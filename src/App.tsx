@@ -8,6 +8,11 @@ import { Layout } from "@/components/layout/Layout";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
+import Search from "./pages/Search";
+import Bookmarks from "./pages/Bookmarks";
+import Profile from "./pages/Profile";
+import CreatePost from "./pages/CreatePost";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,11 +28,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/home" element={<Layout><Home /></Layout>} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/search" element={<Layout><div className="p-8 text-center">Search page coming soon...</div></Layout>} />
-            <Route path="/bookmarks" element={<Layout><div className="p-8 text-center">Bookmarks page coming soon...</div></Layout>} />
-            <Route path="/profile" element={<Layout><div className="p-8 text-center">Profile page coming soon...</div></Layout>} />
-            <Route path="/post" element={<Layout><div className="p-8 text-center">Create post page coming soon...</div></Layout>} />
-            <Route path="/settings" element={<Layout><div className="p-8 text-center">Settings page coming soon...</div></Layout>} />
+            <Route path="/search" element={<Layout><Search /></Layout>} />
+            <Route path="/bookmarks" element={<Layout><Bookmarks /></Layout>} />
+            <Route path="/profile/:username" element={<Layout><Profile /></Layout>} />
+            <Route path="/post" element={<Layout><CreatePost /></Layout>} />
+            <Route path="/settings" element={<Layout><Settings /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
