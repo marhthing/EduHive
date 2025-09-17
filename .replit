@@ -13,19 +13,6 @@ packages = ["ffmpeg", "python3", "yt-dlp", "libreoffice", "supabase-cli"]
 runButton = "Project"
 
 [[workflows.workflow]]
-name = "Development Server"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run dev"
-waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
-
-[[workflows.workflow]]
 name = "Project"
 mode = "parallel"
 author = "agent"
@@ -38,13 +25,13 @@ args = "Frontend"
 name = "Frontend"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -57,5 +44,5 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 35145
+localPort = 44515
 externalPort = 3000
