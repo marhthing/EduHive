@@ -472,8 +472,8 @@ export default function Profile() {
                   <div className="text-sm text-muted-foreground">Followers</div>
                 </div>
                 <div 
-                  className="text-center cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors"
-                  onClick={() => setShowFollowingModal(true)}
+                  className={`text-center ${isOwnProfile ? 'cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors' : ''}`}
+                  onClick={isOwnProfile ? () => setShowFollowingModal(true) : undefined}
                 >
                   <div className="font-bold">{followingCount}</div>
                   <div className="text-sm text-muted-foreground">Following</div>
