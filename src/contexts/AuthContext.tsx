@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,56 +48,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        console.log('Getting initial session...');
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('Initial session:', session);
+    let isMounted = true;
 
-        if (session?.user) {
-          console.log('User found in initial session');
-          setSession(session);
-          setUser(session.user);
-        } else {
-          console.log('No user found, clearing auth state');
-          setSession(null);
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('Error getting initial session:', error);
-        setSession(null);
+    console.log('Getting initial session...');
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
+
+      console.log('Initial session:', session);
+      if (session?.user) {
+        setUser(session.user);
+        setSession(session);
+        console.log('User found:', session.user.email);
+      } else {
         setUser(null);
-      } finally {
-        console.log('Setting loading to false');
+        setSession(null);
+        console.log('No user found, clearing auth state');
+      }
+      setLoading(false);
+      console.log('Setting loading to false');
+    }).catch((error) => {
+      console.error('Error getting session:', error);
+      if (isMounted) {
+        setUser(null);
+        setSession(null);
         setLoading(false);
       }
-    };
-
-    getInitialSession();
+    });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+
         console.log('Auth state change:', event, session);
-        setSession(session);
-        setUser(session?.user ?? null);
 
-        if (event === 'SIGNED_OUT') {
-          console.log('User signed out');
-          // Clear username from localStorage
-          Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('username_')) {
-              localStorage.removeItem(key);
-            }
-          });
+        if (session?.user) {
+          setUser(session.user);
+          setSession(session);
+        } else {
+          setUser(null);
+          setSession(null);
         }
-
         setLoading(false);
       }
     );
 
-    return () => subscription.unsubscribe();
+    // Safety timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (isMounted && loading) {
+        console.log('Auth context timeout reached, setting loading to false');
+        setLoading(false);
+      }
+    }, 3000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const value = {
