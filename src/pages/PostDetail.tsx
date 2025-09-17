@@ -472,45 +472,46 @@ export default function PostDetail() {
                 </div>
               </div>
               </div>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 hover:bg-muted rounded-full"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  {user && user.id === post.user_id && (
-                    <>
-                      <DropdownMenuItem onClick={handleEditPost}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit post
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this post?')) {
-                            handleDeletePost();
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete post
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem>
-                    <Flag className="h-4 w-4 mr-2" />
-                    Report post
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 hover:bg-muted rounded-full"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {user && user.id === post.user_id && (
+                  <>
+                    <DropdownMenuItem onClick={handleEditPost}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit post
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => {
+                        if (confirm('Are you sure you want to delete this post?')) {
+                          handleDeletePost();
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete post
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem>
+                  <Flag className="h-4 w-4 mr-2" />
+                  Report post
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
             <p className="text-foreground whitespace-pre-wrap mb-3 text-lg">{post.body}</p>
 
