@@ -20,8 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 
-const renderBadge = (count: number) => {
-  if (count === 0) return null;
+const renderBadge = (count: number | undefined) => {
+  if (!count || count === 0) return null;
   
   return (
     <span className="absolute -top-1 -right-1 bg-red-500 rounded-full h-2 w-2">
@@ -185,9 +185,9 @@ export function AppSidebar() {
   };
 
   const getNavigationItems = () => [
-    { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : 0, onClick: () => handleNavClick("/home") },
+    { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : undefined, onClick: () => handleNavClick("/home") },
     { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
-    { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : 0, onClick: () => handleNavClick("/notifications") },
+    { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : undefined, onClick: () => handleNavClick("/notifications") },
     { title: "Bookmarks", url: "/bookmarks", icon: Bookmark, onClick: () => handleNavClick("/bookmarks") },
     { title: "Profile", url: `/profile/${username}`, icon: User, onClick: () => handleNavClick(`/profile/${username}`) },
     { title: "Create Post", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },

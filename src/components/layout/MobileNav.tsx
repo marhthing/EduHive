@@ -6,9 +6,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const getNavigationItems = (username: string, notificationCount: number, newPostsCount: number, handleNavClick: (url: string) => void) => [
-  { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : 0, onClick: () => handleNavClick("/home") },
+  { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : undefined, onClick: () => handleNavClick("/home") },
   { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
-  { title: "Notifications", url: "/notifications", icon: Bell, badge: notificationCount > 0 ? notificationCount : 0, onClick: () => handleNavClick("/notifications") },
+  { title: "Notifications", url: "/notifications", icon: Bell, badge: notificationCount > 0 ? notificationCount : undefined, onClick: () => handleNavClick("/notifications") },
   { title: "Create", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
   { title: "Profile", url: `/profile/${username}`, icon: User, onClick: () => handleNavClick(`/profile/${username}`) },
 ];
@@ -147,8 +147,8 @@ export function MobileNav() {
   const isActive = (path: string) => currentPath === path;
   const navigationItems = getNavigationItems(username, unreadNotifications, newPostsCount, handleNavClick);
 
-  const renderBadge = (count: number) => {
-    if (count === 0) return null;
+  const renderBadge = (count: number | undefined) => {
+    if (!count || count === 0) return null;
     
     return (
       <span className="absolute -top-1 -right-1 bg-red-500 rounded-full h-2 w-2">
