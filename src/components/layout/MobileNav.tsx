@@ -17,9 +17,11 @@ export function MobileNav() {
   const location = useLocation();
   const { user } = useAuth();
   const currentPath = location.pathname;
-  const [username, setUsername] = useState<string>("");
   const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
   const [newPostsCount, setNewPostsCount] = useState<number>(0);
+
+  // Get username from user metadata
+  const username = user?.user_metadata?.username || "";
 
   const fetchNotificationCount = async () => {
     if (!user) return;
@@ -76,22 +78,6 @@ export function MobileNav() {
   };
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (user) {
-        try {
-          const { data, error } = await import("@/integrations/supabase/client").then(module => 
-            module.supabase.from("profiles").select("username").eq("user_id", user.id).single()
-          );
-          if (error) throw error;
-          setUsername(data?.username || "");
-        } catch (error) {
-          console.error("Error fetching username:", error);
-          setUsername("");
-        }
-      }
-    };
-
-    fetchUserProfile();
     fetchNotificationCount();
     fetchNewPostsCount();
 
