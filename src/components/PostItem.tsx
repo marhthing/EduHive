@@ -393,47 +393,7 @@ export function PostItem({
     }
   };
 
-  const handleBookmark = async () => {
-    if (!currentUserId) {
-      console.error('User not authenticated');
-      return;
-    }
-
-    try {
-      console.log('Toggling bookmark for post:', post.id, 'Current state:', post.is_bookmarked);
-
-      if (post.is_bookmarked) {
-        const { error } = await supabase
-          .from('bookmarks')
-          .delete()
-          .eq('post_id', post.id)
-          .eq('user_id', currentUserId);
-
-        if (error) {
-          console.error('Error removing bookmark:', error);
-          throw error;
-        }
-
-        console.log('Bookmark removed successfully');
-      } else {
-        const { error } = await supabase
-          .from('bookmarks')
-          .insert({ post_id: post.id, user_id: currentUserId });
-
-        if (error) {
-          console.error('Error adding bookmark:', error);
-          throw error;
-        }
-
-        console.log('Bookmark added successfully');
-      }
-
-      onBookmark(post.id);
-    } catch (error) {
-      console.error('Error toggling bookmark:', error);
-      // You might want to show a toast notification here
-    }
-  };
+  
 
   return (
     <div
@@ -608,12 +568,12 @@ export function PostItem({
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                handleBookmark();
+                onBookmark(post.id);
               }}
               className={`flex items-center gap-1 md:gap-2 rounded-full p-1.5 md:p-2 transition-colors ${
                 post.is_bookmarked
-                  ? "text-bookmark hover:text-bookmark hover:bg-bookmark/10"
-                  : "text-muted-foreground hover:text-bookmark hover:bg-bookmark/10"
+                  ? "text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                  : "text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
               }`}
             >
               <Bookmark className={`h-3.5 w-3.5 md:h-4 md:w-4 ${post.is_bookmarked ? "fill-current" : ""}`} />
