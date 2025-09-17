@@ -150,11 +150,24 @@ export default function Auth() {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
-      if (error) throw error;
+      
+      if (error) {
+        console.error('Google OAuth error:', error);
+        throw error;
+      }
     } catch (error: any) {
-      showToast(error.message || "Failed to sign in with Google", "error");
+      console.error('Google sign-in failed:', error);
+      if (error.message?.includes('OAuth')) {
+        showToast("Google sign-in is not properly configured. Please use email/password instead.", "error");
+      } else {
+        showToast(error.message || "Failed to sign in with Google", "error");
+      }
     } finally {
       setLoading(false);
     }
@@ -296,8 +309,9 @@ export default function Auth() {
                 className="w-full"
                 onClick={handleGoogleAuth}
                 disabled={loading}
+                type="button"
               >
-                Sign in with Google
+                {loading ? "Connecting to Google..." : "Sign in with Google"}
               </Button>
             </form>
           </TabsContent>
