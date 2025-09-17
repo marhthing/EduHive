@@ -353,34 +353,46 @@ export default function Profile() {
       // Show processing for a bit longer
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Look for username in localStorage
+      // Look for username in localStorage using the correct key format
       let foundUsername = "";
       
-      // Check different possible localStorage keys
-      const possibleKeys = ['username', 'user_username', 'current_username'];
+      if (currentUser?.id) {
+        // Check the specific key format used in the app: username_${user.id}
+        foundUsername = localStorage.getItem(`username_${currentUser.id}`) || "";
+      }
       
-      // Also check for keys that might be prefixed with user ID
-      Object.keys(localStorage).forEach(key => {
-        if (key.includes('username') || key.startsWith('username_')) {
+      // If not found with user ID, check other possible keys
+      if (!foundUsername) {
+        const possibleKeys = ['username', 'user_username', 'current_username'];
+        
+        // Also check for keys that might contain 'username'
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('username') || key.startsWith('username_')) {
+            const value = localStorage.getItem(key);
+            if (value && !foundUsername) {
+              foundUsername = value;
+            }
+          }
+        });
+        
+        // Check the specific possible keys
+        for (const key of possibleKeys) {
           const value = localStorage.getItem(key);
           if (value && !foundUsername) {
             foundUsername = value;
+            break;
           }
-        }
-      });
-      
-      // Check the specific possible keys
-      for (const key of possibleKeys) {
-        const value = localStorage.getItem(key);
-        if (value && !foundUsername) {
-          foundUsername = value;
-          break;
         }
       }
       
       if (foundUsername) {
         setFetchedUsername(foundUsername);
         showToast(`Found username: @${foundUsername}`, "success");
+        
+        // Redirect to the proper profile URL
+        setTimeout(() => {
+          navigate(`/profile/${foundUsername}`, { replace: true });
+        }, 1000);
       } else {
         showToast("No username found in localStorage", "info");
       }
