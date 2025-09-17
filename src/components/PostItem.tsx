@@ -491,10 +491,7 @@ export function PostItem({
 
 
           {/* Post Body */}
-          <p 
-            className="text-foreground mb-2 md:mb-3 leading-relaxed cursor-pointer text-sm md:text-base break-words"
-            onClick={() => navigate(`/post/${post.id}`)}
-          >
+          <p className="text-foreground mb-2 md:mb-3 leading-relaxed text-sm md:text-base break-words">
             {post.body}
           </p>
 
@@ -522,7 +519,10 @@ export function PostItem({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onComment(post.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onComment(post.id);
+              }}
               className="flex items-center gap-1 md:gap-2 text-comment hover:text-comment hover:bg-comment/10 rounded-full p-1.5 md:p-2 transition-colors"
             >
               <MessageCircle className="h-3.5 w-3.5 md:h-4 md:w-4" />
@@ -532,7 +532,10 @@ export function PostItem({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onLike(post.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onLike(post.id);
+              }}
               className={`flex items-center gap-1 md:gap-2 rounded-full p-1.5 md:p-2 transition-colors ${
                 post.is_liked
                   ? "text-like hover:text-like hover:bg-like/10"
@@ -546,7 +549,10 @@ export function PostItem({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onShare(post)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onShare(post);
+              }}
               className="flex items-center gap-1 md:gap-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full p-1.5 md:p-2 transition-colors"
             >
               <Share className="h-3.5 w-3.5 md:h-4 md:w-4" />
@@ -555,7 +561,10 @@ export function PostItem({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onBookmark(post.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onBookmark(post.id);
+              }}
               className={`flex items-center gap-1 md:gap-2 rounded-full p-1.5 md:p-2 transition-colors ${
                 post.is_bookmarked
                   ? "text-bookmark hover:text-bookmark hover:bg-bookmark/10"
