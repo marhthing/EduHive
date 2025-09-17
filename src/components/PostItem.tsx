@@ -52,7 +52,6 @@ interface PostItemProps {
   onDelete?: (postId: string) => void;
   showDropdown?: boolean;
   className?: string;
-  disableNavigation?: boolean; // Add this prop to disable click navigation
 }
 
 export function PostItem({
@@ -65,8 +64,7 @@ export function PostItem({
   onEdit,
   onDelete,
   showDropdown = true,
-  className = "",
-  disableNavigation = false
+  className = ""
 }: PostItemProps) {
   const [imageError, setImageError] = useState(false);
   const [carouselOpen, setCarouselOpen] = useState(false);
@@ -373,8 +371,8 @@ export function PostItem({
 
   return (
     <div
-      className={`p-4 ${!disableNavigation ? 'hover:bg-muted/20 cursor-pointer' : ''} transition-colors border border-border rounded-lg ${className}`}
-      onClick={disableNavigation ? undefined : () => navigate(`/post/${post.id}`)}
+      className={`p-4 hover:bg-muted/20 transition-colors cursor-pointer border border-border rounded-lg ${className}`}
+      onClick={() => navigate(`/post/${post.id}`)}
     >
       <div className="flex gap-3">
         <Avatar
