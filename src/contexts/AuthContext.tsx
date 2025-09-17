@@ -29,6 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkDeactivationStatus = async (userId: string) => {
     try {
+      console.log('Checking deactivation status for user:', userId);
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('is_deactivated, scheduled_deletion_at')
@@ -40,17 +41,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
+      console.log('Profile data:', profileData);
+
       if (profileData?.is_deactivated) {
         const deletionDate = new Date(profileData.scheduled_deletion_at);
         const now = new Date();
         
+        console.log('Account is deactivated. Deletion date:', deletionDate, 'Now:', now);
+        
         if (deletionDate <= now) {
           // Account is past deletion date - sign out
+          console.log('Account past deletion date, signing out');
           await supabase.auth.signOut();
           return false;
         }
+        console.log('Account deactivated but within grace period');
         return true;
       }
+      console.log('Account is not deactivated');
       return false;
     } catch (error) {
       console.error('Error checking deactivation status:', error);
@@ -92,19 +100,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Get initial session
     const getInitialSession = async () => {
       try {
+        console.log('Getting initial session...');
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('Initial session:', session);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          console.log('User found, checking deactivation status...');
           const deactivated = await checkDeactivationStatus(session.user.id);
+          console.log('Deactivation status:', deactivated);
           setIsDeactivated(deactivated);
         } else {
+          console.log('No user found');
           setIsDeactivated(false);
         }
       } catch (error) {
         console.error('Error getting initial session:', error);
+        setSession(null);
+        setUser(null);
+        setIsDeactivated(false);
       } finally {
+        console.log('Setting loading to false');
         setLoading(false);
       }
     };
@@ -114,13 +131,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
+        if (session?.user && event !== 'SIGNED_OUT') {
+          console.log('Auth change: checking deactivation status...');
           const deactivated = await checkDeactivationStatus(session.user.id);
+          console.log('Auth change deactivation status:', deactivated);
           setIsDeactivated(deactivated);
         } else {
+          console.log('Auth change: no user or signed out');
           setIsDeactivated(false);
         }
         
