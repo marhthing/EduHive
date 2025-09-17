@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PostItem } from "@/components/PostItem";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { format } from "date-fns";
+import { formatTimeShort } from "@/lib/timeFormat";
 import { FollowersModal } from "@/components/FollowersModal";
 import { FollowingModal } from "@/components/FollowingModal";
 
