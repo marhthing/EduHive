@@ -66,9 +66,8 @@ export default function Settings() {
       const now = new Date();
       
       if (lastChange) {
-        // Calculate next allowed change date (one month after last change)
-        const nextChange = new Date(lastChange);
-        nextChange.setMonth(nextChange.getMonth() + 1);
+        // Calculate next allowed change date (30 days after last change)
+        const nextChange = new Date(lastChange.getTime() + (30 * 24 * 60 * 60 * 1000));
         
         const canChange = now >= nextChange;
         setCanChangeUsername(canChange);
