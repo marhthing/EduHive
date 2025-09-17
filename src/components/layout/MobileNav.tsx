@@ -1,4 +1,4 @@
-import { Home, Search, Bookmark, User, Plus } from "lucide-react";
+import { Home, Search, Bookmark, User, Plus, Bell } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,8 +7,8 @@ import { useState, useEffect } from "react";
 const getNavigationItems = (username: string) => [
   { title: "Home", url: "/home", icon: Home },
   { title: "Search", url: "/search", icon: Search },
+  { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Create", url: "/post", icon: Plus },
-  { title: "Bookmarks", url: "/bookmarks", icon: Bookmark },
   { title: "Profile", url: `/profile/${username}`, icon: User },
 ];
 

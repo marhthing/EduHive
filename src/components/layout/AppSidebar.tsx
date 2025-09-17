@@ -22,6 +22,7 @@ import { Link } from "react-router-dom";
 const getNavigationItems = (username: string) => [
   { title: "Home", url: "/home", icon: Home },
   { title: "Search", url: "/search", icon: Search },
+  { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Bookmarks", url: "/bookmarks", icon: Bookmark },
   { title: "Profile", url: `/profile/${username}`, icon: User },
   { title: "Create Post", url: "/post", icon: Plus },
@@ -142,14 +143,6 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarMenuItem>
-          <SidebarMenuButton asChild>
-            <NavLink to="/notifications" className={getNavCls}>
-              <Bell className="h-5 w-5" />
-              {!collapsed && <span className="ml-3">Notifications</span>}
-            </NavLink>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
       </SidebarContent>
     </Sidebar>
   );
