@@ -1022,11 +1022,11 @@ export default function PostDetail() {
 
       {/* Comment Form or Login Prompt */}
       {user ? (
-        <div className="border border-border rounded-xl p-2 mb-4">
-          <div className="flex gap-2">
-            <Avatar className="h-8 w-8 flex-shrink-0">
+        <div className="border border-border rounded-lg p-1.5 mb-3">
+          <div className="flex gap-1.5">
+            <Avatar className="h-6 w-6 flex-shrink-0 mt-0.5">
               <AvatarImage src={user.user_metadata?.avatar_url} />
-              <AvatarFallback>
+              <AvatarFallback className="text-xs">
                 {user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
@@ -1036,7 +1036,7 @@ export default function PostDetail() {
                 placeholder="Write a comment..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                className="min-h-[32px] max-h-[120px] resize-none border-none text-sm placeholder:text-muted-foreground focus-visible:ring-0 p-0 mb-1"
+                className="min-h-[24px] max-h-[96px] resize-none border-none text-xs placeholder:text-muted-foreground focus-visible:ring-0 p-0 mb-0.5 leading-4"
                 disabled={submitting}
               />
 
@@ -1044,7 +1044,7 @@ export default function PostDetail() {
                 <Button
                   onClick={handleSubmitComment}
                   disabled={!commentText.trim() || submitting}
-                  className="rounded-full px-3 py-1 h-7 text-xs"
+                  className="rounded-full px-2 py-0.5 h-6 text-xs"
                 >
                   {submitting ? "Posting..." : "Comment"}
                 </Button>
@@ -1053,12 +1053,12 @@ export default function PostDetail() {
           </div>
         </div>
       ) : (
-        <div className="border border-border rounded-xl p-2 mb-4 text-center">
-          <p className="text-muted-foreground text-xs mb-2">
-            Join the conversation! Log in to like, comment, and interact with posts.
+        <div className="border border-border rounded-lg p-1.5 mb-3 text-center">
+          <p className="text-muted-foreground text-xs mb-1.5">
+            Join the conversation! Log in to comment.
           </p>
-          <Button onClick={() => navigate('/auth')} className="rounded-full px-3 py-1 h-7 text-xs">
-            Log In / Sign Up
+          <Button onClick={() => navigate('/auth')} className="rounded-full px-2 py-0.5 h-6 text-xs">
+            Log In
           </Button>
         </div>
       )}
