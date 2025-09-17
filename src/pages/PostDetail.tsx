@@ -1224,6 +1224,7 @@ export default function PostDetail() {
               </div>
             </div>
         </div>
+      </div>
 
       {/* Comment Form or Login Prompt */}
       {user ? (
