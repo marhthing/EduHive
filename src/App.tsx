@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Layout } from "@/components/layout/Layout";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -24,6 +25,7 @@ const Notifications = lazy(() => import("@/pages/Notifications"));
 const AccountReactivation = lazy(() => import("@/pages/AccountReactivation"));
 const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const LogoDemo = lazy(() => import("./pages/LogoDemo"));
 
 const queryClient = new QueryClient();
 
@@ -34,13 +36,14 @@ const App = () => (
         <TooltipProvider>
           <TwitterToastProvider>
           <BrowserRouter>
-            <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><LoadingSpinner size={120} text="Loading page..." /></div>}>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/reactivate" element={<AccountReactivation />} />
+                <Route path="/logo-demo" element={<LogoDemo />} />
                 <Route path="/home" element={<ProtectedRoute><Layout><Home /></Layout></ProtectedRoute>} />
                 <Route path="/search" element={<ProtectedRoute><Layout><Search /></Layout></ProtectedRoute>} />
                 <Route path="/bookmarks" element={<ProtectedRoute><Layout><Bookmarks /></Layout></ProtectedRoute>} />
