@@ -658,16 +658,26 @@ export default function PostDetail() {
                     // Single attachment - full width
                     <div className="rounded-2xl overflow-hidden border border-border">
                       {attachments[0].type?.startsWith('image/') ? (
-                        <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
-                          <DialogTrigger asChild>
-                            <img 
-                              src={attachments[0].url} 
-                              alt="Post attachment" 
-                              className="w-full max-h-96 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                              loading="lazy"
-                              onClick={() => setCarouselStartIndex(0)}
-                            />
-                          </DialogTrigger>
+                        user ? (
+                          <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
+                            <DialogTrigger asChild>
+                              <img 
+                                src={attachments[0].url} 
+                                alt="Post attachment" 
+                                className="w-full max-h-96 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                loading="lazy"
+                                onClick={() => setCarouselStartIndex(0)}
+                              />
+                            </DialogTrigger>
+                        ) : (
+                          <img 
+                            src={attachments[0].url} 
+                            alt="Post attachment" 
+                            className="w-full max-h-96 object-cover cursor-not-allowed opacity-75"
+                            loading="lazy"
+                            title="Login to view full image"
+                          />
+                        )
                           <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none">
                             <div className="relative">
                               <Button
@@ -709,7 +719,9 @@ export default function PostDetail() {
                                               </Button>
                                               <Button
                                                 variant="outline"
+                                                disabled={!user}
                                                 onClick={() => {
+                                                  if (!user) return;
                                                   const link = document.createElement('a');
                                                   link.href = attachment.url;
                                                   link.download = 'document.pdf';
@@ -736,7 +748,9 @@ export default function PostDetail() {
                                               </Button>
                                               <Button
                                                 variant="outline"
+                                                disabled={!user}
                                                 onClick={() => {
+                                                  if (!user) return;
                                                   const link = document.createElement('a');
                                                   link.href = attachment.url;
                                                   link.download = 'attachment';
@@ -775,7 +789,9 @@ export default function PostDetail() {
                             <Button
                               variant="outline"
                               size="sm"
+                              disabled={!user}
                               onClick={() => {
+                                if (!user) return;
                                 const link = document.createElement('a');
                                 link.href = attachments[0].url;
                                 link.download = 'document.pdf';
@@ -785,6 +801,7 @@ export default function PostDetail() {
                                 document.body.removeChild(link);
                               }}
                               className="px-3"
+                              title={user ? "Download PDF" : "Login to download"}
                             >
                               ⬇️
                             </Button>
@@ -804,7 +821,9 @@ export default function PostDetail() {
                             <Button
                               variant="outline"
                               size="sm"
+                              disabled={!user}
                               onClick={() => {
+                                if (!user) return;
                                 const link = document.createElement('a');
                                 link.href = attachments[0].url;
                                 link.download = 'attachment';
@@ -814,6 +833,7 @@ export default function PostDetail() {
                                 document.body.removeChild(link);
                               }}
                               className="px-3"
+                              title={user ? "Download file" : "Login to download"}
                             >
                               ⬇️
                             </Button>
@@ -947,16 +967,26 @@ export default function PostDetail() {
                               </DialogContent>
                             </Dialog>
                           ) : attachment.type?.startsWith('image/') ? (
-                            <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
-                              <DialogTrigger asChild>
-                                <img
-                                  src={attachment.url}
-                                  alt={`Attachment ${index + 1}`}
-                                  className="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                  loading="lazy"
-                                  onClick={() => setCarouselStartIndex(index)}
-                                />
-                              </DialogTrigger>
+                            user ? (
+                              <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
+                                <DialogTrigger asChild>
+                                  <img
+                                    src={attachment.url}
+                                    alt={`Attachment ${index + 1}`}
+                                    className="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                    loading="lazy"
+                                    onClick={() => setCarouselStartIndex(index)}
+                                  />
+                                </DialogTrigger>
+                            ) : (
+                              <img
+                                src={attachment.url}
+                                alt={`Attachment ${index + 1}`}
+                                className="w-full h-48 object-cover cursor-not-allowed opacity-75"
+                                loading="lazy"
+                                title="Login to view full image"
+                              />
+                            )
                               <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none">
                                 <div className="relative">
                                   <Button
@@ -1139,7 +1169,9 @@ export default function PostDetail() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      disabled={!user}
                       onClick={async () => {
+                        if (!user) return;
                         // Download each attachment one by one
                         for (let i = 0; i < attachments.length; i++) {
                           const attachment = attachments[i];
@@ -1161,7 +1193,12 @@ export default function PostDetail() {
                           }
                         }
                       }}
-                      className="flex items-center gap-2 text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10 rounded-full p-2 h-auto transition-colors"
+                      className={`flex items-center gap-2 rounded-full p-2 h-auto transition-colors ${
+                        user 
+                          ? 'text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10' 
+                          : 'text-muted-foreground/50 cursor-not-allowed'
+                      }`}
+                      title={user ? "Download all attachments" : "Login to download attachments"}
                     >
                       <Download className="h-5 w-5" />
                     </Button>
