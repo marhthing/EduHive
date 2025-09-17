@@ -72,21 +72,11 @@ export default function Settings() {
     }
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !profile) return;
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please select an image smaller than 5MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check file type
+    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
         title: "Invalid file type",
@@ -96,12 +86,26 @@ export default function Settings() {
       return;
     }
 
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setUploading(true);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Upload to Supabase Storage with user ID in path
       const fileExt = file.name.split('.').pop();
-      const fileName = `${profile.id}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const fileName = `avatar_${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -109,27 +113,30 @@ export default function Settings() {
 
       if (uploadError) throw uploadError;
 
+      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
+      // Update profile with new avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ profile_pic: publicUrl })
-        .eq('user_id', profile.user_id);
+        .eq('user_id', user.id);
 
       if (updateError) throw updateError;
 
       setProfile({ ...profile, profile_pic: publicUrl });
+
       toast({
         title: "Success",
         description: "Profile picture updated successfully",
       });
     } catch (error: any) {
-      console.error('Error uploading avatar:', error);
+      console.error('Avatar upload error:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to update profile picture",
+        title: "Upload failed",
+        description: error.message || "Failed to upload avatar",
         variant: "destructive",
       });
     } finally {
@@ -356,7 +363,7 @@ export default function Settings() {
           {/* Danger Zone */}
           <div className="border-t pt-6 space-y-4">
             <h3 className="text-lg font-semibold text-destructive">Danger Zone</h3>
-            
+
             <div className="flex gap-4">
               <Button
                 variant="outline"
