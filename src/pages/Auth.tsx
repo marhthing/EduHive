@@ -48,7 +48,7 @@ export default function Auth() {
 
       if (error) throw error;
 
-      // Check if account is deactivated
+      // Check if account is deactivated and profile exists
       if (data.user) {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -58,6 +58,13 @@ export default function Auth() {
 
         if (profileError) {
           console.error('Error checking profile status:', profileError);
+          // If profile doesn't exist, sign out the user
+          if (profileError.code === 'PGRST116') { // No rows returned
+            await supabase.auth.signOut();
+            setLoading(false);
+            showToast("Account profile not found. Please contact support.", "error");
+            return;
+          }
         } else if (profileData?.is_deactivated) {
           // Check if account is still within reactivation period
           const deletionDate = new Date(profileData.scheduled_deletion_at);

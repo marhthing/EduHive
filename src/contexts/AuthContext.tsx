@@ -57,10 +57,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
-      // If no profile found, user is not deactivated
+      // If no profile found, this means the user doesn't have a proper profile
+      // This should trigger a sign out since the user account is incomplete
       if (!profileData) {
-        console.log('No profile found for user, treating as not deactivated');
-        return false;
+        console.log('No profile found for user - signing out incomplete account');
+        await supabase.auth.signOut();
+        throw new Error('User profile not found - account incomplete');
       }
 
       console.log('Profile data:', profileData);
