@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkDeactivationStatus = async (userId: string) => {
     try {
       console.log('Checking deactivation status for user:', userId);
-      
+
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('is_deactivated, scheduled_deletion_at')
@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (profileData.is_deactivated) {
         const deletionDate = new Date(profileData.scheduled_deletion_at);
         const now = new Date();
-        
+
         if (deletionDate <= now) {
           // Account is past deletion date - sign out
           console.log('Account past deletion date, signing out');
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-      
+
       if (!user) {
         setIsDeactivated(false);
       }
@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Getting initial session...');
         const { data: { session } } = await supabase.auth.getSession();
         console.log('Initial session:', session);
-        
+
         if (session?.user) {
           console.log('User found in initial session');
           setSession(session);
@@ -150,11 +150,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Auth state change:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (event === 'SIGNED_OUT') {
           console.log('User signed out');
           setIsDeactivated(false);
-          
+
           // Clear username from localStorage
           Object.keys(localStorage).forEach(key => {
             if (key.startsWith('username_')) {
@@ -162,7 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           });
         }
-        
+
         setLoading(false);
       }
     );
