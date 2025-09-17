@@ -379,7 +379,7 @@ export function PostItem({
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-0.5" style={{ marginBottom: '0 !important' }}>
+          <div className="flex items-start justify-between" style={{ marginBottom: '-4px !important' }}>
             <div className="flex items-center gap-1 md:gap-2 cursor-pointer min-w-0 flex-1" onClick={handleProfileClick}>
               <span className="font-semibold hover:underline text-sm md:text-base truncate">
                 {post.profile?.name || post.profile?.username || 'Anonymous'}
@@ -398,10 +398,10 @@ export function PostItem({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 hover:bg-muted rounded-full"
+                    className="h-6 w-6 p-0 hover:bg-muted rounded-full -mt-1"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
@@ -447,7 +447,7 @@ export function PostItem({
 
           {/* School and Department */}
           {(post.profile?.school || post.profile?.department) && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5 md:mb-2 flex-wrap" style={{ marginTop: '-10px !important' }}>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5 md:mb-2 flex-wrap" style={{ marginTop: '-14px !important' }}>
               {post.profile?.school && (
                 <span className="max-w-[200px] truncate">{post.profile.school}</span>
               )}

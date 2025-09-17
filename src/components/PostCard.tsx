@@ -338,7 +338,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
               </span>
             </div>
             {(post.profile?.school || post.profile?.department) && (
-              <div className="text-xs text-muted-foreground" style={{ marginTop: '-6px !important' }}>
+              <div className="text-xs text-muted-foreground" style={{ marginTop: '-10px !important' }}>
                 {post.profile?.school && post.profile.school}
                 {post.profile?.school && post.profile?.department && ' • '}
                 {post.profile?.department && post.profile.department}
