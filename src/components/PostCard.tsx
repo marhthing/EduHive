@@ -312,39 +312,36 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
   return (
     <Card className="w-full">
       <CardContent className="p-4">
-        {/* Header */}
-        <div className="flex items-start gap-3 mb-3">
-          <Avatar className="w-10 h-10">
-            <AvatarImage src={post.profile?.profile_pic || ""} />
-            <AvatarFallback>
-              {post.profile?.username?.charAt(0).toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-0">
-              <span className="font-semibold text-sm">
-                {post.profile?.name || post.profile?.username || "Unknown User"}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                @{post.profile?.username || "unknown"}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                • {formatTimeShort(post.created_at)}
-              </span>
-            </div>
-            {(post.profile?.school || post.profile?.department) && (
-              <div className="text-xs text-muted-foreground" style={{ marginTop: '-10px !important' }}>
-                {post.profile?.school && post.profile.school}
-                {post.profile?.school && post.profile?.department && ' • '}
-                {post.profile?.department && post.profile.department}
-              </div>
-            )}
+        {/* Header with avatar inside the flex */}
+        <div className="mb-3">
+          <div className="flex items-center gap-2 flex-wrap mb-0" style={{ display: 'flex !important', alignItems: 'center !important' }}>
+            <Avatar className="w-8 h-8" style={{ flexShrink: '0 !important' }}>
+              <AvatarImage src={post.profile?.profile_pic || ""} />
+              <AvatarFallback>
+                {post.profile?.username?.charAt(0).toUpperCase() || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <span className="font-semibold text-sm">
+              {post.profile?.name || post.profile?.username || "Unknown User"}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              @{post.profile?.username || "unknown"}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              • {formatTimeShort(post.created_at)}
+            </span>
           </div>
+          {(post.profile?.school || post.profile?.department) && (
+            <div className="text-xs text-muted-foreground" style={{ marginTop: '-10px !important', marginLeft: '40px !important' }}>
+              {post.profile?.school && post.profile.school}
+              {post.profile?.school && post.profile?.department && ' • '}
+              {post.profile?.department && post.profile.department}
+            </div>
+          )}
         </div>
 
-        {/* Post Body - aligned with the start of username */}
-        <div style={{ marginLeft: '52px !important' }}>
+        {/* Post Body - starts from left edge */}
+        <div>
           <p className="text-foreground whitespace-pre-wrap mb-3 text-lg">{post.body}</p>
           {renderAttachments()}
 
@@ -365,7 +362,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-between pt-2 border-t" style={{ marginLeft: '-52px !important', paddingLeft: '52px !important' }}>
+          <div className="flex items-center justify-between pt-2 border-t">
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
