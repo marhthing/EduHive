@@ -421,7 +421,7 @@ export default function PostDetail() {
     if (!user) return;
 
     try {
-      const comment = comments.find(c => c.id === commentId) || 
+      const comment = comments.find(c => c.id === commentId) ||
                     comments.flatMap(c => c.replies || []).find(r => r.id === commentId);
 
       if (!comment) return;
@@ -618,7 +618,7 @@ export default function PostDetail() {
                         <Edit className="h-4 w-4 mr-2" />
                         Edit post
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
                         onClick={() => {
                           if (confirm('Are you sure you want to delete this post?')) {
@@ -667,17 +667,17 @@ export default function PostDetail() {
                         <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
                           <DialogTrigger asChild>
                             {user ? (
-                              <img 
-                                src={attachments[0].url} 
-                                alt="Post attachment" 
+                              <img
+                                src={attachments[0].url}
+                                alt="Post attachment"
                                 className="w-full max-h-96 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                                 loading="lazy"
                                 onClick={() => setCarouselStartIndex(0)}
                               />
                             ) : (
-                              <img 
-                                src={attachments[0].url} 
-                                alt="Post attachment" 
+                              <img
+                                src={attachments[0].url}
+                                alt="Post attachment"
                                 className="w-full max-h-96 object-cover cursor-not-allowed opacity-75"
                                 loading="lazy"
                                 title="Login to view full image"
@@ -695,11 +695,11 @@ export default function PostDetail() {
                                 >
                                   <X className="h-6 w-6" />
                                 </Button>
-                                <Carousel 
+                                <Carousel
                                       className="w-full"
-                                      opts={{ 
+                                      opts={{
                                         startIndex: carouselStartIndex,
-                                        loop: true 
+                                        loop: true
                                       }}
                                     >
                                   <CarouselContent>
@@ -852,7 +852,7 @@ export default function PostDetail() {
                   ) : (
                     // Multiple attachments - grid layout
                     <div className={`grid gap-2 ${
-                      attachments.length === 2 ? 'grid-cols-2' : 
+                      attachments.length === 2 ? 'grid-cols-2' :
                       attachments.length === 3 ? 'grid-cols-2' :
                       'grid-cols-2'
                     }`}>
@@ -891,11 +891,11 @@ export default function PostDetail() {
                                   >
                                     <X className="h-6 w-6" />
                                   </Button>
-                                  <Carousel 
+                                  <Carousel
                                         className="w-full"
-                                        opts={{ 
+                                        opts={{
                                           startIndex: carouselStartIndex,
-                                          loop: true 
+                                          loop: true
                                         }}
                                       >
                                     <CarouselContent>
@@ -1006,11 +1006,11 @@ export default function PostDetail() {
                                     >
                                       <X className="h-6 w-6" />
                                     </Button>
-                                    <Carousel 
+                                    <Carousel
                                           className="w-full"
-                                          opts={{ 
+                                          opts={{
                                             startIndex: carouselStartIndex,
-                                            loop: true 
+                                            loop: true
                                           }}
                                         >
                                       <CarouselContent>
@@ -1138,9 +1138,9 @@ export default function PostDetail() {
                   <span className="text-sm">{post.likes_count}</span>
                 </Button>
 
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="flex items-center gap-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors"
             >
                   <MessageCircle className="h-5 w-5" />
@@ -1162,7 +1162,7 @@ export default function PostDetail() {
 
                 {(() => {
                   if (!post.attachment_url) return null;
-                  
+
                   let attachments;
                   try {
                     const parsed = JSON.parse(post.attachment_url);
@@ -1202,8 +1202,8 @@ export default function PostDetail() {
                         }
                       }}
                       className={`flex items-center gap-2 rounded-full p-2 h-auto transition-colors ${
-                        user 
-                          ? 'text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10' 
+                        user
+                          ? 'text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10'
                           : 'text-muted-foreground/50 cursor-not-allowed'
                       }`}
                       title={user ? "Download all attachments" : "Login to download attachments"}
@@ -1213,9 +1213,9 @@ export default function PostDetail() {
                   );
                 })()}
 
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="flex items-center gap-2 text-muted-foreground hover:text-green-500 hover:bg-green-500/10 rounded-full p-2 h-auto transition-colors"
                   onClick={handleShare}
                 >
@@ -1224,7 +1224,6 @@ export default function PostDetail() {
               </div>
             </div>
         </div>
-      </div>
 
       {/* Comment Form or Login Prompt */}
       {user ? (
@@ -1247,7 +1246,7 @@ export default function PostDetail() {
               />
 
               <div className="flex justify-end">
-                <Button 
+                <Button
                   onClick={handleSubmitComment}
                   disabled={!commentText.trim() || submitting}
                   className="rounded-full px-6"
@@ -1307,7 +1306,7 @@ export default function PostDetail() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
                         {user && user.id === comment.user_id ? (
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => {
                               if (confirm('Are you sure you want to delete this comment?')) {
@@ -1385,7 +1384,7 @@ export default function PostDetail() {
                             >
                               Cancel
                             </Button>
-                            <Button 
+                            <Button
                               onClick={() => handleSubmitReply(comment.id)}
                               disabled={!replyText.trim() || submitting}
                               size="sm"
@@ -1431,7 +1430,7 @@ export default function PostDetail() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">
                                   {user && user.id === reply.user_id ? (
-                                    <DropdownMenuItem 
+                                    <DropdownMenuItem
                                       className="text-destructive focus:text-destructive"
                                       onClick={() => {
                                         if (confirm('Are you sure you want to delete this reply?')) {
