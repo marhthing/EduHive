@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Heart, MessageCircle, Bookmark, Share2, FileText, ExternalLink, X, Download } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, X, Download } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,6 +41,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
   const [imageError, setImageError] = useState(false);
   const [carouselOpen, setCarouselOpen] = useState(false);
   const [carouselStartIndex, setCarouselStartIndex] = useState(initialImageIndex); // State for the starting index
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false); // State for the report dialog
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -70,17 +71,17 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
       try {
         const link = document.createElement('a');
         link.href = attachment.url;
-        
+
         // Create a meaningful filename
         const fileExtension = attachment.type?.split('/')[1] || 'unknown';
         const fileName = `${post.profile?.username || 'user'}_attachment_${i + 1}.${fileExtension}`;
-        
+
         link.download = fileName;
         link.target = '_blank';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         // Add a small delay between downloads to avoid browser blocking
         if (i < attachments.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -417,6 +418,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
                 size="sm"
                 onClick={handleDownloadAll}
                 className="text-muted-foreground hover:text-purple-500"
+                title="Download all media"
               >
                 <Download className="w-4 h-4" />
               </Button>

@@ -94,17 +94,17 @@ export function PostItem({
       try {
         const link = document.createElement('a');
         link.href = attachment.url;
-        
+
         // Create a meaningful filename
         const fileExtension = attachment.type?.split('/')[1] || 'unknown';
         const fileName = `${post.profile?.username || 'user'}_attachment_${i + 1}.${fileExtension}`;
-        
+
         link.download = fileName;
         link.target = '_blank';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         // Add a small delay between downloads to avoid browser blocking
         if (i < attachments.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 500));
