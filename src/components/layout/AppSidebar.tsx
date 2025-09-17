@@ -154,37 +154,13 @@ export function AppSidebar() {
     return storedUsername ? `/profile/${storedUsername}` : "/profile";
   };
 
-  const handleNavClick = async (url: string) => {
-    if (url === "/notifications" && user && unreadNotifications > 0) {
-      // Mark all notifications as read
-      try {
-        await supabase
-          .from('notifications')
-          .update({ read: true })
-          .eq('user_id', user.id)
-          .eq('read', false);
-        setUnreadNotifications(0);
-      } catch (error) {
-        console.error('Error marking notifications as read:', error);
-      }
-    } else if (url === "/home" && newPostsCount > 0) {
-      // Reset new posts count (user has seen them)
-      setNewPostsCount(0);
-      // Store in localStorage to persist across refreshes
-      localStorage.setItem(`lastVisited_${user?.id}`, Date.now().toString());
-    }
-    
-    // Navigate to the URL
-    navigate(url);
-  };
-
   const getNavigationItems = () => [
-    { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : undefined, onClick: () => handleNavClick("/home") },
-    { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
-    { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : undefined, onClick: () => handleNavClick("/notifications") },
-    { title: "Bookmarks", url: "/bookmarks", icon: Bookmark, onClick: () => handleNavClick("/bookmarks") },
-    { title: "Profile", url: getProfileUrl(), icon: User, onClick: () => handleNavClick(getProfileUrl()) },
-    { title: "Create Post", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
+    { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : undefined },
+    { title: "Search", url: "/search", icon: Search },
+    { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : undefined },
+    { title: "Bookmarks", url: "/bookmarks", icon: Bookmark },
+    { title: "Profile", url: getProfileUrl(), icon: User },
+    { title: "Create Post", url: "/post", icon: Plus },
   ];
 
   const navigationItems = getNavigationItems();
@@ -203,17 +179,37 @@ export function AppSidebar() {
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Button
-                      variant={isActive(item.url) ? "default" : "ghost"}
-                      className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground !text-foreground dark:!text-sidebar-foreground"
-                      onClick={item.onClick}
+                    <NavLink
+                      to={item.url}
+                      onClick={() => {
+                        if (item.url === "/notifications" && user && unreadNotifications > 0) {
+                          // Mark all notifications as read
+                          supabase
+                            .from('notifications')
+                            .update({ read: true })
+                            .eq('user_id', user.id)
+                            .eq('read', false)
+                            .then(() => setUnreadNotifications(0))
+                            .catch(error => console.error('Error marking notifications as read:', error));
+                        } else if (item.url === "/home" && newPostsCount > 0) {
+                          // Reset new posts count (user has seen them)
+                          setNewPostsCount(0);
+                          // Store in localStorage to persist across refreshes
+                          localStorage.setItem(`lastVisited_${user?.id}`, Date.now().toString());
+                        }
+                      }}
+                      className={({ isActive }) =>
+                        isActive 
+                          ? "bg-primary text-primary-foreground font-medium flex items-center w-full p-2 rounded-md" 
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center w-full p-2 rounded-md !text-foreground dark:!text-sidebar-foreground"
+                      }
                     >
                       <div className="relative">
                         <item.icon className="h-5 w-5" />
                         {item.badge && item.badge > 0 && renderBadge(item.badge)}
                       </div>
                       {!collapsed && <span className="ml-3">{item.title}</span>}
-                    </Button>
+                    </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

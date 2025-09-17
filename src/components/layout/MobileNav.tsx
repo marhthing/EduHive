@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const getNavigationItems = (user: any, notificationCount: number, newPostsCount: number, handleNavClick: (url: string) => void) => {
+const getNavigationItems = (user: any, notificationCount: number, newPostsCount: number) => {
   const getProfileUrl = () => {
     if (!user) return "/profile";
 
@@ -15,11 +15,11 @@ const getNavigationItems = (user: any, notificationCount: number, newPostsCount:
   };
 
   return [
-    { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : undefined, onClick: () => handleNavClick("/home") },
-    { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
-    { title: "Notifications", url: "/notifications", icon: Bell, badge: notificationCount > 0 ? notificationCount : undefined, onClick: () => handleNavClick("/notifications") },
-    { title: "Create", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
-    { title: "Profile", url: getProfileUrl(), icon: User, onClick: () => handleNavClick(getProfileUrl()) },
+    { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : undefined },
+    { title: "Search", url: "/search", icon: Search },
+    { title: "Notifications", url: "/notifications", icon: Bell, badge: notificationCount > 0 ? notificationCount : undefined },
+    { title: "Create", url: "/post", icon: Plus },
+    { title: "Profile", url: getProfileUrl(), icon: User },
   ];
 };
 
@@ -116,29 +116,8 @@ export function MobileNav() {
     }
   }, [user]);
 
-  const handleNavClick = async (url: string) => {
-    if (url === "/notifications" && user && unreadNotifications > 0) {
-      // Mark all notifications as read
-      try {
-        await supabase
-          .from('notifications')
-          .update({ read: true })
-          .eq('user_id', user.id)
-          .eq('read', false);
-        setUnreadNotifications(0);
-      } catch (error) {
-        console.error('Error marking notifications as read:', error);
-      }
-    } else if (url === "/home" && newPostsCount > 0) {
-      // Reset new posts count (user has seen them)
-      setNewPostsCount(0);
-      // Store in localStorage to persist across refreshes
-      localStorage.setItem(`lastVisited_${user?.id}`, Date.now().toString());
-    }
-  };
-
   const isActive = (path: string) => currentPath === path;
-  const navigationItems = getNavigationItems(user, unreadNotifications, newPostsCount, handleNavClick);
+  const navigationItems = getNavigationItems(user, unreadNotifications, newPostsCount);
 
   const renderBadge = (count: number | undefined) => {
     if (!count || count === 0) return null;
@@ -153,19 +132,40 @@ export function MobileNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t border-border md:hidden">
       <div className="flex items-center justify-around py-1.5 px-1">
         {navigationItems.map((item) => (
-          <Button
+          <NavLink
             key={item.title}
-            variant={isActive(item.url) ? "default" : "ghost"}
-            size="sm"
-            className="flex flex-col items-center gap-0.5 h-auto py-1.5 px-1 relative w-full min-w-0 flex-1"
-            onClick={item.onClick}
+            to={item.url}
+            onClick={() => {
+              if (item.url === "/notifications" && user && unreadNotifications > 0) {
+                // Mark all notifications as read
+                supabase
+                  .from('notifications')
+                  .update({ read: true })
+                  .eq('user_id', user.id)
+                  .eq('read', false)
+                  .then(() => setUnreadNotifications(0))
+                  .catch(error => console.error('Error marking notifications as read:', error));
+              } else if (item.url === "/home" && newPostsCount > 0) {
+                // Reset new posts count (user has seen them)
+                setNewPostsCount(0);
+                // Store in localStorage to persist across refreshes
+                localStorage.setItem(`lastVisited_${user?.id}`, Date.now().toString());
+              }
+            }}
+            className={({ isActive }) => 
+              `flex flex-col items-center gap-0.5 h-auto py-1.5 px-1 relative w-full min-w-0 flex-1 rounded-md ${
+                isActive 
+                  ? "bg-primary text-primary-foreground" 
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`
+            }
           >
             <div className="relative">
               <item.icon className="h-4 w-4" />
               {item.badge && item.badge > 0 && renderBadge(item.badge)}
             </div>
             <span className="text-[10px] leading-tight truncate">{item.title}</span>
-          </Button>
+          </NavLink>
         ))}
       </div>
     </nav>
