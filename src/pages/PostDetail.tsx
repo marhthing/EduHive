@@ -19,6 +19,7 @@ import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatTimeShort } from "@/lib/timeFormat";
 import { useToast } from "@/hooks/use-toast";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 interface Profile {
   username: string;
@@ -69,6 +70,9 @@ export default function PostDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [carouselOpen, setCarouselOpen] = useState(false);
   const [carouselStartIndex, setCarouselStartIndex] = useState(0);
+  const [deletePostModalOpen, setDeletePostModalOpen] = useState(false);
+  const [deleteCommentModalOpen, setDeleteCommentModalOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
   const { showToast } = useTwitterToast();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -454,13 +458,18 @@ export default function PostDetail() {
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!user) return;
+    setCommentToDelete(commentId);
+    setDeleteCommentModalOpen(true);
+  };
+
+  const confirmDeleteComment = async () => {
+    if (!user || !commentToDelete) return;
 
     try {
       const { error } = await supabase
         .from('comments')
         .delete()
-        .eq('id', commentId)
+        .eq('id', commentToDelete)
         .eq('user_id', user.id);
 
       if (error) throw error;
@@ -478,6 +487,8 @@ export default function PostDetail() {
         description: "Failed to delete comment. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setCommentToDelete(null);
     }
   };
 
@@ -500,7 +511,11 @@ export default function PostDetail() {
     }
   };
 
-  const handleDeletePost = async () => {
+  const handleDeletePost = () => {
+    setDeletePostModalOpen(true);
+  };
+
+  const confirmDeletePost = async () => {
     if (!user || !post) return;
 
     try {
@@ -620,11 +635,7 @@ export default function PostDetail() {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this post?')) {
-                            handleDeletePost();
-                          }
-                        }}
+                        onClick={handleDeletePost}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete post
@@ -1092,11 +1103,7 @@ export default function PostDetail() {
                         {user && user.id === comment.user_id ? (
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
-                            onClick={() => {
-                              if (confirm('Are you sure you want to delete this comment?')) {
-                                handleDeleteComment(comment.id);
-                              }
-                            }}
+                            onClick={() => handleDeleteComment(comment.id)}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete comment
@@ -1216,11 +1223,7 @@ export default function PostDetail() {
                                   {user && user.id === reply.user_id ? (
                                     <DropdownMenuItem
                                       className="text-destructive focus:text-destructive"
-                                      onClick={() => {
-                                        if (confirm('Are you sure you want to delete this reply?')) {
-                                          handleDeleteComment(reply.id);
-                                        }
-                                      }}
+                                      onClick={() => handleDeleteComment(reply.id)}
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
                                       Delete reply
@@ -1259,6 +1262,27 @@ export default function PostDetail() {
           ))
         )}
       </div>
+
+      {/* Confirmation Modals */}
+      <ConfirmationModal
+        open={deletePostModalOpen}
+        onOpenChange={setDeletePostModalOpen}
+        title="Delete Post"
+        description="Are you sure you want to delete this post? This action cannot be undone."
+        confirmText="Delete"
+        onConfirm={confirmDeletePost}
+        variant="destructive"
+      />
+
+      <ConfirmationModal
+        open={deleteCommentModalOpen}
+        onOpenChange={setDeleteCommentModalOpen}
+        title="Delete Comment"
+        description="Are you sure you want to delete this comment? This action cannot be undone."
+        confirmText="Delete"
+        onConfirm={confirmDeleteComment}
+        variant="destructive"
+      />
     </div>
   );
 }

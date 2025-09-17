@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { ReportDialog } from "@/components/ReportDialog";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,6 +72,7 @@ export function PostItem({
   const [carouselOpen, setCarouselOpen] = useState(false);
   const [carouselStartIndex, setCarouselStartIndex] = useState(0);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const navigate = useNavigate();
   // Use currentUserId prop for user authentication check
 
@@ -420,9 +422,7 @@ export function PostItem({
                         className="text-destructive focus:text-destructive"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm('Are you sure you want to delete this post?')) {
-                            onDelete(post.id);
-                          }
+                          setDeleteModalOpen(true);
                         }}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
@@ -563,6 +563,17 @@ export function PostItem({
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Post"
+        description="Are you sure you want to delete this post? This action cannot be undone."
+        confirmText="Delete"
+        onConfirm={() => onDelete?.(post.id)}
+        variant="destructive"
+      />
 
       {/* Report Dialog */}
       <ReportDialog
