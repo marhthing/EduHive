@@ -124,12 +124,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Initial session:', session);
         
         if (session?.user) {
-          console.log('User found, checking deactivation status...');
-          const deactivated = await checkDeactivationStatus(session.user.id);
-          console.log('Deactivation status:', deactivated);
+          console.log('User found in initial session');
           setSession(session);
           setUser(session.user);
-          setIsDeactivated(deactivated);
+          setIsDeactivated(false); // Deactivation is only checked during actual login
         } else {
           console.log('No user found, clearing auth state');
           setSession(null);
