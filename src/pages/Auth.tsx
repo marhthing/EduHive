@@ -121,7 +121,10 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-primary">EduHive</CardTitle>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <img src="/logo.svg" alt="EduHive Logo" className="h-10 w-10" />
+            <CardTitle className="text-2xl font-bold text-primary">EduHive</CardTitle>
+          </div>
           <CardDescription>
             Join the student community to share notes and resources
           </CardDescription>
