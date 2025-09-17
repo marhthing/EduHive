@@ -85,9 +85,24 @@ export default function Profile() {
       console.log("Followers count from DB:", profileData.followers_count);
       console.log("Following count from DB:", profileData.following_count);
       
+      // Get actual follower count from follows table
+      const { count: actualFollowersCount } = await supabase
+        .from("follows")
+        .select("*", { count: "exact", head: true })
+        .eq("following_id", profileData.user_id);
+
+      // Get actual following count from follows table
+      const { count: actualFollowingCount } = await supabase
+        .from("follows")
+        .select("*", { count: "exact", head: true })
+        .eq("follower_id", profileData.user_id);
+
+      console.log("Actual followers count:", actualFollowersCount);
+      console.log("Actual following count:", actualFollowingCount);
+      
       setProfile(profileData);
-      setFollowersCount(profileData.followers_count || 0);
-      setFollowingCount(profileData.following_count || 0);
+      setFollowersCount(actualFollowersCount || 0);
+      setFollowingCount(actualFollowingCount || 0);
 
       // Check if current user is following this profile
       if (currentUser && profileData) {
