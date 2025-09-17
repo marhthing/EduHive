@@ -569,7 +569,8 @@ export default function PostDetail() {
 
       {/* Post */}
       <div className="border border-border rounded-lg p-4 mb-4">
-        <div className="flex gap-3">
+        {/* Header with avatar and user info */}
+        <div className="flex gap-3 mb-3">
           <Avatar className="h-12 w-12 flex-shrink-0">
             <AvatarImage src={post.profile?.profile_pic || undefined} />
             <AvatarFallback>
@@ -578,7 +579,7 @@ export default function PostDetail() {
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between">
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 text-sm">
                   <span className="font-semibold text-foreground">{post.profile?.name || post.profile?.username || 'Anonymous'}</span>
@@ -601,60 +602,64 @@ export default function PostDetail() {
               </div>
 
               <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 hover:bg-muted rounded-full"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {user && user.id === post.user_id && (
-                  <>
-                    <DropdownMenuItem onClick={handleEditPost}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit post
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      className="text-destructive focus:text-destructive"
-                      onClick={() => {
-                        if (confirm('Are you sure you want to delete this post?')) {
-                          handleDeletePost();
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete post
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                <DropdownMenuItem>
-                  <Flag className="h-4 w-4 mr-2" />
-                  Report post
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-muted rounded-full"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {user && user.id === post.user_id && (
+                    <>
+                      <DropdownMenuItem onClick={handleEditPost}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit post
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this post?')) {
+                            handleDeletePost();
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete post
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem>
+                    <Flag className="h-4 w-4 mr-2" />
+                    Report post
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
+        </div>
 
-            <p className="text-foreground whitespace-pre-wrap mb-3 text-lg">{post.body}</p>
+        {/* Post body - now starts from the left */}
+        <p className="text-foreground whitespace-pre-wrap mb-3 text-lg">{post.body}</p>
 
-            {(() => {
-              if (!post.attachment_url) return null;
+            {/* Attachments - aligned with post body */}
+        {(() => {
+          if (!post.attachment_url) return null;
 
-              // Parse attachments
-              let attachments;
-              try {
-                const parsed = JSON.parse(post.attachment_url);
-                attachments = Array.isArray(parsed) ? parsed : [{url: post.attachment_url, type: post.attachment_type}];
-              } catch {
-                attachments = [{url: post.attachment_url, type: post.attachment_type}];
-              }
+          // Parse attachments
+          let attachments;
+          try {
+            const parsed = JSON.parse(post.attachment_url);
+            attachments = Array.isArray(parsed) ? parsed : [{url: post.attachment_url, type: post.attachment_type}];
+          } catch {
+            attachments = [{url: post.attachment_url, type: post.attachment_type}];
+          }
 
-              return (
-                <div className="mb-3 space-y-2">
+          return (
+            <div className="mb-3 space-y-2">
                   {attachments.length === 1 ? (
                     // Single attachment - full width
                     <div className="rounded-2xl overflow-hidden border border-border">
@@ -1106,19 +1111,20 @@ export default function PostDetail() {
               );
             })()}
 
-            {(post.school_tag || post.course_tag) && (
-              <div className="flex gap-2 mb-3">
-                {post.school_tag && (
-                  <Badge variant="secondary" className="text-xs">{post.school_tag}</Badge>
-                )}
-                {post.course_tag && (
-                  <Badge variant="outline" className="text-xs">{post.course_tag}</Badge>
-                )}
-              </div>
+            {/* Tags - aligned with post body */}
+        {(post.school_tag || post.course_tag) && (
+          <div className="flex gap-2 mb-3">
+            {post.school_tag && (
+              <Badge variant="secondary" className="text-xs">{post.school_tag}</Badge>
             )}
+            {post.course_tag && (
+              <Badge variant="outline" className="text-xs">{post.course_tag}</Badge>
+            )}
+          </div>
+        )}
 
-
-            <div className="flex items-center justify-between">
+        {/* Actions - aligned with post body */}
+        <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
@@ -1217,7 +1223,6 @@ export default function PostDetail() {
                 </Button>
               </div>
             </div>
-          </div>
         </div>
       </div>
 
