@@ -483,9 +483,6 @@ export default function PostDetail() {
                       </Button>
                     </div>
                   </div>
-                )}t'}
-                    </p>
-                  </div>
                 )}
               </div>
             )}
