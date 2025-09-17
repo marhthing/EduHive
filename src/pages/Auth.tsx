@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
-import { Mail, Lock, User, GraduationCap, Building2 } from "lucide-react";
+import { Mail, Lock, User, GraduationCap, Building2, AlertCircle, RefreshCw } from "lucide-react";
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -51,7 +52,21 @@ export default function Auth() {
 
         if (profileError) {
           console.error('Error checking profile status:', profileError);
+          // If no profile found, user might have been deleted
+          if (profileError.code === 'PGRST116') {
+            showToast("Account not found. It may have been permanently deleted.", "error");
+            await supabase.auth.signOut();
+            return;
+          }
         } else if (profileData?.is_deactivated) {
+          // Check if account is still within recovery period
+          const deletionDate = new Date(profileData.scheduled_deletion_at);
+          if (deletionDate <= new Date()) {
+            showToast("Account has been permanently deleted.", "error");
+            await supabase.auth.signOut();
+            return;
+          }
+          
           setDeactivationInfo({
             deactivated_at: profileData.deactivated_at,
             scheduled_deletion_at: profileData.scheduled_deletion_at
@@ -172,9 +187,14 @@ export default function Auth() {
 
       if (error) throw error;
 
-      showToast("Account reactivated successfully! Welcome back.", "success");
+      showToast("Account reactivated successfully! Please sign in again.", "success");
+      
+      // Sign out the user and redirect to login
+      await supabase.auth.signOut();
       setShowReactivation(false);
-      navigate("/");
+      setLoginData({ email: "", password: "" });
+      setIsSignUp(false);
+      
     } catch (error: any) {
       console.error('Error reactivating account:', error);
       showToast(error.message || "Failed to reactivate account", "error");
