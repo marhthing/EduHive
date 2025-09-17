@@ -199,7 +199,8 @@ export function AppSidebar() {
     <Sidebar className={collapsed ? "w-16" : "w-64"}>
       <SidebarContent className="py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xl font-bold text-primary mb-4 px-4">
+          <SidebarGroupLabel className="text-xl font-bold text-primary mb-4 px-4 flex items-center gap-2">
+            <img src="/logo.svg" alt="EduHive Logo" className="h-8 w-8" />
             {!collapsed && "EduHive"}
           </SidebarGroupLabel>
 
