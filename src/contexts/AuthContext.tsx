@@ -34,16 +34,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('profiles')
         .select('is_deactivated, scheduled_deletion_at')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error checking deactivation status:', error);
         return false;
       }
 
+      // If no profile found, user is not deactivated
+      if (!profileData) {
+        console.log('No profile found for user, treating as not deactivated');
+        return false;
+      }
+
       console.log('Profile data:', profileData);
 
-      if (profileData?.is_deactivated) {
+      if (profileData.is_deactivated) {
         const deletionDate = new Date(profileData.scheduled_deletion_at);
         const now = new Date();
         
