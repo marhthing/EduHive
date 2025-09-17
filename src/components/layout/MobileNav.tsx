@@ -10,7 +10,7 @@ const getNavigationItems = (username: string, notificationCount: number, newPost
   { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
   { title: "Notifications", url: "/notifications", icon: Bell, badge: notificationCount > 0 ? notificationCount : undefined, onClick: () => handleNavClick("/notifications") },
   { title: "Create", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
-  { title: "Profile", url: `/profile/${username}`, icon: User, onClick: () => handleNavClick(`/profile/${username}`) },
+  { title: "Profile", url: username ? `/profile/${username}` : "/profile", icon: User, onClick: () => handleNavClick(username ? `/profile/${username}` : "/profile") },
 ];
 
 export function MobileNav() {

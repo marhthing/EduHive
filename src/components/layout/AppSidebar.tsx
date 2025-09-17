@@ -189,7 +189,7 @@ export function AppSidebar() {
     { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
     { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : undefined, onClick: () => handleNavClick("/notifications") },
     { title: "Bookmarks", url: "/bookmarks", icon: Bookmark, onClick: () => handleNavClick("/bookmarks") },
-    { title: "Profile", url: `/profile/${username}`, icon: User, onClick: () => handleNavClick(`/profile/${username}`) },
+    { title: "Profile", url: username ? `/profile/${username}` : "/profile", icon: User, onClick: () => handleNavClick(username ? `/profile/${username}` : "/profile") },
     { title: "Create Post", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
   ];
 
