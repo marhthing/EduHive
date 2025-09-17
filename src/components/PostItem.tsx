@@ -134,7 +134,7 @@ export function PostItem({
     if (attachments.length === 0) return null;
 
     return (
-      <div className="mt-3 mb-3 space-y-2">
+      <div className="mt-3 space-y-2" style={{ marginBottom: '0.75rem !important' }}>
         {attachments.length === 1 ? (
           // Single attachment - full width
           <div className="rounded-2xl overflow-hidden border border-border">
