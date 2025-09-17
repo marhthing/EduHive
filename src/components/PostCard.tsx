@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { formatTimeShort } from "@/lib/timeFormat";
-import { Heart, MessageCircle, Bookmark, Share2, X, Download, FileText, ExternalLink } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, X, Download, FileText, ExternalLink, Share } from "lucide-react";
 import { downloadUrl } from "@/lib/download";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
 
   const handleShare = async () => {
     const postUrl = `${window.location.origin}/post/${post.id}`;
-    
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -114,7 +114,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
 
     // Check if all attachments are images
     const allImages = attachments.every(att => att.type?.startsWith('image/'));
-    
+
     // If all are images, use grid layout
     if (allImages) {
       return (
@@ -220,7 +220,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
             />
           </div>
         ))}
-        
+
         {/* Render documents in list format - each file gets its own full-width row */}
         {documentAttachments.map((attachment, index) => (
           <div key={`doc-${index}`} className="flex items-center gap-3 p-3 bg-muted rounded-lg border border-border">
@@ -231,11 +231,11 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
                 <FileText className="h-8 w-8 text-muted-foreground" />
               )}
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
-                {attachment.type === 'application/pdf' || attachment.type?.includes('pdf') 
-                  ? 'PDF Document' 
+                {attachment.type === 'application/pdf' || attachment.type?.includes('pdf')
+                  ? 'PDF Document'
                   : `File (${attachment.type || 'Unknown type'})`}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -249,7 +249,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
                 size="sm"
                 onClick={async (e) => {
                   e.stopPropagation();
-                  
+
                   // Use original filename if available, otherwise create a meaningful filename
                   const fileName = attachment.name || `${post.profile?.username || 'user'}_attachment_${index + 1}.${attachment.type?.includes('pdf') ? 'pdf' : attachment.type?.split('/')[1] || 'unknown'}`;
                   await downloadUrl(attachment.url, fileName);
@@ -345,13 +345,18 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
 
         {/* Content */}
         <div className="mb-3">
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">{post.body}</p>
-          {renderAttachments()}
         </div>
 
-        {/* Tags */}
+        {/* Post Body - properly aligned */}
+        <div className="ml-[52px]">
+          <p className="text-foreground whitespace-pre-wrap mb-3 text-lg">{post.body}</p>
+        </div>
+        {renderAttachments()}
+
+
+        {/* Tags and Actions */}
         {(post.school_tag || post.course_tag) && (
-          <div className="flex gap-2 mb-3 flex-wrap">
+          <div className="flex gap-2 mb-3">
             {post.school_tag && (
               <Badge variant="secondary" className="text-xs">
                 {post.school_tag}
@@ -364,8 +369,6 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
             )}
           </div>
         )}
-
-        {/* Actions */}
         <div className="flex items-center justify-between pt-2 border-t">
           <div className="flex items-center gap-1">
             <Button
