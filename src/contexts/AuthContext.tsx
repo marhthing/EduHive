@@ -189,26 +189,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.setItem(`username_${session.user.id}`, session.user.user_metadata.username);
           }
 
-          // Sync Google avatar to profile if available and not already set
-          if (session.user.user_metadata?.avatar_url && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-            try {
-              const { data: profileData } = await supabase
-                .from('profiles')
-                .select('profile_pic')
-                .eq('user_id', session.user.id)
-                .single();
-
-              // Only update if profile_pic is null/empty or different from Google avatar
-              if (!profileData?.profile_pic || profileData.profile_pic !== session.user.user_metadata.avatar_url) {
-                await supabase
+          // Sync Google avatar to profile if available and not already set (only on initial sign in)
+          if (session.user.user_metadata?.avatar_url && event === 'SIGNED_IN') {
+            // Use a timeout to avoid blocking the auth flow
+            setTimeout(async () => {
+              try {
+                const { data: profileData, error: profileError } = await supabase
                   .from('profiles')
-                  .update({ profile_pic: session.user.user_metadata.avatar_url })
-                  .eq('user_id', session.user.id);
-                console.log('Synced Google avatar to profile');
+                  .select('profile_pic')
+                  .eq('user_id', session.user.id)
+                  .single();
+
+                if (profileError) {
+                  console.log('Profile not ready for avatar sync yet');
+                  return;
+                }
+
+                // Only update if profile_pic is null/empty or different from Google avatar
+                if (!profileData?.profile_pic || profileData.profile_pic !== session.user.user_metadata.avatar_url) {
+                  const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({ profile_pic: session.user.user_metadata.avatar_url })
+                    .eq('user_id', session.user.id);
+
+                  if (!updateError) {
+                    console.log('Synced Google avatar to profile');
+                  }
+                }
+              } catch (error) {
+                // Silent fail to not affect login performance
+                console.log('Avatar sync skipped');
               }
-            } catch (error) {
-              console.error('Error syncing Google avatar:', error);
-            }
+            }, 1000);
           }
         } else {
           console.log('Auth change: no user or signed out');
