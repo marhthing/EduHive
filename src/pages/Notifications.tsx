@@ -174,7 +174,28 @@ export default function Notifications() {
 
   useEffect(() => {
     fetchNotifications();
-  }, [user]);
+    
+    // Mark all notifications as read when user visits the page
+    const markAsReadOnVisit = async () => {
+      if (user && notifications.length > 0) {
+        try {
+          const { error } = await supabase
+            .from('notifications')
+            .update({ read: true })
+            .eq('user_id', user.id)
+            .eq('read', false);
+
+          if (error) throw error;
+        } catch (error) {
+          console.error('Error marking notifications as read:', error);
+        }
+      }
+    };
+
+    // Small delay to ensure notifications are loaded first
+    const timer = setTimeout(markAsReadOnVisit, 1000);
+    return () => clearTimeout(timer);
+  }, [user, notifications.length]);
 
   if (loading) {
     return (

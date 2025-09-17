@@ -22,6 +22,8 @@ interface Profile {
   year: number | null;
   profile_pic: string | null;
   created_at: string;
+  followers_count: number;
+  following_count: number;
 }
 
 interface Post {
@@ -57,6 +59,11 @@ export default function Profile() {
   const { showToast } = useTwitterToast();
   const navigate = useNavigate();
 
+  // State for follower counts, to be managed locally before fetching from DB again if needed
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+
+
   const fetchProfile = async () => {
     try {
       const { data: profileData, error } = await supabase
@@ -67,6 +74,9 @@ export default function Profile() {
 
       if (error) throw error;
       setProfile(profileData);
+      setFollowersCount(profileData.followers_count || 0);
+      setFollowingCount(profileData.following_count || 0);
+
 
       // Check if current user is following this profile
       if (currentUser && profileData) {
@@ -96,7 +106,7 @@ export default function Profile() {
       if (error) throw error;
 
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       const postsWithCounts = await Promise.all(
         (postsData || []).map(async (post) => {
           const [likesResult, commentsResult, userLikeResult, userBookmarkResult, profileResult] = await Promise.all([
@@ -144,10 +154,10 @@ export default function Profile() {
           .insert({ post_id: postId, user_id: user.id });
       }
 
-      setPosts(posts.map(p => 
-        p.id === postId 
-          ? { 
-              ...p, 
+      setPosts(posts.map(p =>
+        p.id === postId
+          ? {
+              ...p,
               is_liked: !p.is_liked,
               likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1
             }
@@ -178,8 +188,8 @@ export default function Profile() {
           .insert({ post_id: postId, user_id: user.id });
       }
 
-      setPosts(posts.map(p => 
-        p.id === postId 
+      setPosts(posts.map(p =>
+        p.id === postId
           ? { ...p, is_bookmarked: !p.is_bookmarked }
           : p
       ));
@@ -213,44 +223,57 @@ export default function Profile() {
   };
 
   const handleFollowToggle = async () => {
-    if (!currentUser || !profile) return;
+    if (!currentUser || followingUser) return;
 
     setFollowingUser(true);
     try {
       if (isFollowing) {
         // Unfollow
         const { error } = await supabase
-          .from("follows")
+          .from('follows')
           .delete()
-          .eq("follower_id", currentUser.id)
-          .eq("following_id", profile.user_id);
+          .eq('follower_id', currentUser.id)
+          .eq('following_id', profile.user_id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Unfollow error:', error);
+          throw error;
+        }
+
         setIsFollowing(false);
+        setFollowersCount(prev => prev - 1);
         showToast(`Unfollowed @${profile.username}`, "success");
       } else {
         // Follow
         const { error } = await supabase
-          .from("follows")
+          .from('follows')
           .insert({
             follower_id: currentUser.id,
-            following_id: profile.user_id,
+            following_id: profile.user_id
           });
 
-        if (error) throw error;
-        setIsFollowing(true);
-        showToast(`Following @${profile.username}`, "success");
+        if (error) {
+          console// error in follow: { code: '23505', message: 'duplicate key value violates unique constraint "follows_follower_id_following_id_key"', ... }
+          if (error.code === '23505') {
+            showToast(`You are already following @${profile.username}`, "warning");
+          } else {
+            console.error('Follow error:', error);
+            throw error;
+          }
+        } else {
+          setIsFollowing(true);
+          setFollowersCount(prev => prev + 1);
+          showToast(`Following @${profile.username}`, "success");
+        }
       }
-
-      // Refresh profile to get updated counts
-      await fetchProfile();
     } catch (error) {
-      console.error("Error toggling follow:", error);
-      showToast("Failed to update follow status", "error");
+      console.error('Error toggling follow:', error);
+      showToast("Failed to update follow status. Please try again.", "error");
     } finally {
       setFollowingUser(false);
     }
   };
+
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -265,7 +288,7 @@ export default function Profile() {
     if (username) {
       fetchProfile();
     }
-  }, [username]);
+  }, [username, currentUser]); // Added currentUser dependency
 
   useEffect(() => {
     if (profile) {
@@ -328,7 +351,7 @@ export default function Profile() {
                     </Link>
                   </Button>
                 ) : currentUser ? (
-                  <Button 
+                  <Button
                     onClick={handleFollowToggle}
                     disabled={followingUser}
                     variant={isFollowing ? "outline" : "default"}
@@ -374,11 +397,11 @@ export default function Profile() {
                   <div className="text-sm text-muted-foreground">Posts</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-bold">{profile.followers_count || 0}</div>
+                  <div className="font-bold">{followersCount}</div>
                   <div className="text-sm text-muted-foreground">Followers</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-bold">{profile.following_count || 0}</div>
+                  <div className="font-bold">{followingCount}</div>
                   <div className="text-sm text-muted-foreground">Following</div>
                 </div>
                 <div className="text-center">
@@ -398,6 +421,7 @@ export default function Profile() {
           <TabsTrigger value="posts" className="flex-1">
             Posts ({posts.length})
           </TabsTrigger>
+          {/* Add other tabs here if needed, e.g., Followers, Following */}
         </TabsList>
 
         <TabsContent value="posts" className="mt-6">
@@ -407,8 +431,8 @@ export default function Profile() {
                 <Edit3 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No posts yet</h3>
                 <p className="text-muted-foreground mb-4">
-                  {isOwnProfile 
-                    ? "Share your first post to get started" 
+                  {isOwnProfile
+                    ? "Share your first post to get started"
                     : `${profile.username} hasn't posted anything yet`
                   }
                 </p>
@@ -429,7 +453,7 @@ export default function Profile() {
                   onLike={handleToggleLike}
                   onBookmark={handleToggleBookmark}
                   onComment={(postId) => navigate(`/post/${postId}`)}
-                  onShare={() => {}}
+                  onShare={() => {}} // Placeholder for share functionality
                   onEdit={handleEditPost}
                   onDelete={handleDeletePost}
                   showDropdown={isOwnProfile}
@@ -438,6 +462,7 @@ export default function Profile() {
             </div>
           )}
         </TabsContent>
+        {/* Add other TabsContent components here if needed */}
       </Tabs>
     </div>
   );

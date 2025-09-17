@@ -4,6 +4,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -20,13 +21,23 @@ import { Link } from "react-router-dom";
 
 
 const getNavigationItems = (username: string) => [
-  { title: "Home", url: "/home", icon: Home },
+  { title: "Home", url: "/home", icon: Home, badge: newPostsCount },
   { title: "Search", url: "/search", icon: Search },
-  { title: "Notifications", url: "/notifications", icon: Bell },
+  { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications },
   { title: "Bookmarks", url: "/bookmarks", icon: Bookmark },
   { title: "Profile", url: `/profile/${username}`, icon: User },
   { title: "Create Post", url: "/post", icon: Plus },
 ];
+
+  const renderBadge = (count: number) => {
+    if (count === 0) return null;
+    
+    return (
+      <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]">
+        {count > 99 ? '99+' : count}
+      </span>
+    );
+  };
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -38,6 +49,54 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
   const [username, setUsername] = useState<string>("");
+  const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
+  const [newPostsCount, setNewPostsCount] = useState<number>(0);
+
+  const fetchNotificationCount = async () => {
+    if (!user) return;
+    
+    try {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('read', false);
+
+      if (error) throw error;
+      setUnreadNotifications(count || 0);
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+    }
+  };
+
+  const fetchNewPostsCount = async () => {
+    if (!user) return;
+
+    try {
+      // Get posts from last 24 hours from followed users
+      const { data: followsData } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+
+      if (!followsData?.length) return;
+
+      const followedUserIds = followsData.map(f => f.following_id);
+      const yesterday = new Date();
+      yesterday.setHours(yesterday.getHours() - 24);
+
+      const { count, error } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .in('user_id', followedUserIds)
+        .gte('created_at', yesterday.toISOString());
+
+      if (error) throw error;
+      setNewPostsCount(count || 0);
+    } catch (error) {
+      console.error('Error fetching new posts count:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -56,6 +115,36 @@ export function AppSidebar() {
     };
 
     fetchUserProfile();
+    fetchNotificationCount();
+    fetchNewPostsCount();
+
+    // Set up real-time listeners
+    if (user) {
+      const notificationSubscription = supabase
+        .channel('notifications')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+          () => {
+            fetchNotificationCount();
+          }
+        )
+        .subscribe();
+
+      const postsSubscription = supabase
+        .channel('posts')
+        .on('postgres_changes', 
+          { event: 'INSERT', schema: 'public', table: 'posts' },
+          () => {
+            fetchNewPostsCount();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        notificationSubscription.unsubscribe();
+        postsSubscription.unsubscribe();
+      };
+    }
   }, [user]);
 
   const isActive = (path: string) => currentPath === path;
@@ -91,7 +180,10 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="h-5 w-5" />
+                      <div className="relative">
+                        <item.icon className="h-5 w-5" />
+                        {item.badge && item.badge > 0 && renderBadge(item.badge)}
+                      </div>
                       {!collapsed && <span className="ml-3">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
