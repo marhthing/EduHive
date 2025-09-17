@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -389,7 +388,7 @@ export default function PostDetail() {
         title: "Success",
         description: "Post deleted successfully",
       });
-      
+
       // Navigate back to home after deleting
       navigate('/home');
     } catch (error) {
@@ -449,16 +448,20 @@ export default function PostDetail() {
               {post.profile?.username?.[0]?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
-          
+
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="font-semibold text-foreground">{post.profile?.username || 'Anonymous'}</span>
+            <div className="flex items-center gap-2 text-sm mb-2">
+                <span className="font-semibold text-foreground">{post.profile?.name || post.profile?.username || 'Anonymous'}</span>
+                <span className="text-muted-foreground">•</span>
+                <span className="text-muted-foreground">@{post.profile?.username || 'anonymous'}</span>
                 {post.profile?.school && (
-                  <span className="text-muted-foreground">@{post.profile.school.toLowerCase().replace(/\s+/g, '')}</span>
+                  <>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-muted-foreground">{post.profile.school}</span>
+                  </>
                 )}
               </div>
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -497,9 +500,9 @@ export default function PostDetail() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            
+
             <p className="text-foreground whitespace-pre-wrap mb-3 text-lg">{post.body}</p>
-            
+
             {post.attachment_url && (
               <div className="mb-3 rounded-2xl overflow-hidden border border-border">
                 {post.attachment_type?.startsWith('image/') ? (
@@ -571,7 +574,7 @@ export default function PostDetail() {
                 )}
               </div>
             )}
-            
+
             {(post.school_tag || post.course_tag) && (
               <div className="flex gap-2 mb-3">
                 {post.school_tag && (
@@ -586,7 +589,7 @@ export default function PostDetail() {
             <div className="text-sm text-muted-foreground mb-4">
               {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
             </div>
-            
+
             <div className="flex items-center justify-between max-w-md">
               <Button
                 variant="ghost"
@@ -643,7 +646,7 @@ export default function PostDetail() {
                 {user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
-            
+
             <div className="flex-1">
               <Textarea
                 placeholder="Write a comment..."
@@ -652,7 +655,7 @@ export default function PostDetail() {
                 className="min-h-[80px] resize-none border-none text-base placeholder:text-muted-foreground focus-visible:ring-0 p-0 mb-3"
                 disabled={submitting}
               />
-              
+
               <div className="flex justify-end">
                 <Button 
                   onClick={handleSubmitComment}
@@ -684,16 +687,16 @@ export default function PostDetail() {
                     {comment.profile?.username?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 text-sm mb-1">
                     <span className="font-semibold text-foreground">{comment.profile?.username || 'Anonymous'}</span>
                     <span className="text-muted-foreground">•</span>
                     <span className="text-muted-foreground">{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}</span>
                   </div>
-                  
+
                   <p className="text-foreground whitespace-pre-wrap mb-2">{comment.body}</p>
-                  
+
                   <Button
                     variant="ghost"
                     size="sm"
@@ -713,7 +716,7 @@ export default function PostDetail() {
                             {user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
-                        
+
                         <div className="flex-1">
                           <Textarea
                             placeholder={`Reply to ${comment.profile?.username || 'Anonymous'}...`}
@@ -722,7 +725,7 @@ export default function PostDetail() {
                             className="min-h-[60px] resize-none border-none text-sm placeholder:text-muted-foreground focus-visible:ring-0 p-0 mb-2"
                             disabled={submitting}
                           />
-                          
+
                           <div className="flex gap-2 justify-end">
                             <Button
                               variant="ghost"
@@ -759,14 +762,14 @@ export default function PostDetail() {
                               {reply.profile?.username?.[0]?.toUpperCase() || 'U'}
                             </AvatarFallback>
                           </Avatar>
-                          
+
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 text-sm mb-1">
                               <span className="font-semibold text-foreground">{reply.profile?.username || 'Anonymous'}</span>
                               <span className="text-muted-foreground">•</span>
                               <span className="text-muted-foreground">{formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}</span>
                             </div>
-                            
+
                             <p className="text-foreground whitespace-pre-wrap text-sm">{reply.body}</p>
                           </div>
                         </div>

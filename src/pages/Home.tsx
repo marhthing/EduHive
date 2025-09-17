@@ -23,6 +23,7 @@ interface Profile {
   name: string | null;
   profile_pic: string | null;
   school: string | null;
+  department: string | null;
 }
 
 interface Post {
@@ -73,7 +74,10 @@ export default function Home() {
         .select('user_id, username, name, profile_pic, school, department')
         .in('user_id', userIds);
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        // Continue without profiles rather than throwing
+      }
 
       // Create a map of user_id to profile
       const profilesMap = new Map(
