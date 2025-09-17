@@ -135,137 +135,178 @@ export function PostItem({
     const attachments = parseAttachments();
     if (attachments.length === 0) return null;
 
-    return (
-      <div className="mt-3 space-y-2" style={{ marginBottom: '0.75rem !important' }}>
-        {attachments.length === 1 ? (
-          // Single attachment - full width
-          <div className="rounded-2xl overflow-hidden border border-border">
-            {renderSingleAttachment(attachments[0], 0, attachments, () => {
-              setCarouselStartIndex(0);
-              setCarouselOpen(true);
-            })}
-          </div>
-        ) : (
-          // Multiple attachments - grid layout
-          <div className={`grid gap-2 ${
-            attachments.length === 2 ? 'grid-cols-2' :
-            attachments.length === 3 ? 'grid-cols-2' :
-            'grid-cols-2'
-          }`}>
-            {attachments.slice(0, 4).map((attachment, index) => (
-              <div key={index} className="relative rounded-lg overflow-hidden border border-border">
-                {index === 3 && attachments.length > 4 ? (
-                  <div className="relative cursor-pointer" onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/post/${post.id}`);
-                  }}>
-                    {renderSingleAttachment(attachment, index)}
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center hover:bg-black/70 transition-colors">
-                      <span className="text-white text-lg font-semibold">
-                        +{attachments.length - 4} more
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
-                    <DialogTrigger asChild>
-                      <div className="cursor-pointer" onClick={(e) => {
-                        e.stopPropagation();
-                        setCarouselStartIndex(index);
-                        setCarouselOpen(true);
-                      }}>
-                        {renderSingleAttachment(attachment, index)}
+    // Check if all attachments are images
+    const allImages = attachments.every(att => att.type?.startsWith('image/'));
+    
+    // If all are images, use grid layout
+    if (allImages) {
+      return (
+        <div className="mt-3 space-y-2" style={{ marginBottom: '0.75rem !important' }}>
+          {attachments.length === 1 ? (
+            // Single image - full width
+            <div className="rounded-2xl overflow-hidden border border-border">
+              {renderSingleAttachment(attachments[0], 0, attachments, () => {
+                setCarouselStartIndex(0);
+                setCarouselOpen(true);
+              })}
+            </div>
+          ) : (
+            // Multiple images - grid layout
+            <div className={`grid gap-2 ${
+              attachments.length === 2 ? 'grid-cols-2' :
+              attachments.length === 3 ? 'grid-cols-2' :
+              'grid-cols-2'
+            }`}>
+              {attachments.slice(0, 4).map((attachment, index) => (
+                <div key={index} className="relative rounded-lg overflow-hidden border border-border">
+                  {index === 3 && attachments.length > 4 ? (
+                    <div className="relative cursor-pointer" onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/post/${post.id}`);
+                    }}>
+                      {renderSingleAttachment(attachment, index)}
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center hover:bg-black/70 transition-colors">
+                        <span className="text-white text-lg font-semibold">
+                          +{attachments.length - 4} more
+                        </span>
                       </div>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none">
-                      <div className="relative">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                          onClick={() => setCarouselOpen(false)}
-                        >
-                          <X className="h-6 w-6" />
-                        </Button>
-                        <Carousel
-                          className="w-full"
-                          opts={{
-                            startIndex: carouselStartIndex,
-                            loop: true
-                          }}
-                        >
-                          <CarouselContent>
-                            {attachments.map((attachment, idx) => (
-                              <CarouselItem key={idx}>
-                                <div className="flex items-center justify-center min-h-[60vh] max-h-[80vh] bg-black rounded-lg">
-                                  {attachment.type?.startsWith('image/') ? (
+                    </div>
+                  ) : (
+                    <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
+                      <DialogTrigger asChild>
+                        <div className="cursor-pointer" onClick={(e) => {
+                          e.stopPropagation();
+                          setCarouselStartIndex(index);
+                          setCarouselOpen(true);
+                        }}>
+                          {renderSingleAttachment(attachment, index)}
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none">
+                        <div className="relative">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white rounded-full"
+                            onClick={() => setCarouselOpen(false)}
+                          >
+                            <X className="h-6 w-6" />
+                          </Button>
+                          <Carousel
+                            className="w-full"
+                            opts={{
+                              startIndex: carouselStartIndex,
+                              loop: true
+                            }}
+                          >
+                            <CarouselContent>
+                              {attachments.map((attachment, idx) => (
+                                <CarouselItem key={idx}>
+                                  <div className="flex items-center justify-center min-h-[60vh] max-h-[80vh] bg-black rounded-lg">
                                     <img
                                       src={attachment.url}
                                       alt={`Attachment ${idx + 1}`}
                                       className="max-w-full max-h-full object-contain"
                                       loading="lazy"
                                     />
-                                  ) : attachment.type === 'application/pdf' || attachment.type?.includes('pdf') ? (
-                                    <div className="flex flex-col items-center justify-center p-8 text-white">
-                                      <div className="text-6xl mb-4">📄</div>
-                                      <p className="text-xl mb-4">PDF Document</p>
-                                      <div className="flex gap-4">
-                                        <Button
-                                          variant="outline"
-                                          onClick={() => window.open(attachment.url, '_blank')}
-                                        >
-                                          View PDF
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          onClick={async () => {
-                                            const fileName = `${post.profile?.username || 'user'}_document_${idx + 1}.pdf`;
-                                            await downloadUrl(attachment.url, fileName);
-                                          }}
-                                        >
-                                          Download
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="flex flex-col items-center justify-center p-8 text-white">
-                                      <div className="text-6xl mb-4">📎</div>
-                                      <p className="text-xl mb-4">File ({attachment.type || 'Unknown'})</p>
-                                      <div className="flex gap-4">
-                                        <Button
-                                          variant="outline"
-                                          onClick={() => window.open(attachment.url, '_blank')}
-                                        >
-                                          View File
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          onClick={async () => {
-                                            const fileExtension = attachment.type?.split('/')[1] || 'unknown';
-                                            const fileName = `${post.profile?.username || 'user'}_attachment_${idx + 1}.${fileExtension}`;
-                                            await downloadUrl(attachment.url, fileName);
-                                          }}
-                                        >
-                                          Download
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </CarouselItem>
-                            ))}
-                          </CarouselContent>
-                          <CarouselPrevious className="left-4 bg-black/50 hover:bg-black/70 text-white border-none" />
-                          <CarouselNext className="right-4 bg-black/50 hover:bg-black/70 text-white border-none" />
-                        </Carousel>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                                  </div>
+                                </CarouselItem>
+                              ))}
+                            </CarouselContent>
+                            <CarouselPrevious className="left-4 bg-black/50 hover:bg-black/70 text-white border-none" />
+                            <CarouselNext className="right-4 bg-black/50 hover:bg-black/70 text-white border-none" />
+                          </Carousel>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // For documents/mixed content, use list layout
+    return (
+      <div className="mt-3 space-y-2" style={{ marginBottom: '0.75rem !important' }}>
+        {attachments.map((attachment, index) => {
+          if (attachment.type?.startsWith('image/')) {
+            return (
+              <div key={index} className="rounded-2xl overflow-hidden border border-border">
+                <img
+                  src={attachment.url}
+                  alt={`Attachment ${index + 1}`}
+                  className="w-full h-full max-h-96 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/post/${post.id}`);
+                  }}
+                  loading="lazy"
+                />
+              </div>
+            );
+          }
+
+          // Document/file list item
+          return (
+            <div key={index} className="flex items-center gap-3 p-3 bg-muted rounded-lg border border-border">
+              <div className="flex-shrink-0">
+                {attachment.type === 'application/pdf' || attachment.type?.includes('pdf') ? (
+                  <FileText className="h-8 w-8 text-red-500" />
+                ) : (
+                  <FileText className="h-8 w-8 text-muted-foreground" />
                 )}
               </div>
-            ))}
-          </div>
-        )}
+              
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {attachment.type === 'application/pdf' || attachment.type?.includes('pdf') 
+                    ? 'PDF Document' 
+                    : `File (${attachment.type || 'Unknown type'})`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Click to view or download
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(attachment.url, '_blank');
+                  }}
+                  className="h-8 px-3"
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  View
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!currentUserId) return;
+                    
+                    const fileExtension = attachment.type?.includes('pdf') ? 'pdf' : 
+                                        attachment.type?.split('/')[1] || 'unknown';
+                    const fileName = `${post.profile?.username || 'user'}_attachment_${index + 1}.${fileExtension}`;
+                    await downloadUrl(attachment.url, fileName);
+                  }}
+                  className="h-8 px-3"
+                  disabled={!currentUserId}
+                  title={currentUserId ? "Download file" : "Login to download"}
+                >
+                  <Download className="h-3 w-3 mr-1" />
+                  Download
+                </Button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -305,70 +346,10 @@ export function PostItem({
       );
     }
 
-    if (attachment.type === 'application/pdf' || attachment.type?.includes('pdf')) {
-      return (
-        <div className="p-4 bg-muted h-32 flex items-center">
-          <div className="flex gap-2 items-center w-full">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/post/${post.id}`);
-              }}
-              className="flex-1 justify-start"
-            >
-              📄 PDF Document
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async (e) => {
-                e.stopPropagation();
-                const fileName = `${post.profile?.username || 'user'}_document.pdf`;
-                await downloadUrl(attachment.url, fileName);
-              }}
-              className="px-3"
-              title="Download PDF"
-              disabled={!currentUserId}
-            >
-              ⬇️
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
+    // For non-images in grid context, show a placeholder (this shouldn't happen with new logic)
     return (
-      <div className="p-4 bg-muted h-32 flex items-center">
-        <div className="flex gap-2 items-center w-full">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/post/${post.id}`);
-            }}
-            className="flex-1 justify-start"
-          >
-            📎 File ({attachment.type || 'Unknown'})
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async (e) => {
-              e.stopPropagation();
-              const fileExtension = attachment.type?.split('/')[1] || 'unknown';
-              const fileName = `${post.profile?.username || 'user'}_file.${fileExtension}`;
-              await downloadUrl(attachment.url, fileName);
-            }}
-            className="px-3"
-            title="Download File"
-            disabled={!currentUserId}
-          >
-            ⬇️
-          </Button>
-        </div>
+      <div className="p-4 bg-muted h-32 flex items-center justify-center">
+        <FileText className="h-8 w-8 text-muted-foreground" />
       </div>
     );
   };
