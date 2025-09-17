@@ -15,7 +15,7 @@ export default function Auth() {
   const [signupData, setSignupData] = useState({
     email: "",
     password: "",
-    username: "",
+    name: "",
     school: "",
     department: "",
     year: new Date().getFullYear(),
@@ -44,18 +44,62 @@ export default function Auth() {
     }
   };
 
+  const generateUniqueUsername = async (name: string): Promise<string> => {
+    // Clean the name and create base username
+    const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let baseUsername = cleanName || 'user';
+    
+    // If name is too short, add some random characters
+    if (baseUsername.length < 3) {
+      baseUsername = 'user' + Math.random().toString(36).substring(2, 6);
+    }
+    
+    let username = baseUsername;
+    let counter = 1;
+    
+    // Check if username exists and generate unique one
+    while (true) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .single();
+        
+      if (!data) {
+        // Username is available
+        break;
+      }
+      
+      // Try next variation
+      username = `${baseUsername}${Math.random().toString(36).substring(2, 4)}${counter}`;
+      counter++;
+      
+      if (counter > 10) {
+        // Fallback to random username
+        username = 'user' + Math.random().toString(36).substring(2, 8);
+        break;
+      }
+    }
+    
+    return username;
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Generate unique username
+      const generatedUsername = await generateUniqueUsername(signupData.name);
+
       const { error } = await supabase.auth.signUp({
         email: signupData.email,
         password: signupData.password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            username: signupData.username,
+            name: signupData.name,
+            username: generatedUsername,
             school: signupData.school,
             department: signupData.department,
             year: signupData.year,
@@ -166,16 +210,16 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-username">Username</Label>
+                  <Label htmlFor="signup-name">Full Name</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="signup-username"
+                      id="signup-name"
                       type="text"
-                      placeholder="Choose a username"
+                      placeholder="Enter your full name"
                       className="pl-10"
-                      value={signupData.username}
-                      onChange={(e) => setSignupData({ ...signupData, username: e.target.value })}
+                      value={signupData.name}
+                      onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
                       required
                     />
                   </div>

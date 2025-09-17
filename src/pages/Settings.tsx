@@ -16,12 +16,14 @@ interface Profile {
   id: string;
   user_id: string;
   username: string;
+  name: string | null;
   email: string;
   bio: string | null;
   school: string | null;
   department: string | null;
   year: number | null;
   profile_pic: string | null;
+  last_username_change: string | null;
 }
 
 export default function Settings() {
@@ -32,11 +34,14 @@ export default function Settings() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [formData, setFormData] = useState({
     username: "",
+    name: "",
     bio: "",
     school: "",
     department: "",
     year: "",
   });
+  const [canChangeUsername, setCanChangeUsername] = useState(true);
+  const [nextUsernameChange, setNextUsernameChange] = useState<Date | null>(null);
 
   const fetchProfile = async () => {
     try {
@@ -55,8 +60,23 @@ export default function Settings() {
       if (error) throw error;
 
       setProfile(profileData);
+      
+      // Check if user can change username (once per month)
+      const lastChange = profileData.last_username_change ? new Date(profileData.last_username_change) : null;
+      const now = new Date();
+      const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      
+      const canChange = !lastChange || lastChange <= oneMonthAgo;
+      setCanChangeUsername(canChange);
+      
+      if (!canChange && lastChange) {
+        const nextChange = new Date(lastChange.getFullYear(), lastChange.getMonth() + 1, lastChange.getDate());
+        setNextUsernameChange(nextChange);
+      }
+      
       setFormData({
         username: profileData.username || "",
+        name: profileData.name || "",
         bio: profileData.bio || "",
         school: profileData.school || "",
         department: profileData.department || "",
@@ -138,15 +158,27 @@ export default function Settings() {
     setLoading(true);
 
     try {
+      const updateData: any = {
+        name: formData.name.trim() || null,
+        bio: formData.bio.trim() || null,
+        school: formData.school.trim() || null,
+        department: formData.department.trim() || null,
+        year: formData.year ? parseInt(formData.year) : null,
+      };
+
+      // Only update username if it's changed and user can change it
+      const usernameChanged = formData.username.trim() !== profile.username;
+      if (usernameChanged) {
+        if (!canChangeUsername) {
+          throw new Error("You can only change your username once per month");
+        }
+        updateData.username = formData.username.trim();
+        updateData.last_username_change = new Date().toISOString();
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          username: formData.username.trim(),
-          bio: formData.bio.trim() || null,
-          school: formData.school.trim() || null,
-          department: formData.department.trim() || null,
-          year: formData.year ? parseInt(formData.year) : null,
-        })
+        .update(updateData)
         .eq('user_id', profile.user_id);
 
       if (error) {
@@ -155,8 +187,6 @@ export default function Settings() {
         }
         throw error;
       }
-
-      // Removed success notification - Twitter style minimalism
 
       // Redirect to updated profile
       navigate(`/profile/${formData.username}`);
@@ -249,16 +279,32 @@ export default function Settings() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Enter your full name"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
                 id="username"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 placeholder="Enter your username"
-                disabled={loading}
+                disabled={loading || !canChangeUsername}
                 required
                 minLength={3}
               />
+              {!canChangeUsername && nextUsernameChange && (
+                <p className="text-sm text-muted-foreground">
+                  You can change your username again on {nextUsernameChange.toLocaleDateString()}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

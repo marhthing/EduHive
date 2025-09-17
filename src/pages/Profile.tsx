@@ -16,12 +16,13 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { PostCard } from "@/components/PostCard";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 
 interface Profile {
   id: string; // profiles table primary key
   user_id: string; // auth user id
   username: string;
+  name: string | null;
   email: string;
   bio: string | null;
   school: string | null;
@@ -41,6 +42,7 @@ interface Post {
   created_at: string;
   profile: {
     username: string;
+    name: string | null;
     profile_pic: string | null;
     school: string | null;
     department: string | null;
@@ -96,7 +98,7 @@ export default function Profile() {
             supabase.from("comments").select("id", { count: "exact" }).eq("post_id", post.id),
             user ? supabase.from("likes").select("id").eq("post_id", post.id).eq("user_id", user.id).single() : null,
             user ? supabase.from("bookmarks").select("id").eq("post_id", post.id).eq("user_id", user.id).single() : null,
-            supabase.from("profiles").select("username, profile_pic, school, department").eq("user_id", post.user_id).single()
+            supabase.from("profiles").select("username, name, profile_pic, school, department").eq("user_id", post.user_id).single()
           ]);
 
           return {
@@ -373,7 +375,9 @@ export default function Profile() {
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col">
                               <div className="flex items-center gap-2 text-sm">
-                                <span className="font-semibold">{post.profile?.username || "Unknown User"}</span>
+                                <span className="font-semibold">{post.profile?.name || "Anonymous"}</span>
+                                <span className="text-muted-foreground">•</span>
+                                <span className="text-muted-foreground">@{post.profile?.username || "anonymous"}</span>
                                 <span className="text-muted-foreground">•</span>
                                 <span className="text-muted-foreground">
                                   {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}

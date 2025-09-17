@@ -21,6 +21,7 @@ import { formatDistanceToNow } from "date-fns";
 
 interface Profile {
   username: string;
+  name: string | null;
   profile_pic: string | null;
   school: string | null;
 }
@@ -70,7 +71,7 @@ export default function Home() {
       // Get profiles for these users
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, username, profile_pic, school, department')
+        .select('user_id, username, name, profile_pic, school, department')
         .in('user_id', userIds);
 
       if (profilesError) throw profilesError;
@@ -398,7 +399,9 @@ export default function Home() {
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2 text-sm">
-                        <span className="font-semibold text-foreground">{post.profile?.username || 'Anonymous'}</span>
+                        <span className="font-semibold text-foreground">{post.profile?.name || 'Anonymous'}</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-muted-foreground">@{post.profile?.username || 'anonymous'}</span>
                         <span className="text-muted-foreground">•</span>
                         <span className="text-muted-foreground">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
                       </div>
