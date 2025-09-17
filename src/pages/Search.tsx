@@ -178,12 +178,12 @@ export default function Search() {
             </div>
 
             <div className="flex gap-4 flex-wrap">
-              <Select value={schoolFilter} onValueChange={setSchoolFilter}>
+              <Select value={schoolFilter || "all"} onValueChange={(value) => setSchoolFilter(value === "all" ? "" : value)}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filter by school" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All schools</SelectItem>
+                  <SelectItem value="all">All schools</SelectItem>
                   {schools.map((school) => (
                     <SelectItem key={school} value={school}>
                       {school}
@@ -192,12 +192,12 @@ export default function Search() {
                 </SelectContent>
               </Select>
 
-              <Select value={courseFilter} onValueChange={setCourseFilter}>
+              <Select value={courseFilter || "all"} onValueChange={(value) => setCourseFilter(value === "all" ? "" : value)}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filter by course" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All courses</SelectItem>
+                  <SelectItem value="all">All courses</SelectItem>
                   {courses.map((course) => (
                     <SelectItem key={course} value={course}>
                       {course}
