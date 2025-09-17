@@ -30,11 +30,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkDeactivationStatus = async (userId: string) => {
     try {
       console.log('Checking deactivation status for user:', userId);
+      console.log('Starting Supabase query...');
+      
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('is_deactivated, scheduled_deletion_at')
         .eq('user_id', userId)
         .maybeSingle();
+
+      console.log('Query completed. Error:', error, 'Data:', profileData);
 
       if (error) {
         console.error('Error checking deactivation status:', error);
