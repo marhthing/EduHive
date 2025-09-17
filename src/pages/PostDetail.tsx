@@ -17,11 +17,13 @@ import {
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 interface Profile {
   username: string;
   profile_pic: string | null;
   school: string | null;
+  name: string | null;
 }
 
 interface Post {
@@ -62,6 +64,7 @@ export default function PostDetail() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { showToast } = useTwitterToast();
+  const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -91,7 +94,7 @@ export default function PostDetail() {
       // Get profile for the post author
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('user_id, username, profile_pic, school')
+        .select('user_id, username, profile_pic, school, name')
         .eq('user_id', postData.user_id)
         .single();
 
@@ -156,7 +159,7 @@ export default function PostDetail() {
       const userIds = [...new Set(commentsData.map(comment => comment.user_id))];
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, username, profile_pic, school')
+        .select('user_id, username, profile_pic, school, name')
         .in('user_id', userIds);
 
       if (profilesError) throw profilesError;

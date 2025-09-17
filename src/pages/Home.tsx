@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,7 +82,7 @@ export default function Home() {
 
       // Get likes and comments counts for each post
       const postIds = postsData?.map(post => post.id) || [];
-      
+
       const promises = [
         supabase.from('likes').select('post_id').in('post_id', postIds),
         supabase.from('comments').select('post_id').in('post_id', postIds)
@@ -286,7 +285,7 @@ export default function Home() {
 
       setComposeText("");
       // Removed notification - Twitter doesn't show these
-      
+
       // Refresh posts
       fetchPosts();
     } catch (error) {
@@ -342,7 +341,7 @@ export default function Home() {
                 {user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
-            
+
             <div className="flex-1">
               <Textarea
                 placeholder="What's happening?"
@@ -351,7 +350,7 @@ export default function Home() {
                 className="min-h-[60px] resize-none border-none text-xl placeholder:text-muted-foreground focus-visible:ring-0 p-0"
                 disabled={isPosting}
               />
-              
+
               <div className="flex items-center justify-between mt-3">
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="sm" className="text-primary p-2 h-auto rounded-full">
@@ -361,7 +360,7 @@ export default function Home() {
                     <Upload className="h-5 w-5" />
                   </Button>
                 </div>
-                
+
                 <Button 
                   onClick={handleQuickPost}
                   disabled={!composeText.trim() || isPosting}
@@ -394,7 +393,7 @@ export default function Home() {
                     {post.profile?.username?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col">
@@ -416,7 +415,7 @@ export default function Home() {
                         )}
                       </div>
                     </div>
-                    
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -462,10 +461,10 @@ export default function Home() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  
+
                   <div className="mt-1">
                     <p className="text-foreground whitespace-pre-wrap">{post.body}</p>
-                    
+
                     {post.attachment_url && (
                       <div className="mt-3 rounded-2xl overflow-hidden border border-border">
                         {post.attachment_type?.startsWith('image/') ? (
@@ -548,7 +547,7 @@ export default function Home() {
                         )}
                       </div>
                     )}
-                    
+
                     {(post.school_tag || post.course_tag) && (
                       <div className="flex gap-2 mt-3">
                         {post.school_tag && (
@@ -559,7 +558,7 @@ export default function Home() {
                         )}
                       </div>
                     )}
-                    
+
                     <div className="flex items-center justify-between mt-3 max-w-md">
                       <Button
                         variant="ghost"
