@@ -29,55 +29,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const checkDeactivationStatus = async (userId: string) => {
-    // Don't check again if we already completed initial load and user hasn't changed
-    if (initialLoadComplete && user?.id === userId) {
-      return isDeactivated;
-    }
-
     try {
       console.log('Checking deactivation status for user:', userId);
-      console.log('Starting Supabase query...');
       
-      // Add timeout to prevent hanging
-      const queryPromise = supabase
+      const { data: profileData, error } = await supabase
         .from('profiles')
         .select('is_deactivated, scheduled_deletion_at')
         .eq('user_id', userId)
         .maybeSingle();
 
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Query timeout after 5 seconds')), 10000)
-      );
-
-      const { data: profileData, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
-
-      console.log('Query completed. Error:', error, 'Data:', profileData);
-
       if (error) {
         console.error('Error checking deactivation status:', error);
-        // If it's a permission error, skip deactivation check
-        if (error.message?.includes('permission') || error.message?.includes('policy') || error.message?.includes('timeout')) {
-          console.log('Permission/timeout issue, treating as not deactivated');
-          return false;
-        }
         return false;
       }
 
       // If no profile found, this means the user doesn't have a proper profile
-      // This should trigger a sign out since the user account is incomplete
       if (!profileData) {
         console.log('No profile found for user - signing out incomplete account');
         await supabase.auth.signOut();
         throw new Error('User profile not found - account incomplete');
       }
 
-      console.log('Profile data:', profileData);
-
       if (profileData.is_deactivated) {
         const deletionDate = new Date(profileData.scheduled_deletion_at);
         const now = new Date();
-        
-        console.log('Account is deactivated. Deletion date:', deletionDate, 'Now:', now);
         
         if (deletionDate <= now) {
           // Account is past deletion date - sign out
@@ -85,14 +60,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await supabase.auth.signOut();
           return false;
         }
-        console.log('Account deactivated but within grace period');
         return true;
       }
-      console.log('Account is not deactivated');
       return false;
     } catch (error) {
       console.error('Error checking deactivation status:', error);
-      console.log('Exception in deactivation check, treating as not deactivated');
       return false;
     }
   };
@@ -172,22 +144,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } finally {
         console.log('Setting loading to false');
         setLoading(false);
+        setInitialLoadComplete(true);
       }
     };
 
     getInitialSession();
 
-    // Listen for auth changes
+    // Listen for auth changes - only check deactivation on SIGNED_IN event
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user && event !== 'SIGNED_OUT') {
-          console.log('Auth change: checking deactivation status...');
+        if (session?.user && event === 'SIGNED_IN') {
+          // Only check deactivation on fresh sign-in, not on route changes
+          console.log('New sign-in detected, checking deactivation status...');
           const deactivated = await checkDeactivationStatus(session.user.id);
-          console.log('Auth change deactivation status:', deactivated);
+          console.log('Sign-in deactivation status:', deactivated);
           setIsDeactivated(deactivated);
 
           // Store username in localStorage for easy access
@@ -195,9 +169,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.setItem(`username_${session.user.id}`, session.user.user_metadata.username);
           }
 
-          // Sync Google avatar to profile if available and not already set (only on initial sign in)
-          if (session.user.user_metadata?.avatar_url && event === 'SIGNED_IN') {
-            // Use a timeout to avoid blocking the auth flow
+          // Sync Google avatar to profile if available and not already set
+          if (session.user.user_metadata?.avatar_url) {
             setTimeout(async () => {
               try {
                 const { data: profileData, error: profileError } = await supabase
@@ -211,7 +184,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   return;
                 }
 
-                // Only update if profile_pic is null/empty or different from Google avatar
                 if (!profileData?.profile_pic || profileData.profile_pic !== session.user.user_metadata.avatar_url) {
                   const { error: updateError } = await supabase
                     .from('profiles')
@@ -223,32 +195,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   }
                 }
               } catch (error) {
-                // Silent fail to not affect login performance
                 console.log('Avatar sync skipped');
               }
             }, 1000);
           }
-        } else {
-          console.log('Auth change: no user or signed out');
+        } else if (event === 'SIGNED_OUT') {
+          console.log('User signed out');
           setIsDeactivated(false);
           
-          // Clear username from localStorage on sign out
-          if (event === 'SIGNED_OUT') {
-            Object.keys(localStorage).forEach(key => {
-              if (key.startsWith('username_')) {
-                localStorage.removeItem(key);
-              }
-            });
-          }
+          // Clear username from localStorage
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('username_')) {
+              localStorage.removeItem(key);
+            }
+          });
         }
         
         setLoading(false);
-        setInitialLoadComplete(true);
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [initialLoadComplete, user?.id, isDeactivated]);
+  }, []);
 
   const value = {
     user,
