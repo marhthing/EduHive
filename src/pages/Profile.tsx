@@ -13,6 +13,15 @@ import { formatTimeShort } from "@/lib/timeFormat";
 import { FollowersModal } from "@/components/FollowersModal";
 import { FollowingModal } from "@/components/FollowingModal";
 
+// Mapping between database numeric codes and display labels (same as Settings page)
+const ACADEMIC_YEAR_MAPPING = {
+  1: "Junior Secondary",
+  2: "Senior Secondary", 
+  3: "Undergraduate",
+  4: "Graduate",
+  5: "Postgraduate"
+} as const;
+
 interface Profile {
   id: string; // profiles table primary key
   user_id: string; // auth user id
@@ -666,7 +675,7 @@ export default function Profile() {
                 {profile.year && (
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    Year {profile.year}
+                    {ACADEMIC_YEAR_MAPPING[profile.year as keyof typeof ACADEMIC_YEAR_MAPPING] || `Year ${profile.year}`}
                   </div>
                 )}
                 <div className="flex items-center gap-1">
