@@ -34,7 +34,14 @@ const App = () => (
         <TooltipProvider>
           <TwitterToastProvider>
           <BrowserRouter>
-            <Suspense fallback={<div className="min-h-screen"></div>}>
+            <Suspense fallback={
+              <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="text-center">
+                  <img src="/logo-animated.svg" alt="Loading" className="h-16 w-16 mx-auto mb-4" />
+                  <p className="text-muted-foreground animate-pulse">Loading...</p>
+                </div>
+              </div>
+            }>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />

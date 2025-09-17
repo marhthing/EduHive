@@ -20,6 +20,7 @@ interface Post {
   created_at: string;
   profile: {
     username: string;
+    name: string | null;
     profile_pic: string | null;
     school: string | null;
     department: string | null;
@@ -101,7 +102,7 @@ export default function Search() {
             supabase.from("comments").select("id", { count: "exact" }).eq("post_id", post.id),
             user ? supabase.from("likes").select("id").eq("post_id", post.id).eq("user_id", user.id).single() : null,
             user ? supabase.from("bookmarks").select("id").eq("post_id", post.id).eq("user_id", user.id).single() : null,
-            supabase.from("profiles").select("username, profile_pic, school, department").eq("user_id", post.user_id).single()
+            supabase.from("profiles").select("username, name, profile_pic, school, department").eq("user_id", post.user_id).single()
           ]);
 
           return {
@@ -226,7 +227,7 @@ export default function Search() {
 
       {loading && (
         <div className="text-center py-8">
-          <img src="/logo-animated.svg" alt="Loading" className="h-8 w-8 mx-auto" />
+          <img src="/logo-animated.svg" alt="Loading" className="h-16 w-16 mx-auto" />
           <p className="mt-2 text-muted-foreground">Searching...</p>
         </div>
       )}
