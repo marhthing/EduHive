@@ -459,56 +459,56 @@ export default function Home() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto mt-4 mb-4">
+    <div className="max-w-2xl mx-auto">
       {/* Twitter-style compose area */}
       {user && (
-        <div className="mx-4 mb-4 p-4 border border-border rounded-lg bg-background/80 backdrop-blur-sm">
-          <div className="flex gap-3">
-            <Avatar className="h-10 w-10 flex-shrink-0">
+        <div className="mx-2 md:mx-4 mb-3 md:mb-4 p-3 md:p-4 border border-border rounded-lg bg-background/80 backdrop-blur-sm">
+          <div className="flex gap-2 md:gap-3">
+            <Avatar className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0">
               <AvatarImage src={user.user_metadata?.avatar_url} />
-              <AvatarFallback>
+              <AvatarFallback className="text-xs md:text-sm">
                 {user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
 
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <Textarea
                 placeholder="Got any school work to share?"
                 value={composeText}
                 onChange={(e) => setComposeText(e.target.value)}
-                className="min-h-[60px] resize-none border-none text-xl placeholder:text-muted-foreground focus-visible:ring-0 p-0"
+                className="min-h-[50px] md:min-h-[60px] resize-none border-none text-base md:text-xl placeholder:text-muted-foreground focus-visible:ring-0 p-0"
                 disabled={isPosting}
               />
 
               {/* File previews */}
               {selectedFiles.length > 0 && (
-                <div className="mt-3 space-y-2">
+                <div className="mt-2 md:mt-3 space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs md:text-sm text-muted-foreground">
                       {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} selected
                     </span>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={removeAllFiles}
-                      className="text-xs text-muted-foreground hover:text-foreground"
+                      className="text-xs text-muted-foreground hover:text-foreground h-6 px-2"
                     >
                       Remove all
                     </Button>
                   </div>
-                  <div className="flex gap-2 overflow-x-auto">
+                  <div className="flex gap-2 overflow-x-auto pb-1">
                     {filePreviews.map((preview, index) => (
                       <div key={index} className="relative flex-shrink-0">
                         <img 
                           src={preview} 
                           alt={`Preview ${index + 1}`} 
-                          className="w-20 h-20 object-cover rounded-lg"
+                          className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-lg"
                         />
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => removeFile(index)}
-                          className="absolute -top-1 -right-1 bg-black/50 text-white rounded-full p-1 h-auto w-auto"
+                          className="absolute -top-1 -right-1 bg-black/50 text-white rounded-full p-0.5 h-5 w-5 text-xs"
                         >
                           ×
                         </Button>
@@ -518,17 +518,22 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" className="text-primary p-2 h-auto rounded-full" onClick={() => navigate('/post')}>
-                    <Upload className="h-5 w-5" />
+              <div className="flex items-center justify-between mt-2 md:mt-3">
+                <div className="flex items-center gap-1 md:gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-primary p-1.5 md:p-2 h-auto rounded-full" 
+                    onClick={() => navigate('/post')}
+                  >
+                    <Upload className="h-4 w-4 md:h-5 md:w-5" />
                   </Button>
                 </div>
 
                 <Button 
                   onClick={handleQuickPost}
                   disabled={(!composeText.trim() && selectedFiles.length === 0) || isPosting}
-                  className="rounded-full px-6"
+                  className="rounded-full px-4 md:px-6 h-8 md:h-10 text-sm md:text-base"
                 >
                   {isPosting ? "Posting..." : "Post"}
                 </Button>
@@ -538,10 +543,10 @@ export default function Home() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-2 md:space-y-4 px-2 md:px-0">
         {posts.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-muted-foreground">No posts yet. Be the first to share something!</p>
+          <div className="py-8 md:py-12 text-center">
+            <p className="text-muted-foreground text-sm md:text-base">No posts yet. Be the first to share something!</p>
           </div>
         ) : (
           posts.map((post) => (

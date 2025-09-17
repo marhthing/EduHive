@@ -393,51 +393,32 @@ export function PostItem({
 
   return (
     <div
-      className={`p-4 hover:bg-muted/20 transition-colors cursor-pointer border border-border rounded-lg ${className}`}
+      className={`p-3 md:p-4 hover:bg-muted/20 transition-colors cursor-pointer border border-border rounded-lg ${className}`}
       onClick={() => navigate(`/post/${post.id}`)}
     >
-      <div className="flex gap-3">
+      <div className="flex gap-2 md:gap-3">
         <Avatar
-          className="h-12 w-12 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+          className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={handleProfileClick}
         >
           <AvatarImage src={post.profile?.profile_pic || undefined} />
-          <AvatarFallback>
+          <AvatarFallback className="text-xs md:text-sm">
             {post.profile?.username?.[0]?.toUpperCase() || 'U'}
           </AvatarFallback>
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 text-sm">
-                <span
-                  className="font-semibold text-foreground cursor-pointer hover:underline"
-                  onClick={handleProfileClick}
-                >
-                  {post.profile?.name || post.profile?.username || 'Anonymous'}
-                </span>
-                <span className="text-muted-foreground">•</span>
-                <span
-                  className="text-muted-foreground cursor-pointer hover:underline"
-                  onClick={handleProfileClick}
-                >
-                  @{post.profile?.username || 'anonymous'}
-                </span>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-muted-foreground">{formatTimeShort(post.created_at)}</span>
-              </div>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                {post.profile?.school && (
-                  <span>{post.profile.school}</span>
-                )}
-                {post.profile?.school && post.profile?.department && (
-                  <span className="text-muted-foreground">•</span>
-                )}
-                {post.profile?.department && (
-                  <span>{post.profile.department}</span>
-                )}
-              </div>
+          <div className="flex items-start justify-between mb-1">
+            <div className="flex items-center gap-1 md:gap-2 cursor-pointer min-w-0 flex-1" onClick={handleProfileClick}>
+              <span className="font-semibold hover:underline text-sm md:text-base truncate">
+                {post.profile?.name || post.profile?.username || 'Anonymous'}
+              </span>
+              <span className="text-muted-foreground text-xs md:text-sm truncate">
+                @{post.profile?.username || 'anonymous'}
+              </span>
+              <span className="text-muted-foreground text-xs md:text-sm flex-shrink-0">
+                {formatTimeShort(post.created_at)}
+              </span>
             </div>
 
             {showDropdown && (
@@ -493,10 +474,29 @@ export function PostItem({
             )}
           </div>
 
+          {/* School and Department */}
+          {(post.profile?.school || post.profile?.department) && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5 md:mb-2 flex-wrap">
+              {post.profile?.school && (
+                <span className="max-w-[200px] truncate">{post.profile.school}</span>
+              )}
+              {post.profile?.school && post.profile?.department && (
+                <span className="text-muted-foreground">•</span>
+              )}
+              {post.profile?.department && (
+                <span className="max-w-[200px] truncate">{post.profile.department}</span>
+              )}
+            </div>
+          )}
+
+
           {/* Post Body */}
-          <div className="mb-3 text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+          <p 
+            className="text-foreground mb-2 md:mb-3 leading-relaxed cursor-pointer text-sm md:text-base break-words"
+            onClick={() => navigate(`/post/${post.id}`)}
+          >
             {post.body}
-          </div>
+          </p>
 
           {/* Attachments */}
           {renderAttachments()}
@@ -518,83 +518,67 @@ export function PostItem({
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center gap-1">
+          <div className="flex items-center justify-between text-muted-foreground -ml-2 md:-ml-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onComment(post.id)}
+              className="flex items-center gap-1 md:gap-2 text-comment hover:text-comment hover:bg-comment/10 rounded-full p-1.5 md:p-2 transition-colors"
+            >
+              <MessageCircle className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="text-xs md:text-sm">{post.comments_count}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onLike(post.id)}
+              className={`flex items-center gap-1 md:gap-2 rounded-full p-1.5 md:p-2 transition-colors ${
+                post.is_liked
+                  ? "text-like hover:text-like hover:bg-like/10"
+                  : "text-muted-foreground hover:text-like hover:bg-like/10"
+              }`}
+            >
+              <Heart className={`h-3.5 w-3.5 md:h-4 md:w-4 ${post.is_liked ? "fill-current" : ""}`} />
+              <span className="text-xs md:text-sm">{post.likes_count}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onShare(post)}
+              className="flex items-center gap-1 md:gap-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full p-1.5 md:p-2 transition-colors"
+            >
+              <Share className="h-3.5 w-3.5 md:h-4 md:w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onBookmark(post.id)}
+              className={`flex items-center gap-1 md:gap-2 rounded-full p-1.5 md:p-2 transition-colors ${
+                post.is_bookmarked
+                  ? "text-bookmark hover:text-bookmark hover:bg-bookmark/10"
+                  : "text-muted-foreground hover:text-bookmark hover:bg-bookmark/10"
+              }`}
+            >
+              <Bookmark className={`h-3.5 w-3.5 md:h-4 md:w-4 ${post.is_bookmarked ? "fill-current" : ""}`} />
+            </Button>
+
+            {parseAttachments().length > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onLike(post.id);
+                  handleDownloadAll();
                 }}
-                className={`h-auto p-2 rounded-full transition-colors ${
-                  post.is_liked 
-                    ? "text-red-500 hover:text-red-600 hover:bg-red-500/10" 
-                    : "text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
-                }`}
+                className="flex items-center gap-1 md:gap-2 text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10 rounded-full p-1.5 md:p-2 transition-colors"
+                disabled={!currentUserId}
               >
-                <Heart className={`h-5 w-5 mr-1 ${post.is_liked ? "fill-current" : ""}`} />
-                <span className="text-sm">{post.likes_count}</span>
+                <Download className="h-3.5 w-3.5 md:h-4 md:w-4" />
               </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onComment(post.id);
-                }}
-                className="h-auto p-2 rounded-full text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
-              >
-                <MessageCircle className="h-5 w-5 mr-1" />
-                <span className="text-sm">{post.comments_count}</span>
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onBookmark(post.id);
-                }}
-                className={`h-auto p-2 rounded-full transition-colors ${
-                  post.is_bookmarked 
-                    ? "text-blue-500 hover:text-blue-600 hover:bg-blue-500/10" 
-                    : "text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
-                }`}
-              >
-                <Bookmark className={`h-5 w-5 ${post.is_bookmarked ? "fill-current" : ""}`} />
-              </Button>
-
-              {parseAttachments().length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownloadAll();
-                  }}
-                  className="flex items-center gap-2 text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10 rounded-full p-2 h-auto transition-colors"
-                  disabled={!currentUserId}
-                >
-                  <Download className="h-5 w-5" />
-                </Button>
-              )}
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleShare();
-                }}
-                className="h-auto p-2 rounded-full text-muted-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors"
-              >
-                <Share className="h-5 w-5" />
-              </Button>
-            </div>
+            )}
           </div>
         </div>
       </div>

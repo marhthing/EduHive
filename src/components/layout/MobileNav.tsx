@@ -157,20 +157,20 @@ export function MobileNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden">
-      <div className="flex items-center justify-around py-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t border-border md:hidden">
+      <div className="flex items-center justify-around py-1.5 px-1">
         {navigationItems.map((item) => (
-          <NavLink key={item.title} to={item.url} onClick={item.onClick}>
+          <NavLink key={item.title} to={item.url} onClick={item.onClick} className="flex-1">
             <Button
               variant={isActive(item.url) ? "default" : "ghost"}
               size="sm"
-              className="flex flex-col items-center gap-1 h-auto py-2 px-3 relative"
+              className="flex flex-col items-center gap-0.5 h-auto py-1.5 px-1 relative w-full min-w-0"
             >
               <div className="relative">
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-4 w-4" />
                 {item.badge && item.badge > 0 && renderBadge(item.badge)}
               </div>
-              <span className="text-xs">{item.title}</span>
+              <span className="text-[10px] leading-tight truncate">{item.title}</span>
             </Button>
           </NavLink>
         ))}

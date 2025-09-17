@@ -17,13 +17,13 @@ export function Layout({ children }: LayoutProps) {
         {/* Main Content */}
         <main className="flex-1 flex flex-col">
           {/* Mobile Header */}
-          <header className="flex items-center justify-between p-4 border-b border-border md:hidden">
-            <h1 className="text-xl font-bold text-primary">EduHive</h1>
+          <header className="flex items-center justify-between p-3 md:p-4 border-b border-border md:hidden bg-background/95 backdrop-blur-sm sticky top-0 z-40">
+            <h1 className="text-lg md:text-xl font-bold text-primary">EduHive</h1>
             <SidebarTrigger />
           </header>
 
           {/* Page Content */}
-          <div className="flex-1 pb-16 md:pb-0">
+          <div className="flex-1 pb-16 md:pb-0 pt-2 md:pt-4">
             {children}
           </div>
         </main>
