@@ -32,9 +32,10 @@ task = "shell.exec"
 args = "npm run build"
 
 [deployment]
-deploymentTarget = "static"
-build = "npm run build"
+deploymentTarget = "autoscale"
+build = ["npm", "run", "build"]
 publicDir = "dist"
+run = ["npx", "serve", "-s", "dist", "-l", "5000"]
 
 [[ports]]
 localPort = 5000
