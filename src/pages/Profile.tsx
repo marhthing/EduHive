@@ -73,6 +73,9 @@ export default function Profile() {
         .single();
 
       if (error) throw error;
+      
+      console.log("Profile data fetched:", profileData);
+      
       setProfile(profileData);
       setFollowersCount(profileData.followers_count || 0);
       setFollowingCount(profileData.following_count || 0);
@@ -242,8 +245,10 @@ export default function Profile() {
         setIsFollowing(false);
         showToast(`Unfollowed @${profile.username}`, "success");
 
-        // Refresh the profile to get updated counts from database
-        fetchProfile();
+        // Force refresh the profile to get updated counts from database
+        setTimeout(() => {
+          fetchProfile();
+        }, 500);
       } else {
         // Follow
         const { error } = await supabase
@@ -265,8 +270,10 @@ export default function Profile() {
           setIsFollowing(true);
           showToast(`Following @${profile.username}`, "success");
 
-          // Refresh the profile to get updated counts from database
-          fetchProfile();
+          // Force refresh the profile to get updated counts from database
+          setTimeout(() => {
+            fetchProfile();
+          }, 500);
         }
       }
     } catch (error) {
@@ -303,15 +310,33 @@ export default function Profile() {
         .channel(`profile-follows-${profile.user_id}`)
         .on('postgres_changes', 
           { event: 'INSERT', schema: 'public', table: 'follows', filter: `following_id=eq.${profile.user_id}` },
-          () => {
+          (payload) => {
+            console.log("Follow INSERT detected:", payload);
             // Someone followed this user - refresh profile data
             fetchProfile();
           }
         )
         .on('postgres_changes', 
           { event: 'DELETE', schema: 'public', table: 'follows', filter: `following_id=eq.${profile.user_id}` },
-          () => {
+          (payload) => {
+            console.log("Follow DELETE detected:", payload);
             // Someone unfollowed this user - refresh profile data
+            fetchProfile();
+          }
+        )
+        .on('postgres_changes', 
+          { event: 'INSERT', schema: 'public', table: 'follows', filter: `follower_id=eq.${profile.user_id}` },
+          (payload) => {
+            console.log("Following INSERT detected:", payload);
+            // This user followed someone - refresh profile data for following count
+            fetchProfile();
+          }
+        )
+        .on('postgres_changes', 
+          { event: 'DELETE', schema: 'public', table: 'follows', filter: `follower_id=eq.${profile.user_id}` },
+          (payload) => {
+            console.log("Following DELETE detected:", payload);
+            // This user unfollowed someone - refresh profile data for following count
             fetchProfile();
           }
         )
