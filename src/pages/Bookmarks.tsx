@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { Bookmark, BookmarkX } from "lucide-react";
+import { BookmarkX } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { PostCard } from "@/components/PostCard";
+import { PostItem } from "@/components/PostItem";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 
 interface Post {
@@ -179,23 +179,15 @@ export default function Bookmarks() {
       ) : (
         <div className="space-y-4">
           {posts.map((post) => (
-            <div key={post.id} className="relative">
-              <PostCard
-                post={post}
-                onLike={() => handleToggleLike(post.id)}
-                onBookmark={() => handleRemoveBookmark(post.id)}
-                onComment={() => {}}
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-4 right-4 text-muted-foreground hover:text-destructive"
-                onClick={() => handleRemoveBookmark(post.id)}
-              >
-                <BookmarkX className="w-4 h-4" />
-                <span className="sr-only">Remove bookmark</span>
-              </Button>
-            </div>
+            <PostItem
+              key={post.id}
+              post={post}
+              onLike={handleToggleLike}
+              onBookmark={handleRemoveBookmark}
+              onComment={() => {}}
+              onShare={() => {}}
+              showDropdown={false}
+            />
           ))}
         </div>
       )}

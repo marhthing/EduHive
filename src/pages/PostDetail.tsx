@@ -451,16 +451,26 @@ export default function PostDetail() {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="font-semibold text-foreground">{post.profile?.name || post.profile?.username || 'Anonymous'}</span>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-muted-foreground">@{post.profile?.username || 'anonymous'}</span>
-                {post.profile?.school && (
-                  <>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-semibold text-foreground">{post.profile?.name || post.profile?.username || 'Anonymous'}</span>
+                  <span className="text-muted-foreground">•</span>
+                  <span className="text-muted-foreground">@{post.profile?.username || 'anonymous'}</span>
+                  <span className="text-muted-foreground">•</span>
+                  <span className="text-muted-foreground">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                </div>
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  {post.profile?.school && (
+                    <span>{post.profile.school}</span>
+                  )}
+                  {post.profile?.school && post.profile?.department && (
                     <span className="text-muted-foreground">•</span>
-                    <span className="text-muted-foreground">{post.profile.school}</span>
-                  </>
-                )}
+                  )}
+                  {post.profile?.department && (
+                    <span>{post.profile.department}</span>
+                  )}
+                </div>
+              </div>
               </div>
 
               <DropdownMenu>

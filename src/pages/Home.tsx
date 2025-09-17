@@ -1,22 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Bookmark, Share, Upload, Image, MoreHorizontal, Trash2, Edit, Flag } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Upload, Image } from "lucide-react";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatDistanceToNow } from "date-fns";
+import { PostItem } from "@/components/PostItem";
 
 interface Profile {
   username: string;
@@ -388,243 +379,17 @@ export default function Home() {
           </div>
         ) : (
           posts.map((post) => (
-            <div 
-              key={post.id} 
-              className="p-4 hover:bg-muted/20 transition-colors cursor-pointer border border-border rounded-lg"
-              onClick={() => navigate(`/post/${post.id}`)}
-            >
-              <div className="flex gap-3">
-                <Avatar className="h-10 w-10 flex-shrink-0">
-                  <AvatarImage src={post.profile?.profile_pic || undefined} />
-                  <AvatarFallback>
-                    {post.profile?.username?.[0]?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="font-semibold text-foreground">{post.profile?.name || 'Anonymous'}</span>
-                        <span className="text-muted-foreground">•</span>
-                        <span className="text-muted-foreground">@{post.profile?.username || 'anonymous'}</span>
-                        <span className="text-muted-foreground">•</span>
-                        <span className="text-muted-foreground">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        {post.profile?.school && (
-                          <>
-                            <span>• {post.profile.school}</span>
-                          </>
-                        )}
-                        {post.profile?.department && (
-                          <span>• {post.profile.department}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-muted rounded-full"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        {user && user.id === post.user_id && (
-                          <>
-                            <DropdownMenuItem 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditPost(post.id);
-                              }}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit post
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-destructive focus:text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm('Are you sure you want to delete this post?')) {
-                                  handleDeletePost(post.id);
-                                }
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete post
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                          </>
-                        )}
-                        <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-                          <Flag className="h-4 w-4 mr-2" />
-                          Report post
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  <div className="mt-1">
-                    <p className="text-foreground whitespace-pre-wrap">{post.body}</p>
-
-                    {post.attachment_url && (
-                      <div className="mt-3 rounded-2xl overflow-hidden border border-border">
-                        {post.attachment_type?.startsWith('image/') ? (
-                          <img 
-                            src={post.attachment_url} 
-                            alt="Post attachment" 
-                            className="w-full max-h-96 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(post.attachment_url!, '_blank');
-                            }}
-                            loading="lazy"
-                          />
-                        ) : post.attachment_type === 'application/pdf' || post.attachment_type?.includes('pdf') ? (
-                          <div className="p-4 bg-muted">
-                            <div className="flex gap-2 items-center">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.open(post.attachment_url!, '_blank');
-                                }}
-                                className="flex-1 justify-start"
-                              >
-                                📄 View PDF Document
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const link = document.createElement('a');
-                                  link.href = post.attachment_url!;
-                                  link.download = 'document.pdf';
-                                  link.target = '_blank';
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                }}
-                                className="px-3"
-                              >
-                                ⬇️
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="p-4 bg-muted">
-                            <div className="flex gap-2 items-center">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.open(post.attachment_url!, '_blank');
-                                }}
-                                className="flex-1 justify-start"
-                              >
-                                📎 View File ({post.attachment_type || 'Unknown type'})
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const link = document.createElement('a');
-                                  link.href = post.attachment_url!;
-                                  link.download = 'attachment';
-                                  link.target = '_blank';
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                }}
-                                className="px-3"
-                              >
-                                ⬇️
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {(post.school_tag || post.course_tag) && (
-                      <div className="flex gap-2 mt-3">
-                        {post.school_tag && (
-                          <Badge variant="secondary" className="text-xs">{post.school_tag}</Badge>
-                        )}
-                        {post.course_tag && (
-                          <Badge variant="outline" className="text-xs">{post.course_tag}</Badge>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between mt-3 max-w-md">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLike(post.id);
-                        }}
-                        className={`flex items-center gap-2 hover:bg-red-500/10 rounded-full p-2 h-auto transition-colors ${
-                          post.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
-                        }`}
-                      >
-                        <Heart className={`h-5 w-5 ${post.is_liked ? 'fill-current text-red-500' : ''}`} />
-                        <span className="text-sm">{post.likes_count}</span>
-                      </Button>
-
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="flex items-center gap-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleComment(post.id);
-                        }}
-                      >
-                        <MessageCircle className="h-5 w-5" />
-                        <span className="text-sm">{post.comments_count}</span>
-                      </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBookmark(post.id);
-                        }}
-                        className={`flex items-center gap-2 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors ${
-                          post.is_bookmarked ? 'text-blue-500' : 'text-muted-foreground hover:text-blue-500'
-                        }`}
-                      >
-                        <Bookmark className={`h-5 w-5 ${post.is_bookmarked ? 'fill-current text-blue-500' : ''}`} />
-                      </Button>
-
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="flex items-center gap-2 text-muted-foreground hover:text-green-500 hover:bg-green-500/10 rounded-full p-2 h-auto transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleShare(post);
-                        }}
-                      >
-                        <Share className="h-5 w-5" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <PostItem
+              key={post.id}
+              post={post}
+              currentUserId={user?.id}
+              onLike={handleLike}
+              onBookmark={handleBookmark}
+              onComment={handleComment}
+              onShare={handleShare}
+              onEdit={handleEditPost}
+              onDelete={handleDeletePost}
+            />
           ))
         )}
       </div>
