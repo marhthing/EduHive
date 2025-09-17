@@ -130,7 +130,7 @@ export default function EditPost() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <img src="/logo-animated.svg" alt="Loading" className="h-8 w-8" />
       </div>
     );
   }

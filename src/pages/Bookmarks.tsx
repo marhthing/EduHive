@@ -149,7 +149,7 @@ export default function Bookmarks() {
     return (
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <img src="/logo-animated.svg" alt="Loading" className="h-8 w-8 mx-auto" />
           <p className="mt-2 text-muted-foreground">Loading bookmarks...</p>
         </div>
       </div>

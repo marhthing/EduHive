@@ -110,7 +110,7 @@ export function FollowingModal({ isOpen, onClose, profileUserId, currentUserId }
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <img src="/logo-animated.svg" alt="Loading" className="h-8 w-8 mx-auto" />
               <p className="mt-2 text-muted-foreground">Loading following...</p>
             </div>
           ) : following.length === 0 ? (

@@ -609,7 +609,7 @@ export default function Home() {
   if (loading && posts.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <img src="/logo-animated.svg" alt="Loading" className="h-8 w-8" />
       </div>
     );
   }
@@ -726,7 +726,7 @@ export default function Home() {
             {loadingMore && (
               <div className="flex justify-center py-6">
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                  <img src="/logo-animated.svg" alt="Loading" className="h-5 w-5" />
                   <span className="text-sm">Loading more posts...</span>
                 </div>
               </div>
