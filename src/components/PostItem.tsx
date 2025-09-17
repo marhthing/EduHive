@@ -263,9 +263,9 @@ export function PostItem({
               
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">
-                  {attachment.type === 'application/pdf' || attachment.type?.includes('pdf') 
-                    ? 'PDF Document' 
-                    : `File (${attachment.type || 'Unknown type'})`}
+                  {attachment.name || (attachment.type === 'application/pdf' || attachment.type?.includes('pdf')
+                    ? 'PDF Document'
+                    : `File (${attachment.type || 'Unknown type'})`)}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Click to download

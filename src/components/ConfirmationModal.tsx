@@ -38,15 +38,18 @@ export function ConfirmationModal({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{cancelText}</AlertDialogCancel>
+          <AlertDialogCancel onClick={(e) => e.stopPropagation()}>{cancelText}</AlertDialogCancel>
           <AlertDialogAction
-            onClick={handleConfirm}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleConfirm();
+            }}
             className={
               variant === "destructive"
                 ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
