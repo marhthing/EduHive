@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web"]
+modules = ["nodejs-20", "web", "postgresql-16"]
 run = "npm run dev"
 
 [agent]
@@ -34,7 +34,7 @@ args = "npm run build"
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
 publicDir = "dist"
-run = ["npx", "serve", "-s", "dist", "-l", "5000"]
+run = ["npm", "run", "preview"]
 
 [[ports]]
 localPort = 5000
