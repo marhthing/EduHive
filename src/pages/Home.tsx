@@ -176,7 +176,7 @@ export default function Home() {
 
       const promises = [
         supabase.from('likes').select('post_id').in('post_id', postIds),
-        supabase.from('comments').select('post_id').in('post_id', postIds)
+        supabase.from('comments').select('post_id').in('post_id', postIds).is('parent_comment_id', null)
       ];
 
       // If user is authenticated, also get their likes and bookmarks

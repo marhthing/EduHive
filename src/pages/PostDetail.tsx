@@ -114,10 +114,10 @@ export default function PostDetail() {
 
       if (profileError) throw profileError;
 
-      // Get likes and comments count
+      // Get likes and comments count (only parent comments)
       const [likesResult, commentsResult] = await Promise.all([
         supabase.from('likes').select('post_id').eq('post_id', postId),
-        supabase.from('comments').select('post_id').eq('post_id', postId)
+        supabase.from('comments').select('post_id').eq('post_id', postId).is('parent_comment_id', null)
       ]);
 
       // Check if user liked/bookmarked
