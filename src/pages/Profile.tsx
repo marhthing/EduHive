@@ -56,6 +56,7 @@ export default function Profile() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [isFollowing, setIsFollowing] = useState(false);
   const [followingUser, setFollowingUser] = useState(false);
@@ -73,11 +74,30 @@ export default function Profile() {
 
   const fetchProfile = useCallback(async () => {
     try {
-      const { data: profileData, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("username", username)
-        .single();
+      let profileData;
+      let error;
+
+      if (username) {
+        // Fetch profile by username
+        const result = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("username", username)
+          .single();
+        profileData = result.data;
+        error = result.error;
+      } else if (currentUser) {
+        // No username provided, fetch current user's profile
+        const result = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .single();
+        profileData = result.data;
+        error = result.error;
+      } else {
+        throw new Error("No user found");
+      }
 
       if (error) throw error;
       

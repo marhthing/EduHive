@@ -36,6 +36,7 @@ const App = () => (
               <Route path="/home" element={<ProtectedRoute><Layout><Home /></Layout></ProtectedRoute>} />
               <Route path="/search" element={<ProtectedRoute><Layout><Search /></Layout></ProtectedRoute>} />
               <Route path="/bookmarks" element={<ProtectedRoute><Layout><Bookmarks /></Layout></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
               <Route path="/profile/:username" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
               <Route path="/post" element={<ProtectedRoute><Layout><CreatePost /></Layout></ProtectedRoute>} />
               <Route path="/post/edit/:postId" element={<ProtectedRoute><Layout><EditPost /></Layout></ProtectedRoute>} />
