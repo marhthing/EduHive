@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { formatDistanceToNow } from "date-fns";
+import { formatTimeShort } from "@/lib/timeFormat";
 import { Heart, MessageCircle, Bookmark, Share2, X, Download, FileText, ExternalLink } from "lucide-react";
 import { downloadUrl } from "@/lib/download";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -345,7 +345,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
               )}
             </div>
             <div className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+              {formatTimeShort(post.created_at)}
             </div>
           </div>
         </div>

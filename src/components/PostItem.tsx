@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { formatDistanceToNow } from "date-fns";
+import { formatTimeShort } from "@/lib/timeFormat";
 import { Heart, MessageCircle, Bookmark, Share, MoreHorizontal, Edit, Trash2, Flag, FileText, ExternalLink, X, Download } from "lucide-react";
 import { downloadUrl } from "@/lib/download";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -425,7 +425,7 @@ export function PostItem({
                   @{post.profile?.username || 'anonymous'}
                 </span>
                 <span className="text-muted-foreground">•</span>
-                <span className="text-muted-foreground">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                <span className="text-muted-foreground">{formatTimeShort(post.created_at)}</span>
               </div>
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 {post.profile?.school && (

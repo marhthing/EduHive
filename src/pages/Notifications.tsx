@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatDistanceToNow } from "date-fns";
+import { formatTimeShort } from "@/lib/timeFormat";
 
 interface Notification {
   id: string;
@@ -345,7 +345,7 @@ export default function Notifications() {
                               {notification.message}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                              {formatTimeShort(notification.created_at)}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">

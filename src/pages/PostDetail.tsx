@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatDistanceToNow } from "date-fns";
+import { formatTimeShort } from "@/lib/timeFormat";
 import { useToast } from "@/hooks/use-toast";
 
 interface Profile {
@@ -584,7 +584,7 @@ export default function PostDetail() {
                   <span className="text-muted-foreground">•</span>
                   <span className="text-muted-foreground">@{post.profile?.username || 'anonymous'}</span>
                   <span className="text-muted-foreground">•</span>
-                  <span className="text-muted-foreground">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                  <span className="text-muted-foreground">{formatTimeShort(post.created_at)}</span>
                 </div>
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   {post.profile?.school && (
@@ -1116,9 +1116,6 @@ export default function PostDetail() {
               </div>
             )}
 
-            <div className="text-sm text-muted-foreground mb-4">
-              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-            </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
@@ -1289,7 +1286,7 @@ export default function PostDetail() {
                     <div className="flex items-center gap-2 text-sm">
                       <span className="font-semibold text-foreground">{comment.profile?.username || 'Anonymous'}</span>
                       <span className="text-muted-foreground">•</span>
-                      <span className="text-muted-foreground">{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}</span>
+                      <span className="text-muted-foreground">{formatTimeShort(comment.created_at)}</span>
                     </div>
 
                     <DropdownMenu>
@@ -1413,7 +1410,7 @@ export default function PostDetail() {
                               <div className="flex items-center gap-2 text-sm">
                                 <span className="font-semibold text-foreground">{reply.profile?.username || 'Anonymous'}</span>
                                 <span className="text-muted-foreground">•</span>
-                                <span className="text-muted-foreground">{formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}</span>
+                                <span className="text-muted-foreground">{formatTimeShort(reply.created_at)}</span>
                               </div>
 
                               <DropdownMenu>
