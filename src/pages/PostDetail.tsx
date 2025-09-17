@@ -588,15 +588,15 @@ export default function PostDetail() {
                   <span className="text-muted-foreground">•</span>
                   <span className="text-muted-foreground">{formatTimeShort(post.created_at)}</span>
                 </div>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground" style={{ marginTop: '-10px !important' }}>
+                <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground truncate" style={{ marginTop: '-10px !important' }}>
                   {post.profile?.school && (
-                    <span>{post.profile.school}</span>
+                    <span className="truncate flex-shrink-0 max-w-[120px] md:max-w-none">{post.profile.school}</span>
                   )}
                   {post.profile?.school && post.profile?.department && (
-                    <span className="text-muted-foreground">•</span>
+                    <span className="text-muted-foreground flex-shrink-0">•</span>
                   )}
                   {post.profile?.department && (
-                    <span>{post.profile.department}</span>
+                    <span className="truncate flex-shrink-0 max-w-[100px] md:max-w-none">{post.profile.department}</span>
                   )}
                 </div>
               </div>
