@@ -677,7 +677,8 @@ export default function PostDetail() {
                             loading="lazy"
                             title="Login to view full image"
                           />
-                        )
+                        )}
+                        {user && (
                           <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none">
                             <div className="relative">
                               <Button

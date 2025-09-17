@@ -292,7 +292,7 @@ export function PostItem({
           }}
           onClick={(e) => {
             e.stopPropagation();
-            if (attachments && attachments.length > 1 && openCarousel) {
+            if (currentUserId && attachments && attachments.length > 1 && openCarousel) {
               openCarousel();
             } else {
               navigate(`/post/${post.id}`);
@@ -328,6 +328,7 @@ export function PostItem({
               }}
               className="px-3"
               title="Download PDF"
+              disabled={!currentUserId}
             >
               ⬇️
             </Button>
@@ -361,6 +362,7 @@ export function PostItem({
             }}
             className="px-3"
             title="Download File"
+            disabled={!currentUserId}
           >
             ⬇️
           </Button>
@@ -575,6 +577,7 @@ export function PostItem({
                     handleDownloadAll();
                   }}
                   className="flex items-center gap-2 text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10 rounded-full p-2 h-auto transition-colors"
+                  disabled={!currentUserId}
                 >
                   <Download className="h-5 w-5" />
                 </Button>
