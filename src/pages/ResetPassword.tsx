@@ -26,32 +26,39 @@ export default function ResetPassword() {
     // Check if we have a valid password reset session
     const checkSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // First check URL parameters for tokens
+        const accessToken = searchParams.get('access_token');
+        const refreshToken = searchParams.get('refresh_token');
+        const type = searchParams.get('type');
         
-        if (error) {
-          console.error("Session error:", error);
-          setIsValidSession(false);
-        } else if (session) {
-          setIsValidSession(true);
-        } else {
-          // Check if we have access_token and refresh_token in URL params
-          const accessToken = searchParams.get('access_token');
-          const refreshToken = searchParams.get('refresh_token');
+        console.log("URL params:", { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+        
+        if (accessToken && refreshToken && type === 'recovery') {
+          // Set the session from URL params for password recovery
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
           
-          if (accessToken && refreshToken) {
-            // Set the session from URL params
-            const { error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-            
-            if (sessionError) {
-              console.error("Failed to set session:", sessionError);
-              setIsValidSession(false);
-            } else {
-              setIsValidSession(true);
-            }
+          if (sessionError) {
+            console.error("Failed to set session:", sessionError);
+            setIsValidSession(false);
           } else {
+            console.log("Session set successfully from URL params");
+            setIsValidSession(true);
+          }
+        } else {
+          // Check existing session
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error("Session error:", error);
+            setIsValidSession(false);
+          } else if (session && session.user) {
+            console.log("Valid existing session found");
+            setIsValidSession(true);
+          } else {
+            console.log("No valid session found");
             setIsValidSession(false);
           }
         }
