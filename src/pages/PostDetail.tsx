@@ -67,6 +67,7 @@ export default function PostDetail() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [carouselOpen, setCarouselOpen] = useState(false);
+  const [carouselStartIndex, setCarouselStartIndex] = useState(0);
   const { showToast } = useTwitterToast();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -411,7 +412,7 @@ export default function PostDetail() {
     try {
       const comment = comments.find(c => c.id === commentId) || 
                     comments.flatMap(c => c.replies || []).find(r => r.id === commentId);
-      
+
       if (!comment) return;
 
       if (comment.is_liked) {
@@ -587,7 +588,7 @@ export default function PostDetail() {
                   )}
                 </div>
               </div>
-              
+
               <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -631,7 +632,7 @@ export default function PostDetail() {
 
             {(() => {
               if (!post.attachment_url) return null;
-              
+
               // Parse attachments
               let attachments;
               try {
@@ -654,6 +655,7 @@ export default function PostDetail() {
                               alt="Post attachment" 
                               className="w-full max-h-96 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                               loading="lazy"
+                              onClick={() => setCarouselStartIndex(0)}
                             />
                           </DialogTrigger>
                           <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none">
@@ -666,7 +668,13 @@ export default function PostDetail() {
                               >
                                 <X className="h-6 w-6" />
                               </Button>
-                              <Carousel className="w-full">
+                              <Carousel 
+                                    className="w-full"
+                                    opts={{ 
+                                      startIndex: carouselStartIndex,
+                                      loop: true 
+                                    }}
+                                  >
                                 <CarouselContent>
                                   {attachments.map((attachment, idx) => (
                                     <CarouselItem key={idx}>
@@ -845,7 +853,13 @@ export default function PostDetail() {
                                   >
                                     <X className="h-6 w-6" />
                                   </Button>
-                                  <Carousel className="w-full">
+                                  <Carousel 
+                                        className="w-full"
+                                        opts={{ 
+                                          startIndex: carouselStartIndex,
+                                          loop: true 
+                                        }}
+                                      >
                                     <CarouselContent>
                                       {attachments.map((attachment, idx) => (
                                         <CarouselItem key={idx}>
@@ -930,6 +944,7 @@ export default function PostDetail() {
                                   alt={`Attachment ${index + 1}`}
                                   className="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                                   loading="lazy"
+                                  onClick={() => setCarouselStartIndex(index)}
                                 />
                               </DialogTrigger>
                               <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none">
@@ -942,7 +957,13 @@ export default function PostDetail() {
                                   >
                                     <X className="h-6 w-6" />
                                   </Button>
-                                  <Carousel className="w-full">
+                                  <Carousel 
+                                        className="w-full"
+                                        opts={{ 
+                                          startIndex: carouselStartIndex,
+                                          loop: true 
+                                        }}
+                                      >
                                     <CarouselContent>
                                       {attachments.map((attachment, idx) => (
                                         <CarouselItem key={idx}>
@@ -1160,7 +1181,7 @@ export default function PostDetail() {
                       <span className="text-muted-foreground">•</span>
                       <span className="text-muted-foreground">{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}</span>
                     </div>
-                    
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -1284,7 +1305,7 @@ export default function PostDetail() {
                                 <span className="text-muted-foreground">•</span>
                                 <span className="text-muted-foreground">{formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}</span>
                               </div>
-                              
+
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button

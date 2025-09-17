@@ -66,6 +66,7 @@ export function PostItem({
 }: PostItemProps) {
   const [imageError, setImageError] = useState(false);
   const [carouselOpen, setCarouselOpen] = useState(false);
+  const [carouselStartIndex, setCarouselStartIndex] = useState(0);
   const navigate = useNavigate();
 
   const handleProfileClick = (e: React.MouseEvent) => {
@@ -83,7 +84,7 @@ export function PostItem({
 
   const parseAttachments = () => {
     if (!post.attachment_url) return [];
-    
+
     // Check if it's a JSON array of attachments
     try {
       const parsed = JSON.parse(post.attachment_url);
@@ -93,7 +94,7 @@ export function PostItem({
     } catch {
       // Not JSON, treat as single attachment
     }
-    
+
     // Single attachment
     return [{
       url: post.attachment_url,
@@ -110,7 +111,10 @@ export function PostItem({
         {attachments.length === 1 ? (
           // Single attachment - full width
           <div className="rounded-2xl overflow-hidden border border-border">
-            {renderSingleAttachment(attachments[0], 0, attachments, () => setCarouselOpen(true))}
+            {renderSingleAttachment(attachments[0], 0, attachments, () => {
+              setCarouselStartIndex(0);
+              setCarouselOpen(true);
+            })}
           </div>
         ) : (
           // Multiple attachments - grid layout
@@ -124,7 +128,11 @@ export function PostItem({
                 {index === 3 && attachments.length > 4 ? (
                   <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
                     <DialogTrigger asChild>
-                      <div className="relative cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                      <div className="relative cursor-pointer" onClick={(e) => {
+                        e.stopPropagation();
+                        setCarouselStartIndex(index);
+                        setCarouselOpen(true);
+                      }}>
                         {renderSingleAttachment(attachment, index)}
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center hover:bg-black/70 transition-colors">
                           <span className="text-white text-lg font-semibold">
@@ -143,7 +151,13 @@ export function PostItem({
                         >
                           <X className="h-6 w-6" />
                         </Button>
-                        <Carousel className="w-full">
+                        <Carousel 
+                          className="w-full"
+                          opts={{ 
+                            startIndex: carouselStartIndex,
+                            loop: true 
+                          }}
+                        >
                           <CarouselContent>
                             {attachments.map((attachment, idx) => (
                               <CarouselItem key={idx}>
@@ -223,7 +237,11 @@ export function PostItem({
                 ) : (
                   <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
                     <DialogTrigger asChild>
-                      <div className="cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                      <div className="cursor-pointer" onClick={(e) => {
+                        e.stopPropagation();
+                        setCarouselStartIndex(index);
+                        setCarouselOpen(true);
+                      }}>
                         {renderSingleAttachment(attachment, index)}
                       </div>
                     </DialogTrigger>
@@ -237,7 +255,13 @@ export function PostItem({
                         >
                           <X className="h-6 w-6" />
                         </Button>
-                        <Carousel className="w-full">
+                        <Carousel 
+                          className="w-full"
+                          opts={{ 
+                            startIndex: carouselStartIndex,
+                            loop: true 
+                          }}
+                        >
                           <CarouselContent>
                             {attachments.map((attachment, idx) => (
                               <CarouselItem key={idx}>

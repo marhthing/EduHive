@@ -34,11 +34,13 @@ interface PostCardProps {
   onLike: () => void;
   onBookmark: () => void;
   onComment: () => void;
+  initialImageIndex?: number; // Add this prop
 }
 
-export function PostCard({ post, onLike, onBookmark, onComment }: PostCardProps) {
+export function PostCard({ post, onLike, onBookmark, onComment, initialImageIndex = 0 }: PostCardProps) {
   const [imageError, setImageError] = useState(false);
   const [carouselOpen, setCarouselOpen] = useState(false);
+  const [carouselStartIndex, setCarouselStartIndex] = useState(initialImageIndex); // State for the starting index
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -60,7 +62,7 @@ export function PostCard({ post, onLike, onBookmark, onComment }: PostCardProps)
 
   const parseAttachments = () => {
     if (!post.attachment_url) return [];
-    
+
     // Check if it's a JSON array of attachments
     try {
       const parsed = JSON.parse(post.attachment_url);
@@ -70,7 +72,7 @@ export function PostCard({ post, onLike, onBookmark, onComment }: PostCardProps)
     } catch {
       // Not JSON, treat as single attachment
     }
-    
+
     // Single attachment
     return [{
       url: post.attachment_url,
@@ -87,12 +89,15 @@ export function PostCard({ post, onLike, onBookmark, onComment }: PostCardProps)
         {attachments.length === 1 ? (
           // Single attachment - full width
           <div className="rounded-lg overflow-hidden border border-border">
-            {renderSingleAttachment(attachments[0], 0, attachments, () => setCarouselOpen(true))}
+            {renderSingleAttachment(attachments[0], 0, attachments, () => {
+              setCarouselStartIndex(0); // Ensure it starts at 0 for single image
+              setCarouselOpen(true);
+            })}
           </div>
         ) : (
           // Multiple attachments - grid layout
           <div className={`grid gap-2 ${
-            attachments.length === 2 ? 'grid-cols-2' : 
+            attachments.length === 2 ? 'grid-cols-2' :
             attachments.length === 3 ? 'grid-cols-2' :
             'grid-cols-2'
           }`}>
@@ -120,7 +125,13 @@ export function PostCard({ post, onLike, onBookmark, onComment }: PostCardProps)
                         >
                           <X className="h-6 w-6" />
                         </Button>
-                        <Carousel className="w-full">
+                        <Carousel
+                          className="w-full"
+                          opts={{
+                            startIndex: carouselStartIndex,
+                            loop: true
+                          }}
+                        >
                           <CarouselContent>
                             {attachments.map((attachment, idx) => (
                               <CarouselItem key={idx}>
@@ -201,7 +212,10 @@ export function PostCard({ post, onLike, onBookmark, onComment }: PostCardProps)
                   <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
                     <DialogTrigger asChild>
                       <div className="cursor-pointer">
-                        {renderSingleAttachment(attachment, index)}
+                        {renderSingleAttachment(attachment, index, attachments, () => {
+                          setCarouselStartIndex(index); // Set the start index to the clicked image
+                          setCarouselOpen(true);
+                        })}
                       </div>
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none">
@@ -214,7 +228,13 @@ export function PostCard({ post, onLike, onBookmark, onComment }: PostCardProps)
                         >
                           <X className="h-6 w-6" />
                         </Button>
-                        <Carousel className="w-full">
+                        <Carousel
+                          className="w-full"
+                          opts={{
+                            startIndex: carouselStartIndex,
+                            loop: true
+                          }}
+                        >
                           <CarouselContent>
                             {attachments.map((attachment, idx) => (
                               <CarouselItem key={idx}>
@@ -382,7 +402,7 @@ export function PostCard({ post, onLike, onBookmark, onComment }: PostCardProps)
               {post.profile?.username?.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-sm">
