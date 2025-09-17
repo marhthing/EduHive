@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isDeactivated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,6 +15,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       navigate('/auth', { replace: true });
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!loading && user && isDeactivated) {
+      navigate(`/reactivate?email=${encodeURIComponent(user.email || '')}`, { replace: true });
+    }
+  }, [user, loading, isDeactivated, navigate]);
 
   if (loading) {
     return (

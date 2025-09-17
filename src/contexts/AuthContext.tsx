@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isDeactivated: boolean;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -24,14 +25,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDeactivated, setIsDeactivated] = useState(false);
+
+  const checkDeactivationStatus = async (userId: string) => {
+    try {
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('is_deactivated, scheduled_deletion_at')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error checking deactivation status:', error);
+        return false;
+      }
+
+      if (profileData?.is_deactivated) {
+        const deletionDate = new Date(profileData.scheduled_deletion_at);
+        const now = new Date();
+        
+        if (deletionDate <= now) {
+          // Account is past deletion date - sign out
+          await supabase.auth.signOut();
+          return false;
+        }
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking deactivation status:', error);
+      return false;
+    }
+  };
 
   const refreshUser = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+      
+      if (user) {
+        const deactivated = await checkDeactivationStatus(user.id);
+        setIsDeactivated(deactivated);
+      } else {
+        setIsDeactivated(false);
+      }
     } catch (error) {
       console.error('Error refreshing user:', error);
       setUser(null);
+      setIsDeactivated(false);
     }
   };
 
@@ -68,6 +109,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const deactivated = await checkDeactivationStatus(session.user.id);
+          setIsDeactivated(deactivated);
+        } else {
+          setIsDeactivated(false);
+        }
+        
         setLoading(false);
       }
     );
@@ -79,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     loading,
+    isDeactivated,
     signOut,
     refreshUser,
   };
