@@ -202,7 +202,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
       );
     }
 
-    // For documents/mixed content, use list layout like PostItem
+    // For documents/mixed content, use list layout like PostItem - each attachment gets its own row
     return (
       <div className="mt-3 space-y-2">
         {attachments.map((attachment, index) => {
@@ -220,7 +220,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
             );
           }
 
-          // Document/file list item - matches PostItem style
+          // Document/file list item - each file gets its own full-width row like PostItem
           return (
             <div key={index} className="flex items-center gap-3 p-3 bg-muted rounded-lg border border-border">
               <div className="flex-shrink-0">
