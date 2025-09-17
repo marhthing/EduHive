@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import LoadingSpinner from "@/components/LoadingSpinner";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -94,7 +93,10 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <LoadingSpinner size={120} text="Welcome to EduHive" />
+        <div className="text-center">
+          <img src="/logo-animated.svg" alt="Loading" className="h-28 w-28 mx-auto mb-4" />
+          <p className="text-muted-foreground animate-pulse">Welcome to EduHive</p>
+        </div>
       </div>
     );
   }
