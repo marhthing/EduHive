@@ -155,6 +155,28 @@ export default function Notifications() {
       navigate(`/profile/${notification.from_user.username}`);
     } else if (notification.post_id) {
       navigate(`/post/${notification.post_id}`);
+    } else if (notification.comment_id && (notification.type === 'like' || notification.type === 'reply')) {
+      // For comment likes, we need to fetch the post_id from the comment
+      fetchPostIdForComment(notification.comment_id);
+    }
+  };
+
+  const fetchPostIdForComment = async (commentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('post_id')
+        .eq('id', commentId)
+        .single();
+
+      if (error) throw error;
+
+      if (data?.post_id) {
+        navigate(`/post/${data.post_id}`);
+      }
+    } catch (error) {
+      console.error('Error fetching post for comment:', error);
+      showToast("Failed to navigate to post", "error");
     }
   };
 
