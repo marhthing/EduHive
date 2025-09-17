@@ -35,8 +35,8 @@ const App = () => (
           <TwitterToastProvider>
           <BrowserRouter>
             <Suspense fallback={
-              <div className="min-h-screen flex items-center justify-center bg-background">
-                <div className="text-center">
+              <div className="min-h-screen flex items-center justify-center bg-background transition-opacity duration-150 ease-in">
+                <div className="text-center animate-fadeIn">
                   <img src="/logo-animated.svg" alt="Loading" className="h-16 w-16 mx-auto mb-4" />
                   <p className="text-muted-foreground animate-pulse">Loading...</p>
                 </div>
