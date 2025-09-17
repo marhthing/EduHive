@@ -1,28 +1,31 @@
-
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <!-- Background circle -->
   <circle cx="32" cy="32" r="32" fill="url(#gradient)" />
   
-  <!-- Book/Knowledge symbol -->
-  <path d="M20 18 C20 16, 22 14, 24 14 L40 14 C42 14, 44 16, 44 18 L44 46 C44 48, 42 50, 40 50 L24 50 C22 50, 20 48, 20 46 Z" fill="white" opacity="0.9"/>
+  <!-- School building -->
+  <rect x="22" y="40" width="20" height="16" fill="white" opacity="0.9"/>
+  <polygon points="22,40 32,24 42,40" fill="white" opacity="0.9"/>
   
-  <!-- Book pages -->
-  <line x1="24" y1="22" x2="40" y2="22" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="24" y1="26" x2="36" y2="26" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="24" y1="30" x2="38" y2="30" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="24" y1="34" x2="35" y2="34" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- School building details -->
+  <rect x="26" y="44" width="4" height="4" fill="#3B82F6"/>
+  <rect x="34" y="44" width="4" height="4" fill="#3B82F6"/>
+  <rect x="26" y="50" width="4" height="4" fill="#3B82F6"/>
+  <rect x="34" y="50" width="4" height="4" fill="#3B82F6"/>
+  <rect x="30" y="50" width="4" height="6" fill="#3B82F6"/>
+  <rect x="32" y="28" width="1" height="4" fill="#3B82F6"/>
+  <circle cx="32" cy="26" r="1" fill="#3B82F6"/>
   
-  <!-- Connection dots (representing collaboration) -->
+  <!-- Connection dots (representing students/collaboration) -->
   <circle cx="18" cy="24" r="3" fill="#10B981"/>
   <circle cx="46" cy="28" r="3" fill="#10B981"/>
   <circle cx="16" cy="40" r="3" fill="#F59E0B"/>
   <circle cx="48" cy="42" r="3" fill="#F59E0B"/>
   
   <!-- Connection lines -->
-  <path d="M21 24 Q28 20, 32 24" stroke="#10B981" stroke-width="2" fill="none" opacity="0.6"/>
-  <path d="M43 28 Q38 32, 32 30" stroke="#10B981" stroke-width="2" fill="none" opacity="0.6"/>
-  <path d="M19 40 Q26 36, 32 38" stroke="#F59E0B" stroke-width="2" fill="none" opacity="0.6"/>
-  <path d="M45 42 Q38 38, 32 40" stroke="#F59E0B" stroke-width="2" fill="none" opacity="0.6"/>
+  <path d="M21 24 Q28 20, 32 28" stroke="#10B981" stroke-width="2" fill="none" opacity="0.6"/>
+  <path d="M43 28 Q38 32, 32 32" stroke="#10B981" stroke-width="2" fill="none" opacity="0.6"/>
+  <path d="M19 40 Q26 36, 32 36" stroke="#F59E0B" stroke-width="2" fill="none" opacity="0.6"/>
+  <path d="M45 42 Q38 38, 32 38" stroke="#F59E0B" stroke-width="2" fill="none" opacity="0.6"/>
   
   <!-- Gradient definition -->
   <defs>

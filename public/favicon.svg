@@ -1,15 +1,16 @@
-
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
   <!-- Background circle -->
   <circle cx="16" cy="16" r="16" fill="url(#gradient)" />
   
-  <!-- Simplified book -->
-  <rect x="10" y="8" width="12" height="16" rx="1" fill="white" opacity="0.9"/>
+  <!-- School building -->
+  <rect x="11" y="20" width="10" height="8" fill="white" opacity="0.9"/>
+  <polygon points="11,20 16,12 21,20" fill="white" opacity="0.9"/>
   
-  <!-- Book lines -->
-  <line x1="12" y1="12" x2="20" y2="12" stroke="#3B82F6" stroke-width="1" stroke-linecap="round"/>
-  <line x1="12" y1="15" x2="18" y2="15" stroke="#3B82F6" stroke-width="1" stroke-linecap="round"/>
-  <line x1="12" y1="18" x2="19" y2="18" stroke="#3B82F6" stroke-width="1" stroke-linecap="round"/>
+  <!-- School building details -->
+  <rect x="13" y="22" width="2" height="2" fill="#3B82F6"/>
+  <rect x="17" y="22" width="2" height="2" fill="#3B82F6"/>
+  <rect x="15" y="25" width="2" height="3" fill="#3B82F6"/>
+  <rect x="16" y="14" width="0.5" height="2" fill="#3B82F6"/>
   
   <!-- Connection dots -->
   <circle cx="8" cy="12" r="2" fill="#10B981"/>
