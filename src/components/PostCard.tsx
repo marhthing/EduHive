@@ -343,8 +343,8 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
           </div>
         </div>
 
-        {/* Post Body - aligned with profile info, not avatar */}
-        <div className="ml-[52px]">
+        {/* Post Body - aligned with avatar */}
+        <div>
           <p className="text-foreground whitespace-pre-wrap mb-3 text-lg">{post.body}</p>
           {renderAttachments()}
         </div>
