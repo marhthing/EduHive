@@ -1,10 +1,13 @@
+
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Bookmark, Share, MoreHorizontal } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Heart, MessageCircle, Bookmark, Share, Upload, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
@@ -34,8 +37,11 @@ interface Post {
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [composeText, setComposeText] = useState("");
+  const [isPosting, setIsPosting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPosts();
@@ -251,6 +257,82 @@ export default function Home() {
     }
   };
 
+  const handleShare = async (post: Post) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Post by ${post.profile?.username || 'Anonymous'}`,
+          text: post.body.substring(0, 100) + (post.body.length > 100 ? "..." : ""),
+          url: window.location.href,
+        });
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: "Link copied",
+          description: "Post link copied to clipboard",
+        });
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  const handleComment = (postId: string) => {
+    // Navigate to post detail page for comments
+    navigate(`/post/${postId}`);
+  };
+
+  const handleQuickPost = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to create posts",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!composeText.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter some text",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsPosting(true);
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .insert({
+          body: composeText.trim(),
+          user_id: user.id,
+        });
+
+      if (error) throw error;
+
+      setComposeText("");
+      toast({
+        title: "Success",
+        description: "Post created successfully",
+      });
+      
+      // Refresh posts
+      fetchPosts();
+    } catch (error) {
+      console.error('Error creating post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -261,6 +343,49 @@ export default function Home() {
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Twitter-style compose area */}
+      {user && (
+        <div className="p-4 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="flex gap-3">
+            <Avatar className="h-10 w-10 flex-shrink-0">
+              <AvatarImage src={user.user_metadata?.avatar_url} />
+              <AvatarFallback>
+                {user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div className="flex-1">
+              <Textarea
+                placeholder="What's happening?"
+                value={composeText}
+                onChange={(e) => setComposeText(e.target.value)}
+                className="min-h-[60px] resize-none border-none text-xl placeholder:text-muted-foreground focus-visible:ring-0 p-0"
+                disabled={isPosting}
+              />
+              
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" className="text-primary p-2 h-auto rounded-full">
+                    <Image className="h-5 w-5" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-primary p-2 h-auto rounded-full" onClick={() => navigate('/post')}>
+                    <Upload className="h-5 w-5" />
+                  </Button>
+                </div>
+                
+                <Button 
+                  onClick={handleQuickPost}
+                  disabled={!composeText.trim() || isPosting}
+                  className="rounded-full px-6"
+                >
+                  {isPosting ? "Posting..." : "Post"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="divide-y divide-border">
         {posts.length === 0 ? (
           <div className="py-12 text-center">
@@ -327,17 +452,22 @@ export default function Home() {
                           e.stopPropagation();
                           handleLike(post.id);
                         }}
-                        className={`flex items-center gap-2 text-muted-foreground hover:text-like hover:bg-like/10 rounded-full p-2 h-auto ${post.is_liked ? 'text-like' : ''}`}
+                        className={`flex items-center gap-2 hover:bg-red-500/10 rounded-full p-2 h-auto transition-colors ${
+                          post.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
+                        }`}
                       >
-                        <Heart className={`h-5 w-5 ${post.is_liked ? 'fill-current' : ''}`} />
+                        <Heart className={`h-5 w-5 ${post.is_liked ? 'fill-current text-red-500' : ''}`} />
                         <span className="text-sm">{post.likes_count}</span>
                       </Button>
 
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="flex items-center gap-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full p-2 h-auto"
-                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleComment(post.id);
+                        }}
                       >
                         <MessageCircle className="h-5 w-5" />
                         <span className="text-sm">{post.comments_count}</span>
@@ -350,16 +480,21 @@ export default function Home() {
                           e.stopPropagation();
                           handleBookmark(post.id);
                         }}
-                        className={`flex items-center gap-2 text-muted-foreground hover:text-bookmark hover:bg-bookmark/10 rounded-full p-2 h-auto ${post.is_bookmarked ? 'text-bookmark' : ''}`}
+                        className={`flex items-center gap-2 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors ${
+                          post.is_bookmarked ? 'text-blue-500' : 'text-muted-foreground hover:text-blue-500'
+                        }`}
                       >
-                        <Bookmark className={`h-5 w-5 ${post.is_bookmarked ? 'fill-current' : ''}`} />
+                        <Bookmark className={`h-5 w-5 ${post.is_bookmarked ? 'fill-current text-blue-500' : ''}`} />
                       </Button>
 
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="flex items-center gap-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full p-2 h-auto"
-                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2 text-muted-foreground hover:text-green-500 hover:bg-green-500/10 rounded-full p-2 h-auto transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShare(post);
+                        }}
                       >
                         <Share className="h-5 w-5" />
                       </Button>
