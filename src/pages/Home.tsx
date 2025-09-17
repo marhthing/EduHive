@@ -276,6 +276,39 @@ export default function Home() {
     }
   }, [page, loadingMore, hasMore]);
 
+  // Infinite scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if we're near the bottom of the page (within 500px)
+      const scrollPosition = window.innerHeight + window.scrollY;
+      const documentHeight = document.documentElement.offsetHeight;
+      const threshold = 500; // Start loading when 500px from bottom
+
+      if (scrollPosition >= documentHeight - threshold && !loadingMore && hasMore) {
+        loadMorePosts();
+      }
+    };
+
+    // Add scroll listener with throttling
+    let throttleTimeout: NodeJS.Timeout | null = null;
+    const throttledHandleScroll = () => {
+      if (throttleTimeout) return;
+      throttleTimeout = setTimeout(() => {
+        handleScroll();
+        throttleTimeout = null;
+      }, 200); // Throttle to every 200ms
+    };
+
+    window.addEventListener('scroll', throttledHandleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', throttledHandleScroll);
+      if (throttleTimeout) {
+        clearTimeout(throttleTimeout);
+      }
+    };
+  }, [loadingMore, hasMore, loadMorePosts]);
+
   const refreshPosts = () => {
     // Clear cache and fetch fresh data
     localStorage.removeItem(CACHE_KEY);
@@ -677,29 +710,18 @@ export default function Home() {
               />
             ))}
             
-            {/* Load more button */}
-            {hasMore && (
-              <div className="flex justify-center py-4">
-                <Button
-                  onClick={loadMorePosts}
-                  disabled={loadingMore}
-                  variant="outline"
-                  className="px-6"
-                >
-                  {loadingMore ? (
-                    <div className="flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                      Loading...
-                    </div>
-                  ) : (
-                    'Load More Posts'
-                  )}
-                </Button>
+            {/* Loading indicator for infinite scroll */}
+            {loadingMore && (
+              <div className="flex justify-center py-6">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                  <span className="text-sm">Loading more posts...</span>
+                </div>
               </div>
             )}
             
             {!hasMore && posts.length > 0 && (
-              <div className="text-center py-4 text-muted-foreground text-sm">
+              <div className="text-center py-6 text-muted-foreground text-sm">
                 You've reached the end of the feed
               </div>
             )}
