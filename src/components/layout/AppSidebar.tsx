@@ -185,9 +185,9 @@ export function AppSidebar() {
   };
 
   const getNavigationItems = () => [
-    { title: "Home", url: "/home", icon: Home, badge: newPostsCount, onClick: () => handleNavClick("/home") },
+    { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : 0, onClick: () => handleNavClick("/home") },
     { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
-    { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications, onClick: () => handleNavClick("/notifications") },
+    { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : 0, onClick: () => handleNavClick("/notifications") },
     { title: "Bookmarks", url: "/bookmarks", icon: Bookmark, onClick: () => handleNavClick("/bookmarks") },
     { title: "Profile", url: `/profile/${username}`, icon: User, onClick: () => handleNavClick(`/profile/${username}`) },
     { title: "Create Post", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },

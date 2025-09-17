@@ -6,9 +6,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const getNavigationItems = (username: string, notificationCount: number, newPostsCount: number, handleNavClick: (url: string) => void) => [
-  { title: "Home", url: "/home", icon: Home, badge: newPostsCount, onClick: () => handleNavClick("/home") },
+  { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : 0, onClick: () => handleNavClick("/home") },
   { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
-  { title: "Notifications", url: "/notifications", icon: Bell, badge: notificationCount, onClick: () => handleNavClick("/notifications") },
+  { title: "Notifications", url: "/notifications", icon: Bell, badge: notificationCount > 0 ? notificationCount : 0, onClick: () => handleNavClick("/notifications") },
   { title: "Create", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
   { title: "Profile", url: `/profile/${username}`, icon: User, onClick: () => handleNavClick(`/profile/${username}`) },
 ];
