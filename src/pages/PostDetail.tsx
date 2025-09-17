@@ -92,7 +92,11 @@ export default function PostDetail() {
       if (postError) throw postError;
 
       if (!postData) {
-        navigate('/home');
+        if (user) {
+          navigate('/home');
+        } else {
+          navigate('/');
+        }
         return;
       }
 
@@ -140,7 +144,11 @@ export default function PostDetail() {
         description: "Failed to load post",
         variant: "destructive",
       });
-      navigate('/home');
+      if (user) {
+        navigate('/home');
+      } else {
+        navigate('/');
+      }
     } finally {
       setLoading(false);
     }
@@ -387,15 +395,17 @@ export default function PostDetail() {
   const handleShare = async () => {
     if (!post) return;
 
+    const postUrl = `${window.location.origin}/post/${post.id}`;
+
     try {
       if (navigator.share) {
         await navigator.share({
           title: `Post by ${post.profile?.username || 'Anonymous'}`,
           text: post.body.substring(0, 100) + (post.body.length > 100 ? "..." : ""),
-          url: window.location.href,
+          url: postUrl,
         });
       } else {
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(postUrl);
         toast({
           title: "Link copied",
           description: "Post link copied to clipboard",
@@ -537,9 +547,9 @@ export default function PostDetail() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Post not found</h1>
-          <Button onClick={() => navigate('/home')}>
+          <Button onClick={() => navigate(user ? '/home' : '/')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
+            {user ? 'Back to Home' : 'Back to Landing'}
           </Button>
         </div>
       </div>
@@ -550,7 +560,7 @@ export default function PostDetail() {
     <div className="max-w-2xl mx-auto mt-4 mb-4 mx-4">
       {/* Header */}
       <div className="flex items-center gap-4 p-4 border-b border-border mb-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/home')}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(user ? '/home' : '/')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-lg font-semibold">Post</h1>
@@ -1172,8 +1182,8 @@ export default function PostDetail() {
         </div>
       </div>
 
-      {/* Comment Form */}
-      {user && (
+      {/* Comment Form or Login Prompt */}
+      {user ? (
         <div className="border border-border rounded-lg p-4 mb-4">
           <div className="flex gap-3">
             <Avatar className="h-10 w-10 flex-shrink-0">
@@ -1204,6 +1214,15 @@ export default function PostDetail() {
               </div>
             </div>
           </div>
+        </div>
+      ) : (
+        <div className="border border-border rounded-lg p-4 mb-4 text-center">
+          <p className="text-muted-foreground mb-4">
+            Join the conversation! Log in to like, comment, and interact with posts.
+          </p>
+          <Button onClick={() => navigate('/auth')} className="rounded-full px-6">
+            Log In / Sign Up
+          </Button>
         </div>
       )}
 

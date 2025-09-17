@@ -265,16 +265,18 @@ export default function Home() {
   };
 
   const handleShare = async (post: Post) => {
+    const postUrl = `${window.location.origin}/post/${post.id}`;
+    
     try {
       if (navigator.share) {
         await navigator.share({
           title: `Post by ${post.profile?.username || 'Anonymous'}`,
           text: post.body.substring(0, 100) + (post.body.length > 100 ? "..." : ""),
-          url: window.location.href,
+          url: postUrl,
         });
       } else {
         // Fallback: copy to clipboard
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(postUrl);
         // Removed notification - Twitter doesn't show clipboard actions
       }
     } catch (error) {

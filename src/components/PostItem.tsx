@@ -369,6 +369,26 @@ export function PostItem({
     );
   };
 
+  const handleShare = async () => {
+    const postUrl = `${window.location.origin}/post/${post.id}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Post by ${post.profile?.username}`,
+          text: post.body.substring(0, 100) + (post.body.length > 100 ? "..." : ""),
+          url: postUrl,
+        });
+      } catch (error) {
+        // User cancelled or error occurred
+        console.log("Share cancelled");
+      }
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(postUrl);
+    }
+  };
+
   return (
     <div
       className={`p-4 hover:bg-muted/20 transition-colors cursor-pointer border border-border rounded-lg ${className}`}
@@ -565,7 +585,7 @@ export function PostItem({
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onShare(post);
+                  handleShare();
                 }}
                 className="h-auto p-2 rounded-full text-muted-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors"
               >

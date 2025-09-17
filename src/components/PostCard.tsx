@@ -45,12 +45,14 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false); // State for the report dialog
 
   const handleShare = async () => {
+    const postUrl = `${window.location.origin}/post/${post.id}`;
+    
     if (navigator.share) {
       try {
         await navigator.share({
           title: `Post by ${post.profile?.username}`,
           text: post.body.substring(0, 100) + (post.body.length > 100 ? "..." : ""),
-          url: window.location.href,
+          url: postUrl,
         });
       } catch (error) {
         // User cancelled or error occurred
@@ -58,7 +60,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
       }
     } else {
       // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
+      navigator.clipboard.writeText(postUrl);
     }
   };
 
