@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Bookmark, Share, ArrowLeft, Send, MoreHorizontal, Trash2, Edit, Flag } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share, ArrowLeft, Send, MoreHorizontal, Trash2, Edit, Flag, Reply } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,6 +50,8 @@ interface Comment {
   parent_comment_id: string | null;
   profile: Profile | null;
   replies?: Comment[];
+  likes_count: number;
+  is_liked: boolean;
 }
 
 export default function PostDetail() {
@@ -167,11 +169,39 @@ export default function PostDetail() {
         profilesData?.map(profile => [profile.user_id, profile]) || []
       );
 
+      // Get likes data for all comments
+      const commentIds = commentsData.map(c => c.id);
+      const { data: likesData } = await supabase
+        .from('comment_likes')
+        .select('comment_id')
+        .in('comment_id', commentIds);
+
+      // Get user's likes if logged in
+      let userLikesData = [];
+      if (user) {
+        const { data } = await supabase
+          .from('comment_likes')
+          .select('comment_id')
+          .in('comment_id', commentIds)
+          .eq('user_id', user.id);
+        userLikesData = data || [];
+      }
+
+      // Count likes per comment
+      const likesMap = new Map();
+      likesData?.forEach(like => {
+        likesMap.set(like.comment_id, (likesMap.get(like.comment_id) || 0) + 1);
+      });
+
+      const userLikesSet = new Set(userLikesData.map(l => l.comment_id));
+
       // Organize comments with replies
       const commentsWithProfiles = commentsData.map(comment => ({
         ...comment,
         profile: profilesMap.get(comment.user_id) || null,
-        replies: [] as Comment[]
+        replies: [] as Comment[],
+        likes_count: likesMap.get(comment.id) || 0,
+        is_liked: userLikesSet.has(comment.id)
       }));
 
       // Separate top-level comments and replies
@@ -369,6 +399,89 @@ export default function PostDetail() {
       }
     } catch (error) {
       console.error('Error sharing:', error);
+    }
+  };
+
+  const handleCommentLike = async (commentId: string) => {
+    if (!user) return;
+
+    try {
+      const comment = comments.find(c => c.id === commentId) || 
+                    comments.flatMap(c => c.replies || []).find(r => r.id === commentId);
+      
+      if (!comment) return;
+
+      if (comment.is_liked) {
+        const { error } = await supabase
+          .from('comment_likes')
+          .delete()
+          .eq('comment_id', commentId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('comment_likes')
+          .insert({ comment_id: commentId, user_id: user.id });
+
+        if (error) throw error;
+      }
+
+      fetchComments();
+    } catch (error) {
+      console.error('Error toggling comment like:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update like. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .delete()
+        .eq('id', commentId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Comment deleted successfully",
+      });
+
+      fetchComments();
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete comment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReportComment = async (commentId: string) => {
+    if (!user) return;
+
+    try {
+      // For now, just show a toast. You can implement actual reporting later
+      toast({
+        title: "Comment reported",
+        description: "Thank you for reporting. We'll review this comment.",
+      });
+    } catch (error) {
+      console.error('Error reporting comment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to report comment. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -699,22 +812,71 @@ export default function PostDetail() {
                 </Avatar>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 text-sm mb-1">
-                    <span className="font-semibold text-foreground">{comment.profile?.username || 'Anonymous'}</span>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-muted-foreground">{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}</span>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-semibold text-foreground">{comment.profile?.username || 'Anonymous'}</span>
+                      <span className="text-muted-foreground">•</span>
+                      <span className="text-muted-foreground">{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}</span>
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-muted rounded-full"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        {user && user.id === comment.user_id ? (
+                          <DropdownMenuItem 
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              if (confirm('Are you sure you want to delete this comment?')) {
+                                handleDeleteComment(comment.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete comment
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onClick={() => handleReportComment(comment.id)}>
+                            <Flag className="h-4 w-4 mr-2" />
+                            Report comment
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
                   <p className="text-foreground whitespace-pre-wrap mb-2">{comment.body}</p>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                    className="text-muted-foreground hover:text-blue-500 p-0 h-auto"
-                  >
-                    Reply
-                  </Button>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCommentLike(comment.id)}
+                      className={`flex items-center gap-1 hover:bg-red-500/10 rounded-full p-1 h-auto transition-colors ${
+                        comment.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
+                      }`}
+                    >
+                      <Heart className={`h-4 w-4 ${comment.is_liked ? 'fill-current text-red-500' : ''}`} />
+                      <span className="text-xs">{comment.likes_count}</span>
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                      className="text-muted-foreground hover:text-blue-500 p-1 h-auto flex items-center gap-1"
+                    >
+                      <Reply className="h-4 w-4" />
+                      <span className="text-xs">Reply</span>
+                    </Button>
+                  </div>
 
                   {/* Reply Form */}
                   {replyingTo === comment.id && user && (
@@ -774,13 +936,59 @@ export default function PostDetail() {
                           </Avatar>
 
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 text-sm mb-1">
-                              <span className="font-semibold text-foreground">{reply.profile?.username || 'Anonymous'}</span>
-                              <span className="text-muted-foreground">•</span>
-                              <span className="text-muted-foreground">{formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}</span>
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="font-semibold text-foreground">{reply.profile?.username || 'Anonymous'}</span>
+                                <span className="text-muted-foreground">•</span>
+                                <span className="text-muted-foreground">{formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}</span>
+                              </div>
+                              
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 hover:bg-muted rounded-full"
+                                  >
+                                    <MoreHorizontal className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  {user && user.id === reply.user_id ? (
+                                    <DropdownMenuItem 
+                                      className="text-destructive focus:text-destructive"
+                                      onClick={() => {
+                                        if (confirm('Are you sure you want to delete this reply?')) {
+                                          handleDeleteComment(reply.id);
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Delete reply
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem onClick={() => handleReportComment(reply.id)}>
+                                      <Flag className="h-4 w-4 mr-2" />
+                                      Report reply
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
 
-                            <p className="text-foreground whitespace-pre-wrap text-sm">{reply.body}</p>
+                            <p className="text-foreground whitespace-pre-wrap text-sm mb-2">{reply.body}</p>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCommentLike(reply.id)}
+                              className={`flex items-center gap-1 hover:bg-red-500/10 rounded-full p-1 h-auto transition-colors ${
+                                reply.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
+                              }`}
+                            >
+                              <Heart className={`h-3 w-3 ${reply.is_liked ? 'fill-current text-red-500' : ''}`} />
+                              <span className="text-xs">{reply.likes_count}</span>
+                            </Button>
                           </div>
                         </div>
                       ))}
