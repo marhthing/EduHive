@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Heart, MessageCircle, Bookmark, Share, ArrowLeft, Send, MoreHorizontal, Trash2, Edit, Flag, Reply, X } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share, ArrowLeft, Send, MoreHorizontal, Trash2, Edit, Flag, Reply, X, Download } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1076,47 +1076,97 @@ export default function PostDetail() {
               {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
             </div>
 
-            <div className="flex items-center justify-between max-w-md">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLike}
-                className={`flex items-center gap-2 hover:bg-red-500/10 rounded-full p-2 h-auto transition-colors ${
-                  post.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
-                }`}
-              >
-                <Heart className={`h-5 w-5 ${post.is_liked ? 'fill-current text-red-500' : ''}`} />
-                <span className="text-sm">{post.likes_count}</span>
-              </Button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLike}
+                  className={`flex items-center gap-2 hover:bg-red-500/10 rounded-full p-2 h-auto transition-colors ${
+                    post.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
+                  }`}
+                >
+                  <Heart className={`h-5 w-5 ${post.is_liked ? 'fill-current text-red-500' : ''}`} />
+                  <span className="text-sm">{post.likes_count}</span>
+                </Button>
 
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex items-center gap-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors"
-              >
-                <MessageCircle className="h-5 w-5" />
-                <span className="text-sm">{post.comments_count}</span>
-              </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex items-center gap-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  <span className="text-sm">{post.comments_count}</span>
+                </Button>
+              </div>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBookmark}
-                className={`flex items-center gap-2 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors ${
-                  post.is_bookmarked ? 'text-blue-500' : 'text-muted-foreground hover:text-blue-500'
-                }`}
-              >
-                <Bookmark className={`h-5 w-5 ${post.is_bookmarked ? 'fill-current text-blue-500' : ''}`} />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBookmark}
+                  className={`flex items-center gap-2 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors ${
+                    post.is_bookmarked ? 'text-blue-500' : 'text-muted-foreground hover:text-blue-500'
+                  }`}
+                >
+                  <Bookmark className={`h-5 w-5 ${post.is_bookmarked ? 'fill-current text-blue-500' : ''}`} />
+                </Button>
 
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex items-center gap-2 text-muted-foreground hover:text-green-500 hover:bg-green-500/10 rounded-full p-2 h-auto transition-colors"
-                onClick={handleShare}
-              >
-                <Share className="h-5 w-5" />
-              </Button>
+                {(() => {
+                  if (!post.attachment_url) return null;
+                  
+                  let attachments;
+                  try {
+                    const parsed = JSON.parse(post.attachment_url);
+                    attachments = Array.isArray(parsed) ? parsed : [{url: post.attachment_url, type: post.attachment_type}];
+                  } catch {
+                    attachments = [{url: post.attachment_url, type: post.attachment_type}];
+                  }
+
+                  if (attachments.length === 0) return null;
+
+                  return (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        // Download each attachment one by one
+                        for (let i = 0; i < attachments.length; i++) {
+                          const attachment = attachments[i];
+                          try {
+                            // Create a meaningful filename
+                            const fileExtension = attachment.type?.split('/')[1] || 'unknown';
+                            const fileName = `${post.profile?.username || 'user'}_attachment_${i + 1}.${fileExtension}`;
+
+                            // Use the downloadUrl function
+                            const { downloadUrl } = await import("@/lib/download");
+                            await downloadUrl(attachment.url, fileName);
+
+                            // Add a small delay between downloads to avoid browser blocking
+                            if (i < attachments.length - 1) {
+                              await new Promise(resolve => setTimeout(resolve, 500));
+                            }
+                          } catch (error) {
+                            console.error(`Failed to download attachment ${i + 1}:`, error);
+                          }
+                        }
+                      }}
+                      className="flex items-center gap-2 text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10 rounded-full p-2 h-auto transition-colors"
+                    >
+                      <Download className="h-5 w-5" />
+                    </Button>
+                  );
+                })()}
+
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex items-center gap-2 text-muted-foreground hover:text-green-500 hover:bg-green-500/10 rounded-full p-2 h-auto transition-colors"
+                  onClick={handleShare}
+                >
+                  <Share className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
