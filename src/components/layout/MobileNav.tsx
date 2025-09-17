@@ -47,22 +47,31 @@ export function MobileNav() {
         .select('following_id')
         .eq('follower_id', user.id);
 
-      if (!followsData?.length) return;
+      if (!followsData?.length) {
+        setNewPostsCount(0);
+        return;
+      }
 
       const followedUserIds = followsData.map(f => f.following_id);
-      const yesterday = new Date();
-      yesterday.setHours(yesterday.getHours() - 24);
+      
+      // Get last visit time from localStorage, default to 24 hours ago if not found
+      const lastVisitedKey = `lastVisited_${user.id}`;
+      const lastVisited = localStorage.getItem(lastVisitedKey);
+      const cutoffTime = lastVisited 
+        ? new Date(parseInt(lastVisited))
+        : new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
 
       const { count, error } = await supabase
         .from('posts')
         .select('*', { count: 'exact', head: true })
         .in('user_id', followedUserIds)
-        .gte('created_at', yesterday.toISOString());
+        .gte('created_at', cutoffTime.toISOString());
 
       if (error) throw error;
       setNewPostsCount(count || 0);
     } catch (error) {
       console.error('Error fetching new posts count:', error);
+      setNewPostsCount(0);
     }
   };
 
@@ -130,6 +139,8 @@ export function MobileNav() {
     } else if (url === "/home" && newPostsCount > 0) {
       // Reset new posts count (user has seen them)
       setNewPostsCount(0);
+      // Store in localStorage to persist across refreshes
+      localStorage.setItem(`lastVisited_${user?.id}`, Date.now().toString());
     }
   };
 

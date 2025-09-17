@@ -20,23 +20,14 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 
-const getNavigationItems = (username: string, unreadNotifications: number, newPostsCount: number, handleNavClick: (url: string) => void) => [
-  { title: "Home", url: "/home", icon: Home, badge: newPostsCount, onClick: () => handleNavClick("/home") },
-  { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
-  { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications, onClick: () => handleNavClick("/notifications") },
-  { title: "Bookmarks", url: "/bookmarks", icon: Bookmark, onClick: () => handleNavClick("/bookmarks") },
-  { title: "Profile", url: `/profile/${username}`, icon: User, onClick: () => handleNavClick(`/profile/${username}`) },
-  { title: "Create Post", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
-];
-
-  const renderBadge = (count: number) => {
-    if (count === 0) return null;
-    
-    return (
-      <span className="absolute -top-1 -right-1 bg-red-500 rounded-full h-2 w-2">
-      </span>
-    );
-  };
+const renderBadge = (count: number) => {
+  if (count === 0) return null;
+  
+  return (
+    <span className="absolute -top-1 -right-1 bg-red-500 rounded-full h-2 w-2">
+    </span>
+  );
+};
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -72,28 +63,37 @@ export function AppSidebar() {
     if (!user) return;
 
     try {
-      // Get posts from last 24 hours from followed users
+      // Get posts from followed users since last visit
       const { data: followsData } = await supabase
         .from('follows')
         .select('following_id')
         .eq('follower_id', user.id);
 
-      if (!followsData?.length) return;
+      if (!followsData?.length) {
+        setNewPostsCount(0);
+        return;
+      }
 
       const followedUserIds = followsData.map(f => f.following_id);
-      const yesterday = new Date();
-      yesterday.setHours(yesterday.getHours() - 24);
+      
+      // Get last visit time from localStorage, default to 24 hours ago if not found
+      const lastVisitedKey = `lastVisited_${user.id}`;
+      const lastVisited = localStorage.getItem(lastVisitedKey);
+      const cutoffTime = lastVisited 
+        ? new Date(parseInt(lastVisited))
+        : new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
 
       const { count, error } = await supabase
         .from('posts')
         .select('*', { count: 'exact', head: true })
         .in('user_id', followedUserIds)
-        .gte('created_at', yesterday.toISOString());
+        .gte('created_at', cutoffTime.toISOString());
 
       if (error) throw error;
       setNewPostsCount(count || 0);
     } catch (error) {
       console.error('Error fetching new posts count:', error);
+      setNewPostsCount(0);
     }
   };
 
@@ -179,10 +179,21 @@ export function AppSidebar() {
     } else if (url === "/home" && newPostsCount > 0) {
       // Reset new posts count (user has seen them)
       setNewPostsCount(0);
+      // Store in localStorage to persist across refreshes
+      localStorage.setItem(`lastVisited_${user?.id}`, Date.now().toString());
     }
   };
 
-  const navigationItems = getNavigationItems(username, unreadNotifications, newPostsCount, handleNavClick);
+  const getNavigationItems = () => [
+    { title: "Home", url: "/home", icon: Home, badge: newPostsCount, onClick: () => handleNavClick("/home") },
+    { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
+    { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications, onClick: () => handleNavClick("/notifications") },
+    { title: "Bookmarks", url: "/bookmarks", icon: Bookmark, onClick: () => handleNavClick("/bookmarks") },
+    { title: "Profile", url: `/profile/${username}`, icon: User, onClick: () => handleNavClick(`/profile/${username}`) },
+    { title: "Create Post", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
+  ];
+
+  const navigationItems = getNavigationItems();
 
   return (
     <Sidebar className={collapsed ? "w-16" : "w-64"}>
