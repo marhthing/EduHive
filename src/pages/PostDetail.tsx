@@ -370,6 +370,41 @@ export default function PostDetail() {
     }
   };
 
+  const handleDeletePost = async () => {
+    if (!user || !post) return;
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', post.id)
+        .eq('user_id', user.id); // Ensure only owner can delete
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Post deleted successfully",
+      });
+      
+      // Navigate back to home after deleting
+      navigate('/home');
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete post. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditPost = () => {
+    if (!post) return;
+    // Navigate to edit post page
+    navigate(`/post/edit/${post.id}`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -434,11 +469,18 @@ export default function PostDetail() {
                 <DropdownMenuContent align="end" className="w-48">
                   {user && user.id === post.user_id && (
                     <>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleEditPost}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit post
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive focus:text-destructive">
+                      <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this post?')) {
+                            handleDeletePost();
+                          }
+                        }}
+                      >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete post
                       </DropdownMenuItem>

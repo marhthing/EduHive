@@ -340,6 +340,38 @@ export default function Home() {
     }
   };
 
+  const handleDeletePost = async (postId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('user_id', user.id); // Ensure only owner can delete
+
+      if (error) throw error;
+
+      setPosts(posts.filter(p => p.id !== postId));
+      toast({
+        title: "Success",
+        description: "Post deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete post. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditPost = (postId: string) => {
+    // Navigate to edit post page or open edit modal
+    navigate(`/post/edit/${postId}`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -438,13 +470,23 @@ export default function Home() {
                       <DropdownMenuContent align="end" className="w-48">
                         {user && user.id === post.user_id && (
                           <>
-                            <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditPost(post.id);
+                              }}
+                            >
                               <Edit className="h-4 w-4 mr-2" />
                               Edit post
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-destructive focus:text-destructive"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm('Are you sure you want to delete this post?')) {
+                                  handleDeletePost(post.id);
+                                }
+                              }}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete post
