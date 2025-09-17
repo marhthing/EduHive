@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, UserPlus, Bell, BellOff } from "lucide-react";
+import { Heart, MessageCircle, UserPlus, Bell, BellOff, ChevronLeft, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,16 +29,33 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [markingAllRead, setMarkingAllRead] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const { showToast } = useTwitterToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  const ITEMS_PER_PAGE = 15;
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (page = 1) => {
     if (!user) return;
 
+    setLoading(true);
     try {
       console.log('Fetching notifications for user:', user.id);
       
+      // First get the total count
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+      
+      setTotalCount(count || 0);
+
+      // Then get the paginated data
+      const from = (page - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
       const { data, error } = await supabase
         .from('notifications')
         .select(`
@@ -52,7 +69,8 @@ export default function Notifications() {
           from_user_id
         `)
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       console.log('Notifications query result:', { data, error });
 
@@ -180,6 +198,23 @@ export default function Notifications() {
     }
   };
 
+  const handleNextPage = () => {
+    const maxPage = Math.ceil(totalCount / ITEMS_PER_PAGE);
+    if (currentPage < maxPage) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      fetchNotifications(nextPage);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      const prevPage = currentPage - 1;
+      setCurrentPage(prevPage);
+      fetchNotifications(prevPage);
+    }
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'like':
@@ -195,7 +230,7 @@ export default function Notifications() {
   };
 
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications(1);
     
     // Mark all notifications as read when user visits the page
     const markAsReadOnVisit = async () => {
@@ -217,7 +252,7 @@ export default function Notifications() {
     // Small delay to ensure notifications are loaded first
     const timer = setTimeout(markAsReadOnVisit, 1000);
     return () => clearTimeout(timer);
-  }, [user, notifications.length]);
+  }, [user]);
 
   if (loading) {
     return (
@@ -231,6 +266,9 @@ export default function Notifications() {
   }
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  const hasNextPage = currentPage < totalPages;
+  const hasPrevPage = currentPage > 1;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
@@ -260,7 +298,12 @@ export default function Notifications() {
         </CardHeader>
 
         <CardContent className="p-0">
-          {notifications.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-2 text-muted-foreground">Loading notifications...</p>
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="py-12 text-center">
               <BellOff className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No notifications yet</h3>
@@ -269,45 +312,81 @@ export default function Notifications() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-border">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
-                    !notification.read ? 'bg-muted/30' : ''
-                  }`}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <div className="flex gap-3">
-                    <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarImage src={notification.from_user.profile_pic || undefined} />
-                      <AvatarFallback>
-                        {notification.from_user.username[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
+            <>
+              <div className="divide-y divide-border">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
+                      !notification.read ? 'bg-muted/30' : ''
+                    }`}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="flex gap-3">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarImage src={notification.from_user.profile_pic || undefined} />
+                        <AvatarFallback>
+                          {notification.from_user.username[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-2">
-                        <div className="flex-1">
-                          <p className="text-sm text-foreground mb-1">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {getNotificationIcon(notification.type)}
-                          {!notification.read && (
-                            <div className="w-2 h-2 bg-primary rounded-full"></div>
-                          )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1">
+                            <p className="text-sm text-foreground mb-1">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {getNotificationIcon(notification.type)}
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-primary rounded-full"></div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between p-4 border-t border-border">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount} notifications
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePrevPage}
+                      disabled={!hasPrevPage}
+                      className="flex items-center gap-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-2">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleNextPage}
+                      disabled={!hasNextPage}
+                      className="flex items-center gap-1"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
