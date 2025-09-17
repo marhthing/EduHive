@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, RefreshCw } from "lucide-react";
+import { Upload } from "lucide-react";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { PostItem } from "@/components/PostItem";
@@ -616,18 +616,6 @@ export default function Home() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Refresh button */}
-      <div className="mx-2 md:mx-4 mb-2 flex justify-end">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={refreshPosts}
-          className="text-muted-foreground"
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
-      </div>
 
       {/* Twitter-style compose area */}
       {user && (
