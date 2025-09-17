@@ -358,26 +358,6 @@ export default function Profile() {
       // Show processing for a bit
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // First, try to get username from localStorage
-      const storedUsername = localStorage.getItem(`username_${currentUser.id}`);
-      
-      if (storedUsername) {
-        setFetchedUsername(storedUsername);
-        showToast(`Found your username in localStorage: @${storedUsername}`, "success");
-        
-        // Redirect to the proper profile URL
-        setTimeout(() => {
-          navigate(`/profile/${storedUsername}`, { replace: true });
-        }, 1000);
-        return;
-      }
-      
-      // If not found in localStorage, fetch from database
-      showToast("Not found in localStorage, checking database...", "info");
-      
-      // Show a bit more processing time for DB fetch
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       // Fetch username from database using the current user's ID
       const { data: profileData, error } = await supabase
         .from("profiles")
@@ -393,7 +373,7 @@ export default function Profile() {
       
       if (profileData?.username) {
         setFetchedUsername(profileData.username);
-        showToast(`Found your username in database: @${profileData.username}`, "success");
+        showToast(`Found your username: @${profileData.username}`, "success");
         
         // Store in localStorage for future use
         localStorage.setItem(`username_${currentUser.id}`, profileData.username);
