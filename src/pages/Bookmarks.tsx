@@ -59,7 +59,7 @@ export default function Bookmarks() {
 
           const [likesResult, commentsResult, userLikeResult, profileResult, userBookmarkResult] = await Promise.all([
             supabase.from("likes").select("id", { count: "exact" }).eq("post_id", post.id),
-            supabase.from("comments").select("id", { count: "exact" }).eq("post_id", post.id),
+            supabase.from("comments").select("id", { count: "exact" }).eq("post_id", post.id).is('parent_comment_id', null),
             supabase.from("likes").select("id").eq("post_id", post.id).eq("user_id", user.id).maybeSingle(),
             supabase.from("profiles").select("username, profile_pic, school, department").eq("user_id", post.user_id).maybeSingle(),
             supabase.from("bookmarks").select("id").eq("post_id", post.id).eq("user_id", user.id).maybeSingle(),
