@@ -35,3 +35,11 @@ args = "npm run build"
 deploymentTarget = "static"
 build = "npm run build"
 publicDir = "dist"
+
+[[ports]]
+localPort = 5000
+externalPort = 5000
+
+[[ports]]
+localPort = 8080
+externalPort = 80
