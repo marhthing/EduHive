@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Profile {
   id: string;
+  user_id: string;
   username: string;
   email: string;
   bio: string | null;
@@ -115,7 +116,7 @@ export default function Settings() {
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ profile_pic: publicUrl })
-        .eq('user_id', profile.id);
+        .eq('user_id', profile.user_id);
 
       if (updateError) throw updateError;
 
@@ -162,7 +163,7 @@ export default function Settings() {
           department: formData.department.trim() || null,
           year: formData.year ? parseInt(formData.year) : null,
         })
-        .eq('user_id', profile.id);
+        .eq('user_id', profile.user_id);
 
       if (error) {
         if (error.code === '23505') {
@@ -330,12 +331,12 @@ export default function Settings() {
 
             <div className="space-y-2">
               <Label htmlFor="year">Academic Year</Label>
-              <Select value={formData.year} onValueChange={(value) => setFormData({ ...formData, year: value })}>
+              <Select value={formData.year || "none"} onValueChange={(value) => setFormData({ ...formData, year: value === "none" ? "" : value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select your year" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Not specified</SelectItem>
+                  <SelectItem value="none">Not specified</SelectItem>
                   <SelectItem value="1">Year 1</SelectItem>
                   <SelectItem value="2">Year 2</SelectItem>
                   <SelectItem value="3">Year 3</SelectItem>

@@ -39,46 +39,44 @@ export default function Bookmarks() {
         return;
       }
 
-      const { data: bookmarks, error } = await supabase
+      const { data: bookmarkRows, error } = await supabase
         .from("bookmarks")
-        .select(`
-          post_id,
-          posts (
-            *,
-            profiles:user_id (
-              username,
-              profile_pic,
-              school,
-              department
-            )
-          )
-        `)
+        .select("post_id")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
       const postsWithCounts = await Promise.all(
-        (bookmarks || []).map(async (bookmark: any) => {
-          const post = bookmark.posts;
-          const [likesResult, commentsResult, userLikeResult] = await Promise.all([
+        (bookmarkRows || []).map(async (bookmark: any) => {
+          const { data: post, error: postError } = await supabase
+            .from("posts")
+            .select("*")
+            .eq("id", bookmark.post_id)
+            .maybeSingle();
+
+          if (postError || !post) return null;
+
+          const [likesResult, commentsResult, userLikeResult, profileResult, userBookmarkResult] = await Promise.all([
             supabase.from("likes").select("id", { count: "exact" }).eq("post_id", post.id),
             supabase.from("comments").select("id", { count: "exact" }).eq("post_id", post.id),
-            supabase.from("likes").select("id").eq("post_id", post.id).eq("user_id", user.id).single(),
+            supabase.from("likes").select("id").eq("post_id", post.id).eq("user_id", user.id).maybeSingle(),
+            supabase.from("profiles").select("username, profile_pic, school, department").eq("user_id", post.user_id).maybeSingle(),
+            supabase.from("bookmarks").select("id").eq("post_id", post.id).eq("user_id", user.id).maybeSingle(),
           ]);
 
           return {
             ...post,
-            profile: post.profiles,
+            profile: profileResult.data || null,
             likes_count: likesResult.count || 0,
             comments_count: commentsResult.count || 0,
             is_liked: !!userLikeResult?.data,
-            is_bookmarked: true,
+            is_bookmarked: !!userBookmarkResult?.data,
           };
         })
       );
 
-      setPosts(postsWithCounts);
+      setPosts((postsWithCounts || []).filter(Boolean) as any);
     } catch (error) {
       console.error("Error fetching bookmarked posts:", error);
       toast({

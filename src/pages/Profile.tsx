@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 interface Profile {
-  id: string;
+  id: string; // profiles table primary key
+  user_id: string; // auth user id
   username: string;
   email: string;
   bio: string | null;
@@ -192,7 +193,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (profile) {
-      fetchUserPosts(profile.id);
+      fetchUserPosts(profile.user_id);
       setLoading(false);
     }
   }, [profile]);
@@ -223,7 +224,7 @@ export default function Profile() {
     );
   }
 
-  const isOwnProfile = currentUser?.id === profile.id;
+  const isOwnProfile = currentUser?.id === profile.user_id;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
