@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
+import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 
@@ -46,7 +46,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [composeText, setComposeText] = useState("");
   const [isPosting, setIsPosting] = useState(false);
-  const { toast } = useToast();
+  const { showToast } = useTwitterToast();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -138,11 +138,7 @@ export default function Home() {
       setPosts(processedPosts);
     } catch (error) {
       console.error('Error fetching posts:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load posts",
-        variant: "destructive",
-      });
+      showToast("Failed to load posts", "error");
     } finally {
       setLoading(false);
     }
@@ -150,11 +146,7 @@ export default function Home() {
 
   const handleLike = async (postId: string) => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to like posts",
-        variant: "destructive",
-      });
+      showToast("Please log in to like posts", "error");
       return;
     }
 
@@ -193,21 +185,13 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error toggling like:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update like. Please try again.",
-        variant: "destructive",
-      });
+      showToast("Failed to update like. Please try again.", "error");
     }
   };
 
   const handleBookmark = async (postId: string) => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to bookmark posts",
-        variant: "destructive",
-      });
+      showToast("Please log in to bookmark posts", "error");
       return;
     }
 
@@ -231,10 +215,7 @@ export default function Home() {
             : p
         ));
 
-        toast({
-          title: "Removed",
-          description: "Post removed from bookmarks",
-        });
+        // Removed notification - Twitter doesn't show these
       } else {
         // Add bookmark
         const { error } = await supabase
@@ -249,18 +230,11 @@ export default function Home() {
             : p
         ));
 
-        toast({
-          title: "Saved",
-          description: "Post added to bookmarks",
-        });
+        // Removed notification - Twitter doesn't show these
       }
     } catch (error) {
       console.error('Error toggling bookmark:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update bookmark. Please try again.",
-        variant: "destructive",
-      });
+      showToast("Failed to update bookmark. Please try again.", "error");
     }
   };
 
@@ -275,10 +249,7 @@ export default function Home() {
       } else {
         // Fallback: copy to clipboard
         await navigator.clipboard.writeText(window.location.href);
-        toast({
-          title: "Link copied",
-          description: "Post link copied to clipboard",
-        });
+        // Removed notification - Twitter doesn't show clipboard actions
       }
     } catch (error) {
       console.error('Error sharing:', error);
@@ -292,20 +263,12 @@ export default function Home() {
 
   const handleQuickPost = async () => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to create posts",
-        variant: "destructive",
-      });
+      showToast("Please log in to create posts", "error");
       return;
     }
 
     if (!composeText.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter some text",
-        variant: "destructive",
-      });
+      showToast("Please enter some text", "error");
       return;
     }
 
@@ -321,20 +284,13 @@ export default function Home() {
       if (error) throw error;
 
       setComposeText("");
-      toast({
-        title: "Success",
-        description: "Post created successfully",
-      });
+      // Removed notification - Twitter doesn't show these
       
       // Refresh posts
       fetchPosts();
     } catch (error) {
       console.error('Error creating post:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create post. Please try again.",
-        variant: "destructive",
-      });
+      showToast("Failed to create post. Please try again.", "error");
     } finally {
       setIsPosting(false);
     }
@@ -353,17 +309,10 @@ export default function Home() {
       if (error) throw error;
 
       setPosts(posts.filter(p => p.id !== postId));
-      toast({
-        title: "Success",
-        description: "Post deleted successfully",
-      });
+      // Removed notification - Twitter doesn't show these
     } catch (error) {
       console.error('Error deleting post:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete post. Please try again.",
-        variant: "destructive",
-      });
+      showToast("Failed to delete post. Please try again.", "error");
     }
   };
 

@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useTwitterToast } from "@/components/ui/twitter-toast";
 
 interface Profile {
   id: string;
@@ -26,7 +26,7 @@ interface Profile {
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { showToast } = useTwitterToast();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -64,11 +64,7 @@ export default function Settings() {
       });
     } catch (error) {
       console.error("Error fetching profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load profile data",
-        variant: "destructive",
-      });
+      showToast("Failed to load profile data", "error");
     }
   };
 
@@ -78,21 +74,13 @@ export default function Settings() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid file type",
-        description: "Please select an image file",
-        variant: "destructive",
-      });
+      showToast("Please select an image file", "error");
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please select an image smaller than 5MB",
-        variant: "destructive",
-      });
+      showToast("Please select an image smaller than 5MB", "error");
       return;
     }
 
@@ -128,17 +116,10 @@ export default function Settings() {
 
       setProfile({ ...profile, profile_pic: publicUrl });
 
-      toast({
-        title: "Success",
-        description: "Profile picture updated successfully",
-      });
+      // Removed success notification - Twitter style minimalism
     } catch (error: any) {
       console.error('Avatar upload error:', error);
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload avatar",
-        variant: "destructive",
-      });
+      showToast(error.message || "Failed to upload avatar", "error");
     } finally {
       setUploading(false);
     }
@@ -150,11 +131,7 @@ export default function Settings() {
 
     // Validate username
     if (formData.username.length < 3) {
-      toast({
-        title: "Invalid username",
-        description: "Username must be at least 3 characters long",
-        variant: "destructive",
-      });
+      showToast("Username must be at least 3 characters long", "error");
       return;
     }
 
@@ -179,20 +156,13 @@ export default function Settings() {
         throw error;
       }
 
-      toast({
-        title: "Success",
-        description: "Profile updated successfully",
-      });
+      // Removed success notification - Twitter style minimalism
 
       // Redirect to updated profile
       navigate(`/profile/${formData.username}`);
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update profile",
-        variant: "destructive",
-      });
+      showToast(error.message || "Failed to update profile", "error");
     } finally {
       setLoading(false);
     }
@@ -205,22 +175,14 @@ export default function Settings() {
       navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
-      toast({
-        title: "Error",
-        description: "Failed to sign out",
-        variant: "destructive",
-      });
+      showToast("Failed to sign out", "error");
     }
   };
 
   const handleDeleteAccount = async () => {
     // Note: This would require additional backend logic to properly delete
     // user data while maintaining referential integrity
-    toast({
-      title: "Feature unavailable",
-      description: "Account deletion is not currently available. Please contact support.",
-      variant: "destructive",
-    });
+    showToast("Account deletion is not currently available. Please contact support.", "info");
   };
 
   useEffect(() => {

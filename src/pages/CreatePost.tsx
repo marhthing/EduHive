@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useTwitterToast } from "@/components/ui/twitter-toast";
 
 export default function CreatePost() {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { showToast } = useTwitterToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     body: "",
@@ -27,22 +27,14 @@ export default function CreatePost() {
 
     // Check file size (max 10MB)
     if (selectedFile.size > 10 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please select a file smaller than 10MB",
-        variant: "destructive",
-      });
+      showToast("Please select a file smaller than 10MB", "error");
       return;
     }
 
     // Check file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
     if (!allowedTypes.includes(selectedFile.type)) {
-      toast({
-        title: "Invalid file type",
-        description: "Please select an image (JPEG, PNG, GIF) or PDF file",
-        variant: "destructive",
-      });
+      showToast("Please select an image (JPEG, PNG, GIF) or PDF file", "error");
       return;
     }
 
@@ -88,11 +80,7 @@ export default function CreatePost() {
     e.preventDefault();
     
     if (!formData.body.trim()) {
-      toast({
-        title: "Missing content",
-        description: "Please write something in your post",
-        variant: "destructive",
-      });
+      showToast("Please write something in your post", "error");
       return;
     }
 
@@ -126,19 +114,12 @@ export default function CreatePost() {
 
       if (insertError) throw insertError;
 
-      toast({
-        title: "Post created!",
-        description: "Your post has been shared successfully",
-      });
+      showToast("Post created!", "success");
 
       navigate('/home');
     } catch (error: any) {
       console.error('Error creating post:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create post. Please try again.",
-        variant: "destructive",
-      });
+      showToast(error.message || "Failed to create post. Please try again.", "error");
     } finally {
       setLoading(false);
     }

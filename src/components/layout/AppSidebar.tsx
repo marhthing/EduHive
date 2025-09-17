@@ -2,7 +2,7 @@ import { Home, Search, Bookmark, User, Plus, Settings, Sun, Moon, LogOut } from 
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { useState, useEffect } from "react";
 import {
   Sidebar,
@@ -30,7 +30,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
-  const { toast } = useToast();
+  const { showToast } = useTwitterToast();
   const navigate = useNavigate();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
@@ -59,23 +59,16 @@ export function AppSidebar() {
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
       ? "bg-primary text-primary-foreground font-medium" 
-      : "hover:bg-accent hover:text-accent-foreground";
+      : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      toast({
-        title: "Signed out",
-        description: "You have been successfully signed out.",
-      });
+      // Removed success notification - Twitter-style minimalism
       navigate("/auth");
     } catch (error) {
       console.error("Error signing out:", error);
-      toast({
-        title: "Error",
-        description: "Failed to sign out. Please try again.",
-        variant: "destructive",
-      });
+      showToast("Failed to sign out. Please try again.", "error");
     }
   };
 

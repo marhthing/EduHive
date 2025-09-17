@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { PostCard } from "@/components/PostCard";
-import { useToast } from "@/hooks/use-toast";
+import { useTwitterToast } from "@/components/ui/twitter-toast";
 
 interface Post {
   id: string;
@@ -29,7 +29,7 @@ interface Post {
 export default function Bookmarks() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const { showToast } = useTwitterToast();
 
   const fetchBookmarkedPosts = async () => {
     try {
@@ -79,11 +79,7 @@ export default function Bookmarks() {
       setPosts((postsWithCounts || []).filter(Boolean) as any);
     } catch (error) {
       console.error("Error fetching bookmarked posts:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load bookmarked posts. Please try again.",
-        variant: "destructive",
-      });
+      showToast("Failed to load bookmarked posts. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -103,17 +99,10 @@ export default function Bookmarks() {
       if (error) throw error;
 
       setPosts(posts.filter(post => post.id !== postId));
-      toast({
-        title: "Removed",
-        description: "Post removed from bookmarks",
-      });
+      // Removed notification - Twitter doesn't show these
     } catch (error) {
       console.error("Error removing bookmark:", error);
-      toast({
-        title: "Error",
-        description: "Failed to remove bookmark. Please try again.",
-        variant: "destructive",
-      });
+      showToast("Failed to remove bookmark. Please try again.", "error");
     }
   };
 
@@ -148,11 +137,7 @@ export default function Bookmarks() {
       ));
     } catch (error) {
       console.error("Error toggling like:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update like. Please try again.",
-        variant: "destructive",
-      });
+      showToast("Failed to update like. Please try again.", "error");
     }
   };
 

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { PostCard } from "@/components/PostCard";
-import { useToast } from "@/hooks/use-toast";
+import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { format } from "date-fns";
 
 interface Profile {
@@ -51,7 +51,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("posts");
-  const { toast } = useToast();
+  const { showToast } = useTwitterToast();
 
   const fetchProfile = async () => {
     try {
@@ -65,11 +65,7 @@ export default function Profile() {
       setProfile(profileData);
     } catch (error) {
       console.error("Error fetching profile:", error);
-      toast({
-        title: "Error",
-        description: "Profile not found",
-        variant: "destructive",
-      });
+      showToast("Profile not found", "error");
     }
   };
 

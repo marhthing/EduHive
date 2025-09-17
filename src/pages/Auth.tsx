@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { Mail, Lock, User, GraduationCap, Building2 } from "lucide-react";
 
 export default function Auth() {
@@ -21,7 +21,7 @@ export default function Auth() {
     year: new Date().getFullYear(),
   });
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { showToast } = useTwitterToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,17 +35,10 @@ export default function Auth() {
 
       if (error) throw error;
 
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
-      });
+      showToast("Welcome back!", "success");
       navigate("/");
     } catch (error: any) {
-      toast({
-        title: "Login Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      showToast(`Login failed: ${error.message}`, "error");
     } finally {
       setLoading(false);
     }
@@ -72,16 +65,9 @@ export default function Auth() {
 
       if (error) throw error;
 
-      toast({
-        title: "Account Created!",
-        description: "Please check your email to verify your account.",
-      });
+      showToast("Account created! Please check your email to verify.", "success");
     } catch (error: any) {
-      toast({
-        title: "Signup Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      showToast(`Signup failed: ${error.message}`, "error");
     } finally {
       setLoading(false);
     }
