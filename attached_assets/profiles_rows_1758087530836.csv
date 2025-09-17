@@ -1,6 +1,0 @@
-id,user_id,username,email,school,department,year,profile_pic,bio,created_at,updated_at,name,followers_count,following_count,is_deactivated,deactivated_at,scheduled_deletion_at
-1231d982-afe4-4a3a-ae25-3498fae6f93e,e328b0c4-a31f-487f-964f-85b16f1088d6,matdevyz1,joy.are@student.aul.edu.ng,,,,,,2025-09-17 03:11:08.61302+00,2025-09-17 03:59:55.140877+00,,0,0,false,,
-25d2b8b1-decc-4904-a5e4-99e63b2e28ac,2ca4e8b9-6727-4bff-851c-1a74ffd8ce26,matdevpp1,arefunmi72@gmail.com,,,,,,2025-09-17 03:11:28.319244+00,2025-09-17 05:08:58.879822+00,,0,0,false,,
-8791d2b2-cdfc-4a9d-a1b4-51fcf77f242d,ae0f1a1c-6964-477c-8929-46abd89fe534,matdev,martins.are@student.aul.edu.ng,,,,,,2025-09-17 03:03:59.805336+00,2025-09-17 05:08:58.879822+00,,0,0,false,,
-8dcf5ccf-4134-4132-924c-9105226b4c95,bebca0ec-4ac2-4d05-93e7-444194d8f7c0,matdevwt1,arejoy63@gmail.com,,,,,,2025-09-17 03:06:45.239067+00,2025-09-17 03:59:55.140877+00,,0,0,false,,
-de748c69-d015-4be0-a7e1-3b5f403c2b5e,f8b3a150-e32c-4924-913d-d3f768b7b380,Are Martins,aremartins801@gmail.com,Anchor University Lagos,Computer Science,4,https://aekcdfuqdgtfadmivisf.supabase.co/storage/v1/object/public/avatars/f8b3a150-e32c-4924-913d-d3f768b7b380/avatar_1758074640997.JPG,,2025-09-17 00:37:16.314838+00,2025-09-17 05:08:58.879822+00,Are Martins,1,0,true,2025-09-17 05:08:58.879822+00,2025-11-16 05:08:58.879822+00
