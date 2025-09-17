@@ -25,6 +25,7 @@ interface Profile {
   profile_pic: string | null;
   school: string | null;
   name: string | null;
+  department: string | null;
 }
 
 interface Post {
@@ -103,7 +104,7 @@ export default function PostDetail() {
       // Get profile for the post author
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('user_id, username, profile_pic, school, name')
+        .select('user_id, username, profile_pic, school, name, department')
         .eq('user_id', postData.user_id)
         .single();
 
@@ -172,7 +173,7 @@ export default function PostDetail() {
       const userIds = [...new Set(commentsData.map(comment => comment.user_id))];
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, username, profile_pic, school, name')
+        .select('user_id, username, profile_pic, school, name, department')
         .in('user_id', userIds);
 
       if (profilesError) throw profilesError;

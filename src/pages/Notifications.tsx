@@ -120,7 +120,7 @@ export default function Notifications() {
       );
 
       console.log('Final notifications with profiles:', notificationsWithProfiles);
-      setNotifications(notificationsWithProfiles);
+      setNotifications(notificationsWithProfiles as Notification[]);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       showToast("Failed to load notifications", "error");

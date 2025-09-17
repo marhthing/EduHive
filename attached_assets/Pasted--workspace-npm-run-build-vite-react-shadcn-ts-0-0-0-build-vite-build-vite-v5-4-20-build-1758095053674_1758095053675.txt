@@ -1,0 +1,23 @@
+~/workspace$ npm run build
+
+> vite_react_shadcn_ts@0.0.0 build
+> vite build
+
+vite v5.4.20 building for production...
+✓ 2142 modules transformed.
+[plugin:vite:reporter] [plugin vite:reporter] 
+(!) /home/runner/workspace/src/integrations/supabase/client.ts is dynamically imported by /home/runner/workspace/src/components/layout/AppSidebar.tsx, /home/runner/workspace/src/components/layout/MobileNav.tsx but also statically imported by /home/runner/workspace/src/components/FollowersModal.tsx, /home/runner/workspace/src/components/FollowingModal.tsx, /home/runner/workspace/src/components/ReportDialog.tsx, /home/runner/workspace/src/components/layout/AppSidebar.tsx, /home/runner/workspace/src/components/layout/MobileNav.tsx, /home/runner/workspace/src/contexts/AuthContext.tsx, /home/runner/workspace/src/pages/AccountReactivation.tsx, /home/runner/workspace/src/pages/Auth.tsx, /home/runner/workspace/src/pages/Bookmarks.tsx, /home/runner/workspace/src/pages/CreatePost.tsx, /home/runner/workspace/src/pages/EditPost.tsx, /home/runner/workspace/src/pages/Home.tsx, /home/runner/workspace/src/pages/Index.tsx, /home/runner/workspace/src/pages/Notifications.tsx, /home/runner/workspace/src/pages/PostDetail.tsx, /home/runner/workspace/src/pages/Profile.tsx, /home/runner/workspace/src/pages/Search.tsx, /home/runner/workspace/src/pages/Settings.tsx, dynamic import will not move module into another chunk.
+
+[plugin:vite:reporter] [plugin vite:reporter] 
+(!) /home/runner/workspace/src/lib/download.ts is dynamically imported by /home/runner/workspace/src/pages/PostDetail.tsx but also statically imported by /home/runner/workspace/src/components/PostCard.tsx, /home/runner/workspace/src/components/PostItem.tsx, dynamic import will not move module into another chunk.
+
+dist/index.html                   1.29 kB │ gzip:   0.53 kB
+dist/assets/index-BIqY3_X7.css   66.16 kB │ gzip:  11.56 kB
+dist/assets/index-C_WYpNxe.js   697.85 kB │ gzip: 203.51 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 10.51s
+~/workspace$ 
