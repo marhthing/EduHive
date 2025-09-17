@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Heart, MessageCircle, Bookmark, Share, ArrowLeft, Send, MoreHorizontal, Trash2, Edit, Flag, Reply, X } from "lucide-react";
+import { PostItem } from "@/components/PostItem";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,7 @@ interface Profile {
   profile_pic: string | null;
   school: string | null;
   name: string | null;
+  department: string | null;
 }
 
 interface Post {
@@ -99,7 +101,7 @@ export default function PostDetail() {
       // Get profile for the post author
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('user_id, username, profile_pic, school, name')
+        .select('user_id, username, profile_pic, school, name, department')
         .eq('user_id', postData.user_id)
         .single();
 
@@ -164,7 +166,7 @@ export default function PostDetail() {
       const userIds = [...new Set(commentsData.map(comment => comment.user_id))];
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, username, profile_pic, school, name')
+        .select('user_id, username, profile_pic, school, name, department')
         .in('user_id', userIds);
 
       if (profilesError) throw profilesError;
@@ -557,7 +559,19 @@ export default function PostDetail() {
       </div>
 
       {/* Post */}
-      <div className="border border-border rounded-lg p-4 mb-4">
+      <PostItem
+        post={post}
+        currentUserId={user?.id}
+        onLike={() => handleLike()}
+        onBookmark={() => handleBookmark()}
+        onComment={() => {}} // No action needed since we're already on the detail page
+        onShare={handleShare}
+        onEdit={handleEditPost}
+        onDelete={handleDeletePost}
+        disableNavigation={true}
+        className="mb-4"
+      />
+
         <div className="flex gap-3">
           <Avatar className="h-12 w-12 flex-shrink-0">
             <AvatarImage src={post.profile?.profile_pic || undefined} />
