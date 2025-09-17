@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
@@ -63,14 +62,21 @@ export function PostItem({
   showDropdown = true,
   className = ""
 }: PostItemProps) {
-  const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
-  
-  const isOwnPost = currentUserId === post.user_id;
+  const navigate = useNavigate();
 
-  const handlePostClick = () => {
-    navigate(`/post/${post.id}`);
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (post.profile?.username) {
+      navigate(`/profile/${post.profile.username}`);
+    }
   };
+
+  const handlePostBodyClick = () => {
+    onComment(post.id);
+  };
+
+  const isOwnPost = currentUserId === post.user_id;
 
   const renderAttachment = () => {
     if (!post.attachment_url) return null;
@@ -192,12 +198,15 @@ export function PostItem({
   };
 
   return (
-    <div 
+    <div
       className={`p-4 hover:bg-muted/20 transition-colors cursor-pointer border border-border rounded-lg ${className}`}
-      onClick={handlePostClick}
+      onClick={() => navigate(`/post/${post.id}`)}
     >
       <div className="flex gap-3">
-        <Avatar className="h-10 w-10 flex-shrink-0">
+        <Avatar
+          className="h-12 w-12 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={handleProfileClick}
+        >
           <AvatarImage src={post.profile?.profile_pic || undefined} />
           <AvatarFallback>
             {post.profile?.username?.[0]?.toUpperCase() || 'U'}
@@ -205,12 +214,22 @@ export function PostItem({
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex flex-col">
               <div className="flex items-center gap-2 text-sm">
-                <span className="font-semibold text-foreground">{post.profile?.name || post.profile?.username || 'Anonymous'}</span>
+                <span
+                  className="font-semibold text-foreground cursor-pointer hover:underline"
+                  onClick={handleProfileClick}
+                >
+                  {post.profile?.name || post.profile?.username || 'Anonymous'}
+                </span>
                 <span className="text-muted-foreground">•</span>
-                <span className="text-muted-foreground">@{post.profile?.username || 'anonymous'}</span>
+                <span
+                  className="text-muted-foreground cursor-pointer hover:underline"
+                  onClick={handleProfileClick}
+                >
+                  @{post.profile?.username || 'anonymous'}
+                </span>
                 <span className="text-muted-foreground">•</span>
                 <span className="text-muted-foreground">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
               </div>
@@ -242,7 +261,7 @@ export function PostItem({
                 <DropdownMenuContent align="end" className="w-48">
                   {isOwnPost && onEdit && onDelete && (
                     <>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={(e) => {
                           e.stopPropagation();
                           onEdit(post.id);
@@ -251,7 +270,7 @@ export function PostItem({
                         <Edit className="h-4 w-4 mr-2" />
                         Edit post
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -275,77 +294,80 @@ export function PostItem({
             )}
           </div>
 
-          <div className="mt-1">
-            <p className="text-foreground whitespace-pre-wrap">{post.body}</p>
+          <p
+            className="text-foreground whitespace-pre-wrap mb-3 cursor-pointer"
+            onClick={handlePostBodyClick}
+          >
+            {post.body}
+          </p>
 
-            {renderAttachment()}
+          {renderAttachment()}
 
-            {(post.school_tag || post.course_tag) && (
-              <div className="flex gap-2 mt-3">
-                {post.school_tag && (
-                  <Badge variant="secondary" className="text-xs">{post.school_tag}</Badge>
-                )}
-                {post.course_tag && (
-                  <Badge variant="outline" className="text-xs">{post.course_tag}</Badge>
-                )}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between mt-3 max-w-md">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onLike(post.id);
-                }}
-                className={`flex items-center gap-2 hover:bg-red-500/10 rounded-full p-2 h-auto transition-colors ${
-                  post.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
-                }`}
-              >
-                <Heart className={`h-5 w-5 ${post.is_liked ? 'fill-current text-red-500' : ''}`} />
-                <span className="text-sm">{post.likes_count}</span>
-              </Button>
-
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex items-center gap-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onComment(post.id);
-                }}
-              >
-                <MessageCircle className="h-5 w-5" />
-                <span className="text-sm">{post.comments_count}</span>
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onBookmark(post.id);
-                }}
-                className={`flex items-center gap-2 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors ${
-                  post.is_bookmarked ? 'text-blue-500' : 'text-muted-foreground hover:text-blue-500'
-                }`}
-              >
-                <Bookmark className={`h-5 w-5 ${post.is_bookmarked ? 'fill-current text-blue-500' : ''}`} />
-              </Button>
-
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex items-center gap-2 text-muted-foreground hover:text-green-500 hover:bg-green-500/10 rounded-full p-2 h-auto transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onShare(post);
-                }}
-              >
-                <Share className="h-5 w-5" />
-              </Button>
+          {(post.school_tag || post.course_tag) && (
+            <div className="flex gap-2 mt-3">
+              {post.school_tag && (
+                <Badge variant="secondary" className="text-xs">{post.school_tag}</Badge>
+              )}
+              {post.course_tag && (
+                <Badge variant="outline" className="text-xs">{post.course_tag}</Badge>
+              )}
             </div>
+          )}
+
+          <div className="flex items-center justify-between mt-3 max-w-md">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onLike(post.id);
+              }}
+              className={`flex items-center gap-2 hover:bg-red-500/10 rounded-full p-2 h-auto transition-colors ${
+                post.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
+              }`}
+            >
+              <Heart className={`h-5 w-5 ${post.is_liked ? 'fill-current text-red-500' : ''}`} />
+              <span className="text-sm">{post.likes_count}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                onComment(post.id);
+              }}
+            >
+              <MessageCircle className="h-5 w-5" />
+              <span className="text-sm">{post.comments_count}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onBookmark(post.id);
+              }}
+              className={`flex items-center gap-2 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors ${
+                post.is_bookmarked ? 'text-blue-500' : 'text-muted-foreground hover:text-blue-500'
+              }`}
+            >
+              <Bookmark className={`h-5 w-5 ${post.is_bookmarked ? 'fill-current text-blue-500' : ''}`} />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2 text-muted-foreground hover:text-green-500 hover:bg-green-500/10 rounded-full p-2 h-auto transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                onShare(post);
+              }}
+            >
+              <Share className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>

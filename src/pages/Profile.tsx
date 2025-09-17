@@ -52,6 +52,8 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("posts");
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followingUser, setFollowingUser] = useState(false);
   const { showToast } = useTwitterToast();
   const navigate = useNavigate();
 
@@ -65,6 +67,18 @@ export default function Profile() {
 
       if (error) throw error;
       setProfile(profileData);
+
+      // Check if current user is following this profile
+      if (currentUser && profileData) {
+        const { data: followData } = await supabase
+          .from("follows")
+          .select("id")
+          .eq("follower_id", currentUser.id)
+          .eq("following_id", profileData.user_id)
+          .single();
+
+        setIsFollowing(!!followData);
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
       showToast("Profile not found", "error");
@@ -198,6 +212,46 @@ export default function Profile() {
     navigate(`/post/edit/${postId}`);
   };
 
+  const handleFollowToggle = async () => {
+    if (!currentUser || !profile) return;
+
+    setFollowingUser(true);
+    try {
+      if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+          .from("follows")
+          .delete()
+          .eq("follower_id", currentUser.id)
+          .eq("following_id", profile.user_id);
+
+        if (error) throw error;
+        setIsFollowing(false);
+        showToast(`Unfollowed @${profile.username}`, "success");
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from("follows")
+          .insert({
+            follower_id: currentUser.id,
+            following_id: profile.user_id,
+          });
+
+        if (error) throw error;
+        setIsFollowing(true);
+        showToast(`Following @${profile.username}`, "success");
+      }
+
+      // Refresh profile to get updated counts
+      fetchProfile();
+    } catch (error) {
+      console.error("Error toggling follow:", error);
+      showToast("Failed to update follow status", "error");
+    } finally {
+      setFollowingUser(false);
+    }
+  };
+
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -266,14 +320,23 @@ export default function Profile() {
                   <h1 className="text-2xl font-bold">{profile.name || profile.username}</h1>
                   <p className="text-muted-foreground">@{profile.username}</p>
                 </div>
-                {isOwnProfile && (
+                {isOwnProfile ? (
                   <Button asChild variant="outline" size="sm">
                     <Link to="/settings">
                       <Settings className="w-4 h-4 mr-2" />
                       Edit Profile
                     </Link>
                   </Button>
-                )}
+                ) : currentUser ? (
+                  <Button 
+                    onClick={handleFollowToggle}
+                    disabled={followingUser}
+                    variant={isFollowing ? "outline" : "default"}
+                    size="sm"
+                  >
+                    {followingUser ? "..." : isFollowing ? "Unfollow" : "Follow"}
+                  </Button>
+                ) : null}
               </div>
 
               {profile.bio && (
@@ -309,6 +372,14 @@ export default function Profile() {
                 <div className="text-center">
                   <div className="font-bold">{posts.length}</div>
                   <div className="text-sm text-muted-foreground">Posts</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold">{profile.followers_count || 0}</div>
+                  <div className="text-sm text-muted-foreground">Followers</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold">{profile.following_count || 0}</div>
+                  <div className="text-sm text-muted-foreground">Following</div>
                 </div>
                 <div className="text-center">
                   <div className="font-bold">

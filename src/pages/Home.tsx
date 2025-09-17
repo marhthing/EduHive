@@ -48,6 +48,19 @@ export default function Home() {
 
   const fetchPosts = async () => {
     try {
+      // Get posts with priority for followed users
+      let followedUserIds: string[] = [];
+      
+      if (user) {
+        // Get list of users the current user follows
+        const { data: followsData } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+        
+        followedUserIds = followsData?.map(f => f.following_id) || [];
+      }
+
       // First get all posts
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
@@ -133,7 +146,20 @@ export default function Home() {
         is_bookmarked: userBookmarks.has(post.id),
       })) || [];
 
-      setPosts(processedPosts);
+      // Sort posts: followed users first, then others by date
+      const sortedPosts = processedPosts.sort((a, b) => {
+        const aIsFollowed = followedUserIds.includes(a.user_id);
+        const bIsFollowed = followedUserIds.includes(b.user_id);
+        
+        // If one is followed and other is not, prioritize followed
+        if (aIsFollowed && !bIsFollowed) return -1;
+        if (!aIsFollowed && bIsFollowed) return 1;
+        
+        // If both are followed or both are not followed, sort by date
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      setPosts(sortedPosts);
     } catch (error) {
       console.error('Error fetching posts:', error);
       showToast("Failed to load posts", "error");
