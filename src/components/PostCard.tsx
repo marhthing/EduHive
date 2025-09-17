@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Heart, MessageCircle, Bookmark, Share2, X, Download, FileText, ExternalLink } from "lucide-react";
+import { downloadUrl } from "@/lib/download";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,18 +70,11 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
     for (let i = 0; i < attachments.length; i++) {
       const attachment = attachments[i];
       try {
-        const link = document.createElement('a');
-        link.href = attachment.url;
-
         // Create a meaningful filename
         const fileExtension = attachment.type?.split('/')[1] || 'unknown';
         const fileName = `${post.profile?.username || 'user'}_attachment_${i + 1}.${fileExtension}`;
 
-        link.download = fileName;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        await downloadUrl(attachment.url, fileName);
 
         // Add a small delay between downloads to avoid browser blocking
         if (i < attachments.length - 1) {
@@ -188,15 +182,10 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
                                         </Button>
                                         <Button
                                           variant="outline"
-                                          onClick={(e) => {
+                                          onClick={async (e) => {
                                             e.stopPropagation();
-                                            const link = document.createElement('a');
-                                            link.href = attachment.url;
-                                            link.download = `${post.profile?.username || 'user'}_document_${idx + 1}.pdf`;
-                                            link.target = '_blank';
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
+                                            const fileName = `${post.profile?.username || 'user'}_document_${idx + 1}.pdf`;
+                                            await downloadUrl(attachment.url, fileName);
                                           }}
                                         >
                                           Download
@@ -216,16 +205,11 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
                                         </Button>
                                         <Button
                                           variant="outline"
-                                          onClick={(e) => {
+                                          onClick={async (e) => {
                                             e.stopPropagation();
-                                            const link = document.createElement('a');
-                                            link.href = attachment.url;
                                             const fileExtension = attachment.type?.split('/')[1] || 'unknown';
-                                            link.download = `${post.profile?.username || 'user'}_attachment_${idx + 1}.${fileExtension}`;
-                                            link.target = '_blank';
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
+                                            const fileName = `${post.profile?.username || 'user'}_attachment_${idx + 1}.${fileExtension}`;
+                                            await downloadUrl(attachment.url, fileName);
                                           }}
                                         >
                                           Download

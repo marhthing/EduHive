@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { Heart, MessageCircle, Bookmark, Share, MoreHorizontal, Edit, Trash2, Flag, FileText, ExternalLink, X, Download } from "lucide-react";
+import { downloadUrl } from "@/lib/download";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -92,18 +93,11 @@ export function PostItem({
     for (let i = 0; i < attachments.length; i++) {
       const attachment = attachments[i];
       try {
-        const link = document.createElement('a');
-        link.href = attachment.url;
-
         // Create a meaningful filename
         const fileExtension = attachment.type?.split('/')[1] || 'unknown';
         const fileName = `${post.profile?.username || 'user'}_attachment_${i + 1}.${fileExtension}`;
 
-        link.download = fileName;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        await downloadUrl(attachment.url, fileName);
 
         // Add a small delay between downloads to avoid browser blocking
         if (i < attachments.length - 1) {
@@ -159,114 +153,17 @@ export function PostItem({
             {attachments.slice(0, 4).map((attachment, index) => (
               <div key={index} className="relative rounded-lg overflow-hidden border border-border">
                 {index === 3 && attachments.length > 4 ? (
-                  <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
-                    <DialogTrigger asChild>
-                      <div className="relative cursor-pointer" onClick={(e) => {
-                        e.stopPropagation();
-                        setCarouselStartIndex(index);
-                        setCarouselOpen(true);
-                      }}>
-                        {renderSingleAttachment(attachment, index)}
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center hover:bg-black/70 transition-colors">
-                          <span className="text-white text-lg font-semibold">
-                            +{attachments.length - 4} more
-                          </span>
-                        </div>
-                      </div>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none">
-                      <div className="relative">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                          onClick={() => setCarouselOpen(false)}
-                        >
-                          <X className="h-6 w-6" />
-                        </Button>
-                        <Carousel 
-                          className="w-full"
-                          opts={{ 
-                            startIndex: carouselStartIndex,
-                            loop: true 
-                          }}
-                        >
-                          <CarouselContent>
-                            {attachments.map((attachment, idx) => (
-                              <CarouselItem key={idx}>
-                                <div className="flex items-center justify-center min-h-[60vh] max-h-[80vh] bg-black rounded-lg">
-                                  {attachment.type?.startsWith('image/') ? (
-                                    <img
-                                      src={attachment.url}
-                                      alt={`Attachment ${idx + 1}`}
-                                      className="max-w-full max-h-full object-contain"
-                                      loading="lazy"
-                                    />
-                                  ) : attachment.type === 'application/pdf' || attachment.type?.includes('pdf') ? (
-                                    <div className="flex flex-col items-center justify-center p-8 text-white">
-                                      <div className="text-6xl mb-4">📄</div>
-                                      <p className="text-xl mb-4">PDF Document</p>
-                                      <div className="flex gap-4">
-                                        <Button
-                                          variant="outline"
-                                          onClick={() => window.open(attachment.url, '_blank')}
-                                        >
-                                          View PDF
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          onClick={() => {
-                                            const link = document.createElement('a');
-                                            link.href = attachment.url;
-                                            link.download = 'document.pdf';
-                                            link.target = '_blank';
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
-                                          }}
-                                        >
-                                          Download
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="flex flex-col items-center justify-center p-8 text-white">
-                                      <div className="text-6xl mb-4">📎</div>
-                                      <p className="text-xl mb-4">File ({attachment.type || 'Unknown'})</p>
-                                      <div className="flex gap-4">
-                                        <Button
-                                          variant="outline"
-                                          onClick={() => window.open(attachment.url, '_blank')}
-                                        >
-                                          View File
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          onClick={() => {
-                                            const link = document.createElement('a');
-                                            link.href = attachment.url;
-                                            link.download = 'attachment';
-                                            link.target = '_blank';
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
-                                          }}
-                                        >
-                                          Download
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </CarouselItem>
-                            ))}
-                          </CarouselContent>
-                          <CarouselPrevious className="left-4 bg-black/50 hover:bg-black/70 text-white border-none" />
-                          <CarouselNext className="right-4 bg-black/50 hover:bg-black/70 text-white border-none" />
-                        </Carousel>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <div className="relative cursor-pointer" onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/post/${post.id}`);
+                  }}>
+                    {renderSingleAttachment(attachment, index)}
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center hover:bg-black/70 transition-colors">
+                      <span className="text-white text-lg font-semibold">
+                        +{attachments.length - 4} more
+                      </span>
+                    </div>
+                  </div>
                 ) : (
                   <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
                     <DialogTrigger asChild>
@@ -313,16 +210,15 @@ export function PostItem({
                                       <div className="flex gap-4">
                                         <Button
                                           variant="outline"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                          }}
+                                          onClick={() => window.open(attachment.url, '_blank')}
                                         >
                                           View PDF
                                         </Button>
                                         <Button
                                           variant="outline"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
+                                          onClick={async () => {
+                                            const fileName = `${post.profile?.username || 'user'}_document_${idx + 1}.pdf`;
+                                            await downloadUrl(attachment.url, fileName);
                                           }}
                                         >
                                           Download
@@ -336,16 +232,16 @@ export function PostItem({
                                       <div className="flex gap-4">
                                         <Button
                                           variant="outline"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                          }}
+                                          onClick={() => window.open(attachment.url, '_blank')}
                                         >
                                           View File
                                         </Button>
                                         <Button
                                           variant="outline"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
+                                          onClick={async () => {
+                                            const fileExtension = attachment.type?.split('/')[1] || 'unknown';
+                                            const fileName = `${post.profile?.username || 'user'}_attachment_${idx + 1}.${fileExtension}`;
+                                            await downloadUrl(attachment.url, fileName);
                                           }}
                                         >
                                           Download
@@ -425,15 +321,10 @@ export function PostItem({
             <Button
               variant="outline"
               size="sm"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation();
-                const link = document.createElement('a');
-                link.href = attachment.url;
-                link.download = `${post.profile?.username || 'user'}_document.pdf`;
-                link.target = '_blank';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                const fileName = `${post.profile?.username || 'user'}_document.pdf`;
+                await downloadUrl(attachment.url, fileName);
               }}
               className="px-3"
               title="Download PDF"
@@ -462,16 +353,11 @@ export function PostItem({
           <Button
             variant="outline"
             size="sm"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-              const link = document.createElement('a');
-              link.href = attachment.url;
               const fileExtension = attachment.type?.split('/')[1] || 'unknown';
-              link.download = `${post.profile?.username || 'user'}_file.${fileExtension}`;
-              link.target = '_blank';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
+              const fileName = `${post.profile?.username || 'user'}_file.${fileExtension}`;
+              await downloadUrl(attachment.url, fileName);
             }}
             className="px-3"
             title="Download File"
@@ -585,98 +471,112 @@ export function PostItem({
             )}
           </div>
 
-          <p
-            className="text-foreground whitespace-pre-wrap mb-3 cursor-pointer"
-            onClick={handlePostBodyClick}
-          >
+          {/* Post Body */}
+          <div className="mb-3 text-sm text-foreground leading-relaxed whitespace-pre-wrap">
             {post.body}
-          </p>
+          </div>
 
+          {/* Attachments */}
           {renderAttachments()}
 
+          {/* Tags */}
           {(post.school_tag || post.course_tag) && (
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-1 mb-3 flex-wrap">
               {post.school_tag && (
-                <Badge variant="secondary" className="text-xs">{post.school_tag}</Badge>
+                <Badge variant="secondary" className="text-xs px-2 py-0.5 font-medium">
+                  {post.school_tag}
+                </Badge>
               )}
               {post.course_tag && (
-                <Badge variant="outline" className="text-xs">{post.course_tag}</Badge>
+                <Badge variant="outline" className="text-xs px-2 py-0.5 font-medium">
+                  {post.course_tag}
+                </Badge>
               )}
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-3 max-w-md">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onLike(post.id);
-              }}
-              className={`flex items-center gap-2 hover:bg-red-500/10 rounded-full p-2 h-auto transition-colors ${
-                post.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
-              }`}
-            >
-              <Heart className={`h-5 w-5 ${post.is_liked ? 'fill-current text-red-500' : ''}`} />
-              <span className="text-sm">{post.likes_count}</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                onComment(post.id);
-              }}
-            >
-              <MessageCircle className="h-5 w-5" />
-              <span className="text-sm">{post.comments_count}</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onBookmark(post.id);
-              }}
-              className={`flex items-center gap-2 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors ${
-                post.is_bookmarked ? 'text-blue-500' : 'text-muted-foreground hover:text-blue-500'
-              }`}
-            >
-              <Bookmark className={`h-5 w-5 ${post.is_bookmarked ? 'fill-current text-blue-500' : ''}`} />
-            </Button>
-
-            {parseAttachments().length > 0 && (
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDownloadAll();
+                  onLike(post.id);
                 }}
-                className="flex items-center gap-2 text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10 rounded-full p-2 h-auto transition-colors"
+                className={`h-auto p-2 rounded-full transition-colors ${
+                  post.is_liked 
+                    ? "text-red-500 hover:text-red-600 hover:bg-red-500/10" 
+                    : "text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                }`}
               >
-                <Download className="h-5 w-5" />
+                <Heart className={`h-5 w-5 mr-1 ${post.is_liked ? "fill-current" : ""}`} />
+                <span className="text-sm">{post.likes_count}</span>
               </Button>
-            )}
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-2 text-muted-foreground hover:text-green-500 hover:bg-green-500/10 rounded-full p-2 h-auto transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                onShare(post);
-              }}
-            >
-              <Share className="h-5 w-5" />
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onComment(post.id);
+                }}
+                className="h-auto p-2 rounded-full text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
+              >
+                <MessageCircle className="h-5 w-5 mr-1" />
+                <span className="text-sm">{post.comments_count}</span>
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBookmark(post.id);
+                }}
+                className={`h-auto p-2 rounded-full transition-colors ${
+                  post.is_bookmarked 
+                    ? "text-blue-500 hover:text-blue-600 hover:bg-blue-500/10" 
+                    : "text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
+                }`}
+              >
+                <Bookmark className={`h-5 w-5 ${post.is_bookmarked ? "fill-current" : ""}`} />
+              </Button>
+
+              {parseAttachments().length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownloadAll();
+                  }}
+                  className="flex items-center gap-2 text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10 rounded-full p-2 h-auto transition-colors"
+                >
+                  <Download className="h-5 w-5" />
+                </Button>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShare(post);
+                }}
+                className="h-auto p-2 rounded-full text-muted-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors"
+              >
+                <Share className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Report Dialog */}
       <ReportDialog
         open={reportDialogOpen}
         onOpenChange={setReportDialogOpen}
