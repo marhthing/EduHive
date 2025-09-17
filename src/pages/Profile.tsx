@@ -345,60 +345,49 @@ export default function Profile() {
     }
   };
 
-  const handleFetchUsernameFromStorage = async () => {
+  const handleFetchUsernameFromDB = async () => {
     setFetchingUsername(true);
     setFetchedUsername("");
     
     try {
-      // Show processing for a bit longer
+      // Show processing for a bit
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Look for username in localStorage using the correct key format
-      let foundUsername = "";
-      
-      if (currentUser?.id) {
-        // Check the specific key format used in the app: username_${user.id}
-        foundUsername = localStorage.getItem(`username_${currentUser.id}`) || "";
+      if (!currentUser?.id) {
+        showToast("You need to be logged in", "error");
+        return;
       }
       
-      // If not found with user ID, check other possible keys
-      if (!foundUsername) {
-        const possibleKeys = ['username', 'user_username', 'current_username'];
-        
-        // Also check for keys that might contain 'username'
-        Object.keys(localStorage).forEach(key => {
-          if (key.includes('username') || key.startsWith('username_')) {
-            const value = localStorage.getItem(key);
-            if (value && !foundUsername) {
-              foundUsername = value;
-            }
-          }
-        });
-        
-        // Check the specific possible keys
-        for (const key of possibleKeys) {
-          const value = localStorage.getItem(key);
-          if (value && !foundUsername) {
-            foundUsername = value;
-            break;
-          }
-        }
+      // Fetch username from database using the current user's ID
+      const { data: profileData, error } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("user_id", currentUser.id)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching profile:", error);
+        showToast("Error fetching your profile from database", "error");
+        return;
       }
       
-      if (foundUsername) {
-        setFetchedUsername(foundUsername);
-        showToast(`Found username: @${foundUsername}`, "success");
+      if (profileData?.username) {
+        setFetchedUsername(profileData.username);
+        showToast(`Found your username: @${profileData.username}`, "success");
+        
+        // Store in localStorage for future use
+        localStorage.setItem(`username_${currentUser.id}`, profileData.username);
         
         // Redirect to the proper profile URL
         setTimeout(() => {
-          navigate(`/profile/${foundUsername}`, { replace: true });
+          navigate(`/profile/${profileData.username}`, { replace: true });
         }, 1000);
       } else {
-        showToast("No username found in localStorage", "info");
+        showToast("No username found in your profile", "info");
       }
     } catch (error) {
-      console.error("Error fetching username from localStorage:", error);
-      showToast("Error fetching username from localStorage", "error");
+      console.error("Error fetching username from database:", error);
+      showToast("Error fetching username from database", "error");
     } finally {
       setFetchingUsername(false);
     }
@@ -530,12 +519,12 @@ export default function Profile() {
                         </Link>
                       </Button>
                       <Button
-                        onClick={handleFetchUsernameFromStorage}
+                        onClick={handleFetchUsernameFromDB}
                         disabled={fetchingUsername}
                         variant="secondary"
                         size="sm"
                       >
-                        {fetchingUsername ? "Fetching..." : "Fetch Username"}
+                        {fetchingUsername ? "Fetching..." : "Fetch My Username"}
                       </Button>
                     </>
                   ) : currentUser ? (
