@@ -425,13 +425,78 @@ export default function Home() {
                           <img 
                             src={post.attachment_url} 
                             alt="Post attachment" 
-                            className="w-full max-h-96 object-cover"
+                            className="w-full max-h-96 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(post.attachment_url!, '_blank');
+                            }}
+                            loading="lazy"
                           />
+                        ) : post.attachment_type === 'application/pdf' || post.attachment_type?.includes('pdf') ? (
+                          <div className="p-4 bg-muted">
+                            <div className="flex gap-2 items-center">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(post.attachment_url!, '_blank');
+                                }}
+                                className="flex-1 justify-start"
+                              >
+                                📄 View PDF Document
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const link = document.createElement('a');
+                                  link.href = post.attachment_url!;
+                                  link.download = 'document.pdf';
+                                  link.target = '_blank';
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
+                                className="px-3"
+                              >
+                                ⬇️
+                              </Button>
+                            </div>
+                          </div>
                         ) : (
                           <div className="p-4 bg-muted">
-                            <p className="text-sm text-muted-foreground">
-                              📎 {post.attachment_type || 'File attachment'}
-                            </p>
+                            <div className="flex gap-2 items-center">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(post.attachment_url!, '_blank');
+                                }}
+                                className="flex-1 justify-start"
+                              >
+                                📎 View File ({post.attachment_type || 'Unknown type'})
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const link = document.createElement('a');
+                                  link.href = post.attachment_url!;
+                                  link.download = 'attachment';
+                                  link.target = '_blank';
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
+                                className="px-3"
+                              >
+                                ⬇️
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>
