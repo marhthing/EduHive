@@ -27,6 +27,28 @@ interface Profile {
   last_username_change: string | null;
 }
 
+// Mapping between display labels and database numeric codes
+const ACADEMIC_YEAR_MAPPING = {
+  1: "JSS1",
+  2: "JSS2", 
+  3: "JSS3",
+  4: "SSS1",
+  5: "SSS2",
+  6: "SSS3",
+  100: "100L",
+  200: "200L",
+  300: "300L",
+  400: "400L",
+  500: "500L",
+  600: "600L",
+  700: "700L"
+} as const;
+
+// Reverse mapping for saving to database
+const ACADEMIC_YEAR_REVERSE_MAPPING = Object.fromEntries(
+  Object.entries(ACADEMIC_YEAR_MAPPING).map(([key, value]) => [value, parseInt(key)])
+) as Record<string, number>;
+
 export default function Settings() {
   const navigate = useNavigate();
   const { showToast } = useTwitterToast();
@@ -87,7 +109,7 @@ export default function Settings() {
         bio: profileData.bio || "",
         school: profileData.school || "",
         department: profileData.department || "",
-        year: profileData.year?.toString() || "",
+        year: profileData.year ? ACADEMIC_YEAR_MAPPING[profileData.year as keyof typeof ACADEMIC_YEAR_MAPPING] || "" : "",
       });
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -170,7 +192,7 @@ export default function Settings() {
         bio: formData.bio.trim() || null,
         school: formData.school.trim() || null,
         department: formData.department.trim() || null,
-        year: formData.year ? parseInt(formData.year) : null,
+        year: formData.year ? ACADEMIC_YEAR_REVERSE_MAPPING[formData.year] || null : null,
       };
 
       // Only update username if it's changed and user can change it
@@ -220,7 +242,7 @@ export default function Settings() {
     if (!profile) return;
 
     try {
-      const { data, error } = await supabase.rpc('deactivate_account', {
+      const { data, error } = await supabase.rpc('reactivate_account', {
         target_user_id: profile.user_id
       });
 
@@ -373,12 +395,9 @@ export default function Settings() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Not specified</SelectItem>
-                  <SelectItem value="1">Year 1</SelectItem>
-                  <SelectItem value="2">Year 2</SelectItem>
-                  <SelectItem value="3">Year 3</SelectItem>
-                  <SelectItem value="4">Year 4</SelectItem>
-                  <SelectItem value="5">Year 5</SelectItem>
-                  <SelectItem value="6">Year 6</SelectItem>
+                  {Object.values(ACADEMIC_YEAR_MAPPING).map((label) => (
+                    <SelectItem key={label} value={label}>{label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
