@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +7,6 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  isDeactivated: boolean;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -25,23 +25,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDeactivated, setIsDeactivated] = useState(false);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-
-  
 
   const refreshUser = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-
-      if (!user) {
-        setIsDeactivated(false);
-      }
     } catch (error) {
       console.error('Error refreshing user:', error);
       setUser(null);
-      setIsDeactivated(false);
     }
   };
 
@@ -58,24 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Clear any potentially stuck state first
-    const clearStuckState = async () => {
-      try {
-        // Check if there's a session but it might be invalid
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.log('Session error detected, signing out:', error);
-          await supabase.auth.signOut();
-        }
-      } catch (error) {
-        console.log('Error checking session, signing out:', error);
-        await supabase.auth.signOut();
-      }
-    };
-
     // Get initial session
     const getInitialSession = async () => {
-      await clearStuckState();
       try {
         console.log('Getting initial session...');
         const { data: { session } } = await supabase.auth.getSession();
@@ -90,22 +65,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(null);
           setUser(null);
         }
-        setIsDeactivated(false); // Deactivation is only checked during actual login
       } catch (error) {
         console.error('Error getting initial session:', error);
         setSession(null);
         setUser(null);
-        setIsDeactivated(false);
       } finally {
         console.log('Setting loading to false');
         setLoading(false);
-        setInitialLoadComplete(true);
       }
     };
 
     getInitialSession();
 
-    // Listen for auth changes - don't check deactivation here to avoid infinite loops
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change:', event, session);
@@ -114,8 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (event === 'SIGNED_OUT') {
           console.log('User signed out');
-          setIsDeactivated(false);
-
           // Clear username from localStorage
           Object.keys(localStorage).forEach(key => {
             if (key.startsWith('username_')) {
@@ -135,7 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     loading,
-    isDeactivated,
     signOut,
     refreshUser,
   };
