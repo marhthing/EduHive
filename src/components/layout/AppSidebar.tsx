@@ -173,6 +173,9 @@ export function AppSidebar() {
       // Store in localStorage to persist across refreshes
       localStorage.setItem(`lastVisited_${user?.id}`, Date.now().toString());
     }
+    
+    // Navigate to the URL
+    navigate(url);
   };
 
   const getNavigationItems = () => [
@@ -200,13 +203,17 @@ export function AppSidebar() {
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className={getNavCls} onClick={item.onClick}>
+                    <Button
+                      variant={isActive(item.url) ? "default" : "ghost"}
+                      className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground !text-foreground dark:!text-sidebar-foreground"
+                      onClick={item.onClick}
+                    >
                       <div className="relative">
                         <item.icon className="h-5 w-5" />
                         {item.badge && item.badge > 0 && renderBadge(item.badge)}
                       </div>
                       {!collapsed && <span className="ml-3">{item.title}</span>}
-                    </NavLink>
+                    </Button>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

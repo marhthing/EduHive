@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 const getNavigationItems = (user: any, notificationCount: number, newPostsCount: number, handleNavClick: (url: string) => void) => {
   const getProfileUrl = () => {
     if (!user) return "/profile";
-    
+
     // Get username from localStorage when needed
     const storedUsername = localStorage.getItem(`username_${user.id}`);
     return storedUsername ? `/profile/${storedUsername}` : "/profile";
@@ -32,7 +32,7 @@ export function MobileNav() {
 
   const fetchNotificationCount = async () => {
     if (!user) return;
-    
+
     try {
       const { count, error } = await supabase
         .from('notifications')
@@ -62,11 +62,11 @@ export function MobileNav() {
       }
 
       const followedUserIds = followsData.map(f => f.following_id);
-      
+
       // Get last visit time from localStorage, default to 24 hours ago if not found
       const lastVisitedKey = `lastVisited_${user.id}`;
       const lastVisited = localStorage.getItem(lastVisitedKey);
-      const cutoffTime = lastVisited 
+      const cutoffTime = lastVisited
         ? new Date(parseInt(lastVisited))
         : new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
 
@@ -91,7 +91,7 @@ export function MobileNav() {
     if (user) {
       const notificationSubscription = supabase
         .channel('mobile-notifications')
-        .on('postgres_changes', 
+        .on('postgres_changes',
           { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
           () => {
             fetchNotificationCount();
@@ -101,7 +101,7 @@ export function MobileNav() {
 
       const postsSubscription = supabase
         .channel('mobile-posts')
-        .on('postgres_changes', 
+        .on('postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'posts' },
           () => {
             fetchNewPostsCount();
@@ -142,7 +142,7 @@ export function MobileNav() {
 
   const renderBadge = (count: number | undefined) => {
     if (!count || count === 0) return null;
-    
+
     return (
       <span className="absolute -top-1 -right-1 bg-red-500 rounded-full h-2 w-2">
       </span>
@@ -153,19 +153,19 @@ export function MobileNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t border-border md:hidden">
       <div className="flex items-center justify-around py-1.5 px-1">
         {navigationItems.map((item) => (
-          <NavLink key={item.title} to={item.url} onClick={item.onClick} className="flex-1">
-            <Button
-              variant={isActive(item.url) ? "default" : "ghost"}
-              size="sm"
-              className="flex flex-col items-center gap-0.5 h-auto py-1.5 px-1 relative w-full min-w-0"
-            >
-              <div className="relative">
-                <item.icon className="h-4 w-4" />
-                {item.badge && item.badge > 0 && renderBadge(item.badge)}
-              </div>
-              <span className="text-[10px] leading-tight truncate">{item.title}</span>
-            </Button>
-          </NavLink>
+          <Button
+            key={item.title}
+            variant={isActive(item.url) ? "default" : "ghost"}
+            size="sm"
+            className="flex flex-col items-center gap-0.5 h-auto py-1.5 px-1 relative w-full min-w-0 flex-1"
+            onClick={item.onClick}
+          >
+            <div className="relative">
+              <item.icon className="h-4 w-4" />
+              {item.badge && item.badge > 0 && renderBadge(item.badge)}
+            </div>
+            <span className="text-[10px] leading-tight truncate">{item.title}</span>
+          </Button>
         ))}
       </div>
     </nav>
