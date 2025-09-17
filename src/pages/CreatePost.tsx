@@ -18,62 +18,90 @@ export default function CreatePost() {
     school_tag: "",
     course_tag: "",
   });
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length === 0) return;
 
-    // Check file size (max 10MB)
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      showToast("Please select a file smaller than 10MB", "error");
+    // Check if adding these files would exceed the limit (max 5 files)
+    if (files.length + selectedFiles.length > 5) {
+      showToast("You can upload a maximum of 5 files", "error");
       return;
     }
 
-    // Check file type
+    const validFiles: File[] = [];
+    const newPreviews: string[] = [];
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
-    if (!allowedTypes.includes(selectedFile.type)) {
-      showToast("Please select an image (JPEG, PNG, GIF) or PDF file", "error");
-      return;
+
+    for (const file of selectedFiles) {
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        showToast(`File "${file.name}" is too large. Please select files smaller than 10MB`, "error");
+        continue;
+      }
+
+      // Check file type
+      if (!allowedTypes.includes(file.type)) {
+        showToast(`File "${file.name}" is not supported. Please select images (JPEG, PNG, GIF) or PDF files`, "error");
+        continue;
+      }
+
+      validFiles.push(file);
+
+      // Create preview for images
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setPreviews(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        newPreviews.push('');
+      }
     }
 
-    setFile(selectedFile);
-
-    // Create preview for images
-    if (selectedFile.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => setPreview(reader.result as string);
-      reader.readAsDataURL(selectedFile);
-    } else {
-      setPreview(null);
+    if (validFiles.length > 0) {
+      setFiles(prev => [...prev, ...validFiles]);
+      // Add empty strings for PDFs to maintain index alignment
+      setPreviews(prev => [...prev, ...newPreviews]);
     }
   };
 
-  const removeFile = () => {
-    setFile(null);
-    setPreview(null);
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const uploadFile = async (file: File) => {
+  const removeAllFiles = () => {
+    setFiles([]);
+    setPreviews([]);
+  };
+
+  const uploadFiles = async (files: File[]) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated");
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    const filePath = `${user.id}/${fileName}`;
+    const uploadPromises = files.map(async (file, index) => {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${index}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('attachments')
-      .upload(filePath, file);
+      const { error: uploadError } = await supabase.storage
+        .from('attachments')
+        .upload(filePath, file);
 
-    if (uploadError) throw uploadError;
+      if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('attachments')
-      .getPublicUrl(filePath);
+      const { data: { publicUrl } } = supabase.storage
+        .from('attachments')
+        .getPublicUrl(filePath);
 
-    return { url: publicUrl, type: file.type };
+      return { url: publicUrl, type: file.type };
+    });
+
+    return await Promise.all(uploadPromises);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,11 +122,20 @@ export default function CreatePost() {
 
       let attachment_url = null;
       let attachment_type = null;
+      let attachment_urls = null;
 
-      if (file) {
-        const result = await uploadFile(file);
-        attachment_url = result.url;
-        attachment_type = result.type;
+      if (files.length > 0) {
+        if (files.length === 1) {
+          // For single file, maintain backward compatibility
+          const result = await uploadFiles([files[0]]);
+          attachment_url = result[0].url;
+          attachment_type = result[0].type;
+        } else {
+          // For multiple files, store as JSON array
+          const results = await uploadFiles(files);
+          attachment_urls = JSON.stringify(results);
+          attachment_type = 'multiple';
+        }
       }
 
       const { error: insertError } = await supabase
@@ -108,7 +145,7 @@ export default function CreatePost() {
           body: formData.body.trim(),
           school_tag: formData.school_tag.trim() || null,
           course_tag: formData.course_tag.trim() || null,
-          attachment_url,
+          attachment_url: attachment_urls || attachment_url,
           attachment_type,
         });
 
@@ -172,26 +209,27 @@ export default function CreatePost() {
             </div>
 
             <div className="space-y-2">
-              <Label>Attachment (Optional)</Label>
+              <Label>Attachments (Optional)</Label>
               <div className="border-2 border-dashed border-border rounded-lg p-6">
-                {!file ? (
+                {files.length === 0 ? (
                   <div className="text-center">
                     <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground mb-2">
-                      Upload an image or PDF file
+                      Upload images or PDF files
                     </p>
                     <p className="text-xs text-muted-foreground mb-4">
-                      Max file size: 10MB
+                      Max 5 files, 10MB each
                     </p>
                     <Button type="button" variant="outline" asChild>
                       <label htmlFor="file-upload" className="cursor-pointer">
-                        Choose File
+                        Choose Files
                       </label>
                     </Button>
                     <input
                       id="file-upload"
                       type="file"
                       accept="image/*,.pdf"
+                      multiple
                       onChange={handleFileChange}
                       className="hidden"
                       disabled={loading}
@@ -199,33 +237,82 @@ export default function CreatePost() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {preview ? (
-                      <img
-                        src={preview}
-                        alt="Preview"
-                        className="w-full h-48 object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                        <FileText className="w-8 h-8 text-muted-foreground" />
-                        <div className="flex-1">
-                          <p className="font-medium">{file.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {(file.size / 1024 / 1024).toFixed(1)} MB
-                          </p>
-                        </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-medium">{files.length} file{files.length > 1 ? 's' : ''} selected</p>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
+                          <label htmlFor="file-upload-more" className="cursor-pointer">
+                            Add More
+                          </label>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={removeAllFiles}
+                        >
+                          Remove All
+                        </Button>
                       </div>
-                    )}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={removeFile}
-                      className="w-full"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Remove File
-                    </Button>
+                      <input
+                        id="file-upload-more"
+                        type="file"
+                        accept="image/*,.pdf"
+                        multiple
+                        onChange={handleFileChange}
+                        className="hidden"
+                        disabled={loading}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {files.map((file, index) => (
+                        <div key={index} className="relative">
+                          {previews[index] ? (
+                            <div className="relative">
+                              <img
+                                src={previews[index]}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-lg"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => removeFile(index)}
+                                className="absolute top-1 right-1 p-1 h-auto rounded-full"
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                              <FileText className="w-6 h-6 text-muted-foreground flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{file.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {(file.size / 1024 / 1024).toFixed(1)} MB
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeFile(index)}
+                                className="p-1 h-auto text-destructive hover:text-destructive"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

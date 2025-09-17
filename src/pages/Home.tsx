@@ -38,8 +38,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [composeText, setComposeText] = useState("");
   const [isPosting, setIsPosting] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [filePreviews, setFilePreviews] = useState<string[]>([]);
   const { showToast } = useTwitterToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -288,58 +288,81 @@ export default function Home() {
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
 
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      showToast("Please select a file smaller than 10MB", "error");
+    // Check if adding these files would exceed the limit (max 3 files for quick post)
+    if (selectedFiles.length + files.length > 3) {
+      showToast("You can upload a maximum of 3 files in quick post", "error");
       return;
     }
 
-    // Check file type
+    const validFiles: File[] = [];
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
-      showToast("Please select an image file (JPEG, PNG, GIF)", "error");
-      return;
+
+    for (const file of files) {
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        showToast(`File "${file.name}" is too large. Please select files smaller than 10MB`, "error");
+        continue;
+      }
+
+      // Check file type
+      if (!allowedTypes.includes(file.type)) {
+        showToast(`File "${file.name}" is not supported. Please select image files (JPEG, PNG, GIF)`, "error");
+        continue;
+      }
+
+      validFiles.push(file);
+
+      // Create preview for images
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setFilePreviews(prev => [...prev, e.target?.result as string]);
+        };
+        reader.readAsDataURL(file);
+      }
     }
 
-    setSelectedFile(file);
+    if (validFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...validFiles]);
+    }
+  };
 
-    // Create preview for images
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setFilePreview(e.target?.result as string);
+  const uploadFiles = async (files: File[]) => {
+    const uploadPromises = files.map(async (file, index) => {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${index}_${Math.random()}.${fileExt}`;
+      const filePath = `attachments/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('attachments')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('attachments')
+        .getPublicUrl(filePath);
+
+      return {
+        url: data.publicUrl,
+        type: file.type.startsWith('image/') ? 'image' : 'file'
       };
-      reader.readAsDataURL(file);
-    }
+    });
+
+    return await Promise.all(uploadPromises);
   };
 
-  const uploadFile = async (file: File) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `attachments/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('attachments')
-      .upload(filePath, file);
-
-    if (uploadError) throw uploadError;
-
-    const { data } = supabase.storage
-      .from('attachments')
-      .getPublicUrl(filePath);
-
-    return {
-      url: data.publicUrl,
-      type: file.type.startsWith('image/') ? 'image' : 'file'
-    };
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setFilePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const removeFile = () => {
-    setSelectedFile(null);
-    setFilePreview(null);
+  const removeAllFiles = () => {
+    setSelectedFiles([]);
+    setFilePreviews([]);
   };
 
   const handleQuickPost = async () => {
@@ -357,12 +380,21 @@ export default function Home() {
     try {
       let attachment_url = null;
       let attachment_type = null;
+      let attachment_urls = null;
 
-      // Upload file if selected
-      if (selectedFile) {
-        const result = await uploadFile(selectedFile);
-        attachment_url = result.url;
-        attachment_type = result.type;
+      // Upload files if selected
+      if (selectedFiles.length > 0) {
+        if (selectedFiles.length === 1) {
+          // For single file, maintain backward compatibility
+          const results = await uploadFiles([selectedFiles[0]]);
+          attachment_url = results[0].url;
+          attachment_type = results[0].type;
+        } else {
+          // For multiple files, store as JSON array
+          const results = await uploadFiles(selectedFiles);
+          attachment_urls = JSON.stringify(results);
+          attachment_type = 'multiple';
+        }
       }
 
       const { error } = await supabase
@@ -370,15 +402,15 @@ export default function Home() {
         .insert({
           body: composeText.trim(),
           user_id: user.id,
-          attachment_url,
+          attachment_url: attachment_urls || attachment_url,
           attachment_type,
         });
 
       if (error) throw error;
 
       setComposeText("");
-      setSelectedFile(null);
-      setFilePreview(null);
+      setSelectedFiles([]);
+      setFilePreviews([]);
       showToast("Post created successfully!", "success");
 
       // Refresh posts
@@ -446,22 +478,41 @@ export default function Home() {
                 disabled={isPosting}
               />
 
-              {/* File preview */}
-              {filePreview && (
-                <div className="mt-3 relative inline-block">
-                  <img 
-                    src={filePreview} 
-                    alt="Preview" 
-                    className="max-w-full max-h-40 rounded-lg"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={removeFile}
-                    className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 h-auto"
-                  >
-                    ×
-                  </Button>
+              {/* File previews */}
+              {selectedFiles.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">
+                      {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} selected
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={removeAllFiles}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Remove all
+                    </Button>
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto">
+                    {filePreviews.map((preview, index) => (
+                      <div key={index} className="relative flex-shrink-0">
+                        <img 
+                          src={preview} 
+                          alt={`Preview ${index + 1}`} 
+                          className="w-20 h-20 object-cover rounded-lg"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                          className="absolute -top-1 -right-1 bg-black/50 text-white rounded-full p-1 h-auto w-auto"
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -474,7 +525,7 @@ export default function Home() {
 
                 <Button 
                   onClick={handleQuickPost}
-                  disabled={(!composeText.trim() && !selectedFile) || isPosting}
+                  disabled={(!composeText.trim() && selectedFiles.length === 0) || isPosting}
                   className="rounded-full px-6"
                 >
                   {isPosting ? "Posting..." : "Post"}
