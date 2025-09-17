@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 
-const getNavigationItems = (username: string) => [
+const getNavigationItems = (username: string, unreadNotifications: number, newPostsCount: number) => [
   { title: "Home", url: "/home", icon: Home, badge: newPostsCount },
   { title: "Search", url: "/search", icon: Search },
   { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications },
@@ -164,7 +164,7 @@ export function AppSidebar() {
     }
   };
 
-  const navigationItems = getNavigationItems(username);
+  const navigationItems = getNavigationItems(username, unreadNotifications, newPostsCount);
 
   return (
     <Sidebar className={collapsed ? "w-16" : "w-64"}>
