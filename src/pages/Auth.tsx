@@ -65,17 +65,20 @@ export default function Auth() {
           
           if (deletionDate > now) {
             // Account can still be reactivated - redirect to reactivation page
+            setLoading(false);
             navigate(`/reactivate?email=${encodeURIComponent(loginData.email)}`);
             return;
           } else {
             // Account is past deletion date
             await supabase.auth.signOut();
+            setLoading(false);
             showToast("This account has expired and cannot be recovered.", "error");
             return;
           }
         }
       }
 
+      // Only navigate to home if account is active
       navigate("/");
     } catch (error: any) {
       showToast(`Login failed: ${error.message}`, "error");
