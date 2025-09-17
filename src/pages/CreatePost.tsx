@@ -33,7 +33,60 @@ export default function CreatePost() {
 
     const validFiles: File[] = [];
     const newPreviews: string[] = [];
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+    
+    // MIME types validation
+    const allowedTypes = [
+      // Images
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+      // PDF
+      'application/pdf',
+      // Text files
+      'text/plain', 'text/rtf', 'application/rtf',
+      // Microsoft Office
+      'application/msword', // .doc
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+      'application/vnd.ms-excel', // .xls
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-powerpoint', // .ppt
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+      // OpenDocument
+      'application/vnd.oasis.opendocument.text', // .odt
+      'application/vnd.oasis.opendocument.spreadsheet', // .ods
+      'application/vnd.oasis.opendocument.presentation', // .odp
+      // Archives
+      'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
+      // Other common formats
+      'application/json', 'text/csv', 'application/xml', 'text/xml'
+    ];
+    
+    // Extension-based fallback validation for when MIME type is unreliable
+    const allowedExtensions = [
+      // Images
+      '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg',
+      // PDF
+      '.pdf',
+      // Text files
+      '.txt', '.rtf',
+      // Microsoft Office
+      '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+      // OpenDocument
+      '.odt', '.ods', '.odp',
+      // Archives
+      '.zip', '.rar', '.7z',
+      // Other common formats
+      '.json', '.csv', '.xml'
+    ];
+    
+    const isFileTypeAllowed = (file: File): boolean => {
+      // First check MIME type
+      if (file.type && allowedTypes.includes(file.type)) {
+        return true;
+      }
+      
+      // Fallback to extension check (case-insensitive)
+      const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+      return allowedExtensions.includes(extension);
+    };
 
     for (const file of selectedFiles) {
       // Check file size (max 10MB)
@@ -42,9 +95,9 @@ export default function CreatePost() {
         continue;
       }
 
-      // Check file type
-      if (!allowedTypes.includes(file.type)) {
-        showToast(`File "${file.name}" is not supported. Please select images (JPEG, PNG, GIF) or PDF files`, "error");
+      // Check file type using both MIME and extension validation
+      if (!isFileTypeAllowed(file)) {
+        showToast(`File "${file.name}" is not supported. Supported formats: images (JPG, PNG, GIF, WebP, SVG), PDF, documents (DOC, DOCX, XLS, XLSX, PPT, PPTX), OpenDocument (ODT, ODS, ODP), text files (TXT, RTF), data files (JSON, CSV, XML), and archives (ZIP, RAR, 7z)`, "error");
         continue;
       }
 
@@ -215,7 +268,7 @@ export default function CreatePost() {
                   <div className="text-center">
                     <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground mb-2">
-                      Upload images or PDF files
+                      Upload documents, images, or files
                     </p>
                     <p className="text-xs text-muted-foreground mb-4">
                       Max 5 files, 10MB each
@@ -228,7 +281,7 @@ export default function CreatePost() {
                     <input
                       id="file-upload"
                       type="file"
-                      accept="image/*,.pdf"
+                      accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.zip,.rar,.7z,.json,.csv,.xml,.rtf"
                       multiple
                       onChange={handleFileChange}
                       className="hidden"
@@ -262,7 +315,7 @@ export default function CreatePost() {
                       <input
                         id="file-upload-more"
                         type="file"
-                        accept="image/*,.pdf"
+                        accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.zip,.rar,.7z,.json,.csv,.xml,.rtf"
                         multiple
                         onChange={handleFileChange}
                         className="hidden"
