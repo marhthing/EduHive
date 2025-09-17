@@ -77,7 +77,7 @@ export default function Home() {
       // Get profiles for these users
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, username, profile_pic, school, department')
+        .select('user_id, username, name, profile_pic, school, department')
         .in('user_id', userIds);
 
       console.log('Profiles fetch result:', { profilesData, profilesError });
