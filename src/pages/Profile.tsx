@@ -294,6 +294,29 @@ export default function Profile() {
     if (profile) {
       fetchUserPosts(profile.user_id);
       setLoading(false);
+
+      // Subscribe to follow changes for this profile
+      const followsSubscription = supabase
+        .channel(`profile-follows-${profile.user_id}`)
+        .on('postgres_changes', 
+          { event: 'INSERT', schema: 'public', table: 'follows', filter: `following_id=eq.${profile.user_id}` },
+          () => {
+            // Someone followed this user
+            setFollowersCount(prev => prev + 1);
+          }
+        )
+        .on('postgres_changes', 
+          { event: 'DELETE', schema: 'public', table: 'follows', filter: `following_id=eq.${profile.user_id}` },
+          () => {
+            // Someone unfollowed this user
+            setFollowersCount(prev => Math.max(0, prev - 1));
+          }
+        )
+        .subscribe();
+
+      return () => {
+        followsSubscription.unsubscribe();
+      };
     }
   }, [profile]);
 
