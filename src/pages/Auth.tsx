@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const [showReactivation, setShowReactivation] = useState(false);
-  const [deactivationInfo, setDeactivationInfo] = useState<{
-    deactivated_at: string;
-    scheduled_deletion_at: string;
-  } | null>(null);
+  
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [signupData, setSignupData] = useState({
     email: "",
@@ -28,7 +24,17 @@ export default function Auth() {
     year: new Date().getFullYear(),
   });
   const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useTwitterToast();
+
+  useEffect(() => {
+    // Show message from navigation state (e.g., after reactivation)
+    if (location.state?.message) {
+      showToast(location.state.message, location.state.type || "info");
+      // Clear the state
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, showToast, navigate, location.pathname]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,12 +59,20 @@ export default function Auth() {
         if (profileError) {
           console.error('Error checking profile status:', profileError);
         } else if (profileData?.is_deactivated) {
-          setDeactivationInfo({
-            deactivated_at: profileData.deactivated_at,
-            scheduled_deletion_at: profileData.scheduled_deletion_at
-          });
-          setShowReactivation(true);
-          return;
+          // Check if account is still within reactivation period
+          const deletionDate = new Date(profileData.scheduled_deletion_at);
+          const now = new Date();
+          
+          if (deletionDate > now) {
+            // Account can still be reactivated - redirect to reactivation page
+            navigate(`/reactivate?email=${encodeURIComponent(loginData.email)}`);
+            return;
+          } else {
+            // Account is past deletion date
+            await supabase.auth.signOut();
+            showToast("This account has expired and cannot be recovered.", "error");
+            return;
+          }
         }
       }
 
@@ -173,78 +187,9 @@ export default function Auth() {
     }
   };
 
-  const handleReactivateAccount = async () => {
-    try {
-      setLoading(true);
+  
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-
-      const { error } = await supabase.rpc('reactivate_account', {
-        target_user_id: user.id
-      });
-
-      if (error) throw error;
-
-      showToast("Account reactivated successfully! Welcome back.", "success");
-      setShowReactivation(false);
-      navigate("/");
-    } catch (error: any) {
-      console.error('Error reactivating account:', error);
-      showToast(error.message || "Failed to reactivate account", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (showReactivation && deactivationInfo) {
-    const deletionDate = new Date(deactivationInfo.scheduled_deletion_at);
-    const daysLeft = Math.ceil((deletionDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-2" />
-            <CardTitle>Account Deactivated</CardTitle>
-            <CardDescription>
-              Your account was deactivated on {new Date(deactivationInfo.deactivated_at).toLocaleDateString()}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                You have {daysLeft} days left to reactivate your account before it's permanently deleted.
-              </AlertDescription>
-            </Alert>
-
-            <div className="space-y-3">
-              <Button
-                onClick={handleReactivateAccount}
-                className="w-full"
-                disabled={loading}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                {loading ? "Reactivating..." : "Reactivate Account"}
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowReactivation(false);
-                  supabase.auth.signOut();
-                }}
-                className="w-full"
-              >
-                Sign Out
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">

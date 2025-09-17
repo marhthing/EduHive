@@ -18,6 +18,7 @@ import PostDetail from "./pages/PostDetail";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Notifications from "@/pages/Notifications";
+import AccountReactivation from "@/pages/AccountReactivation"; // Import the new page
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/reactivate" element={<AccountReactivation />} /> {/* New route */}
               <Route path="/home" element={<ProtectedRoute><Layout><Home /></Layout></ProtectedRoute>} />
               <Route path="/search" element={<ProtectedRoute><Layout><Search /></Layout></ProtectedRoute>} />
               <Route path="/bookmarks" element={<ProtectedRoute><Layout><Bookmarks /></Layout></ProtectedRoute>} />
