@@ -28,6 +28,7 @@ interface Notification {
 export default function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paginationLoading, setPaginationLoading] = useState(false);
   const [markingAllRead, setMarkingAllRead] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -40,7 +41,13 @@ export default function Notifications() {
   const fetchNotifications = async (page = 1) => {
     if (!user) return;
 
-    setLoading(true);
+    // Only show main loading on first load, use pagination loading for page changes
+    if (page === 1 && notifications.length === 0) {
+      setLoading(true);
+    } else {
+      setPaginationLoading(true);
+    }
+    
     try {
       console.log('Fetching notifications for user:', user.id);
       
@@ -119,6 +126,7 @@ export default function Notifications() {
       showToast("Failed to load notifications", "error");
     } finally {
       setLoading(false);
+      setPaginationLoading(false);
     }
   };
 
@@ -200,7 +208,7 @@ export default function Notifications() {
 
   const handleNextPage = () => {
     const maxPage = Math.ceil(totalCount / ITEMS_PER_PAGE);
-    if (currentPage < maxPage) {
+    if (currentPage < maxPage && !paginationLoading) {
       const nextPage = currentPage + 1;
       setCurrentPage(nextPage);
       fetchNotifications(nextPage);
@@ -208,7 +216,7 @@ export default function Notifications() {
   };
 
   const handlePrevPage = () => {
-    if (currentPage > 1) {
+    if (currentPage > 1 && !paginationLoading) {
       const prevPage = currentPage - 1;
       setCurrentPage(prevPage);
       fetchNotifications(prevPage);
@@ -364,11 +372,11 @@ export default function Notifications() {
                       variant="outline"
                       size="sm"
                       onClick={handlePrevPage}
-                      disabled={!hasPrevPage}
+                      disabled={!hasPrevPage || paginationLoading}
                       className="flex items-center gap-1"
                     >
                       <ChevronLeft className="h-4 w-4" />
-                      Previous
+                      {paginationLoading ? "Loading..." : "Previous"}
                     </Button>
                     <span className="text-sm text-muted-foreground px-2">
                       Page {currentPage} of {totalPages}
@@ -377,10 +385,10 @@ export default function Notifications() {
                       variant="outline"
                       size="sm"
                       onClick={handleNextPage}
-                      disabled={!hasNextPage}
+                      disabled={!hasNextPage || paginationLoading}
                       className="flex items-center gap-1"
                     >
-                      Next
+                      {paginationLoading ? "Loading..." : "Next"}
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
