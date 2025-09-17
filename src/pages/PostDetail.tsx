@@ -6,7 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Bookmark, Share, ArrowLeft, Send } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share, ArrowLeft, Send, MoreHorizontal, Trash2, Edit, Flag } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
@@ -406,11 +413,44 @@ export default function PostDetail() {
           </Avatar>
           
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 text-sm mb-2">
-              <span className="font-semibold text-foreground">{post.profile?.username || 'Anonymous'}</span>
-              {post.profile?.school && (
-                <span className="text-muted-foreground">@{post.profile.school.toLowerCase().replace(/\s+/g, '')}</span>
-              )}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-semibold text-foreground">{post.profile?.username || 'Anonymous'}</span>
+                {post.profile?.school && (
+                  <span className="text-muted-foreground">@{post.profile.school.toLowerCase().replace(/\s+/g, '')}</span>
+                )}
+              </div>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-muted rounded-full"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {user && user.id === post.user_id && (
+                    <>
+                      <DropdownMenuItem>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit post
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive focus:text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete post
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem>
+                    <Flag className="h-4 w-4 mr-2" />
+                    Report post
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             
             <p className="text-foreground whitespace-pre-wrap mb-3 text-lg">{post.body}</p>
