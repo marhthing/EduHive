@@ -16,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { supabase } from "@/lib/supabaseClient"; // Assuming supabase client is imported
 
 interface Profile {
   username: string;
@@ -71,6 +72,8 @@ export function PostItem({
   const [carouselStartIndex, setCarouselStartIndex] = useState(0);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const navigate = useNavigate();
+  // Assuming you have a way to get the current user, e.g., from context or a hook
+  const user = null; // Replace with actual user fetching logic if not available globally
 
   const handleProfileClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -146,7 +149,7 @@ export function PostItem({
         ) : (
           // Multiple attachments - grid layout
           <div className={`grid gap-2 ${
-            attachments.length === 2 ? 'grid-cols-2' : 
+            attachments.length === 2 ? 'grid-cols-2' :
             attachments.length === 3 ? 'grid-cols-2' :
             'grid-cols-2'
           }`}>
@@ -185,11 +188,11 @@ export function PostItem({
                         >
                           <X className="h-6 w-6" />
                         </Button>
-                        <Carousel 
+                        <Carousel
                           className="w-full"
-                          opts={{ 
+                          opts={{
                             startIndex: carouselStartIndex,
-                            loop: true 
+                            loop: true
                           }}
                         >
                           <CarouselContent>
@@ -283,7 +286,7 @@ export function PostItem({
               parent.innerHTML = `
                 <div class="w-full h-48 bg-muted flex flex-col items-center justify-center">
                   <svg class="w-8 h-8 text-muted-foreground mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.707.707V19a2 2 0 01-2 2z"></path>
                   </svg>
                   <p class="text-muted-foreground text-center text-sm">Failed to load image</p>
                 </div>
@@ -391,6 +394,48 @@ export function PostItem({
     }
   };
 
+  const handleBookmark = async () => {
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
+
+    try {
+      console.log('Toggling bookmark for post:', post.id, 'Current state:', post.is_bookmarked);
+
+      if (post.is_bookmarked) {
+        const { error } = await supabase
+          .from('bookmarks')
+          .delete()
+          .eq('post_id', post.id)
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error removing bookmark:', error);
+          throw error;
+        }
+
+        console.log('Bookmark removed successfully');
+      } else {
+        const { error } = await supabase
+          .from('bookmarks')
+          .insert({ post_id: post.id, user_id: user.id });
+
+        if (error) {
+          console.error('Error adding bookmark:', error);
+          throw error;
+        }
+
+        console.log('Bookmark added successfully');
+      }
+
+      onBookmark(post.id);
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+      // You might want to show a toast notification here
+    }
+  };
+
   return (
     <div
       className={`p-3 md:p-4 hover:bg-muted/20 transition-colors cursor-pointer border border-border rounded-lg ${className}`}
@@ -460,7 +505,7 @@ export function PostItem({
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={(e) => {
                       e.stopPropagation();
                       setReportDialogOpen(true);
@@ -564,7 +609,7 @@ export function PostItem({
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                onBookmark(post.id);
+                handleBookmark();
               }}
               className={`flex items-center gap-1 md:gap-2 rounded-full p-1.5 md:p-2 transition-colors ${
                 post.is_bookmarked

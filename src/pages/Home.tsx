@@ -367,15 +367,22 @@ export default function Home() {
 
     try {
       const post = posts.find(p => p.id === postId);
-      if (!post) return;
+      if (!post) {
+        console.error('Post not found:', postId);
+        showToast("Post not found", "error");
+        return;
+      }
+
+      console.log('Toggling bookmark for post:', postId, 'User ID:', user.id, 'Current state:', post.is_bookmarked);
 
       if (post.is_bookmarked) {
-        const { error } = await supabase
+        const { error, data } = await supabase
           .from('bookmarks')
           .delete()
           .eq('post_id', postId)
           .eq('user_id', user.id);
 
+        console.log('Delete bookmark result:', { error, data });
         if (error) throw error;
 
         setPosts(posts.map(p => 
@@ -383,11 +390,14 @@ export default function Home() {
             ? { ...p, is_bookmarked: false }
             : p
         ));
+        
+        console.log('Bookmark removed successfully');
       } else {
-        const { error } = await supabase
+        const { error, data } = await supabase
           .from('bookmarks')
           .insert({ post_id: postId, user_id: user.id });
 
+        console.log('Insert bookmark result:', { error, data });
         if (error) throw error;
 
         setPosts(posts.map(p => 
@@ -395,10 +405,12 @@ export default function Home() {
             ? { ...p, is_bookmarked: true }
             : p
         ));
+        
+        console.log('Bookmark added successfully');
       }
     } catch (error) {
       console.error('Error toggling bookmark:', error);
-      showToast("Failed to update bookmark. Please try again.", "error");
+      showToast(`Failed to update bookmark: ${error.message || 'Unknown error'}`, "error");
     }
   };
 
