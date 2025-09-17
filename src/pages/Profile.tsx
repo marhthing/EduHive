@@ -95,6 +95,12 @@ export default function Profile() {
           .single();
         profileData = result.data;
         error = result.error;
+        
+        // If we found the profile and we're on /profile without username, redirect to /profile/username
+        if (profileData && !username) {
+          navigate(`/profile/${profileData.username}`, { replace: true });
+          return;
+        }
       } else {
         throw new Error("No user found");
       }
