@@ -471,10 +471,8 @@ export default function PostDetail() {
                   )}
                 </div>
               </div>
-              </div>
-            </div>
-
-            <DropdownMenu>
+              
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
