@@ -32,16 +32,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Checking deactivation status for user:', userId);
       console.log('Starting Supabase query...');
       
-      const { data: profileData, error } = await supabase
+      // Add timeout to prevent hanging
+      const queryPromise = supabase
         .from('profiles')
         .select('is_deactivated, scheduled_deletion_at')
         .eq('user_id', userId)
         .maybeSingle();
 
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout after 5 seconds')), 5000)
+      );
+
+      const { data: profileData, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+
       console.log('Query completed. Error:', error, 'Data:', profileData);
 
       if (error) {
         console.error('Error checking deactivation status:', error);
+        // If it's a permission error, skip deactivation check
+        if (error.message?.includes('permission') || error.message?.includes('policy') || error.message?.includes('timeout')) {
+          console.log('Permission/timeout issue, treating as not deactivated');
+          return false;
+        }
         return false;
       }
 
@@ -72,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     } catch (error) {
       console.error('Error checking deactivation status:', error);
+      console.log('Exception in deactivation check, treating as not deactivated');
       return false;
     }
   };
