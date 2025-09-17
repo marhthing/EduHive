@@ -647,13 +647,102 @@ export default function PostDetail() {
                     // Single attachment - full width
                     <div className="rounded-2xl overflow-hidden border border-border">
                       {attachments[0].type?.startsWith('image/') ? (
-                        <img 
-                          src={attachments[0].url} 
-                          alt="Post attachment" 
-                          className="w-full max-h-96 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => window.open(attachments[0].url, '_blank')}
-                          loading="lazy"
-                        />
+                        <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
+                          <DialogTrigger asChild>
+                            <img 
+                              src={attachments[0].url} 
+                              alt="Post attachment" 
+                              className="w-full max-h-96 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                              loading="lazy"
+                            />
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none">
+                            <div className="relative">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white rounded-full"
+                                onClick={() => setCarouselOpen(false)}
+                              >
+                                <X className="h-6 w-6" />
+                              </Button>
+                              <Carousel className="w-full">
+                                <CarouselContent>
+                                  {attachments.map((attachment, idx) => (
+                                    <CarouselItem key={idx}>
+                                      <div className="flex items-center justify-center min-h-[60vh] max-h-[80vh] bg-black rounded-lg">
+                                        {attachment.type?.startsWith('image/') ? (
+                                          <img
+                                            src={attachment.url}
+                                            alt={`Attachment ${idx + 1}`}
+                                            className="max-w-full max-h-full object-contain"
+                                            loading="lazy"
+                                          />
+                                        ) : attachment.type === 'application/pdf' || attachment.type?.includes('pdf') ? (
+                                          <div className="flex flex-col items-center justify-center p-8 text-white">
+                                            <div className="text-6xl mb-4">📄</div>
+                                            <p className="text-xl mb-4">PDF Document</p>
+                                            <div className="flex gap-4">
+                                              <Button
+                                                variant="outline"
+                                                onClick={() => window.open(attachment.url, '_blank')}
+                                              >
+                                                View PDF
+                                              </Button>
+                                              <Button
+                                                variant="outline"
+                                                onClick={() => {
+                                                  const link = document.createElement('a');
+                                                  link.href = attachment.url;
+                                                  link.download = 'document.pdf';
+                                                  link.target = '_blank';
+                                                  document.body.appendChild(link);
+                                                  link.click();
+                                                  document.body.removeChild(link);
+                                                }}
+                                              >
+                                                Download
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="flex flex-col items-center justify-center p-8 text-white">
+                                            <div className="text-6xl mb-4">📎</div>
+                                            <p className="text-xl mb-4">File ({attachment.type || 'Unknown'})</p>
+                                            <div className="flex gap-4">
+                                              <Button
+                                                variant="outline"
+                                                onClick={() => window.open(attachment.url, '_blank')}
+                                              >
+                                                View File
+                                              </Button>
+                                              <Button
+                                                variant="outline"
+                                                onClick={() => {
+                                                  const link = document.createElement('a');
+                                                  link.href = attachment.url;
+                                                  link.download = 'attachment';
+                                                  link.target = '_blank';
+                                                  document.body.appendChild(link);
+                                                  link.click();
+                                                  document.body.removeChild(link);
+                                                }}
+                                              >
+                                                Download
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </CarouselItem>
+                                  ))}
+                                </CarouselContent>
+                                <CarouselPrevious className="left-4 bg-black/50 hover:bg-black/70 text-white border-none" />
+                                <CarouselNext className="right-4 bg-black/50 hover:bg-black/70 text-white border-none" />
+                              </Carousel>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       ) : attachments[0].type === 'application/pdf' || attachments[0].type?.includes('pdf') ? (
                         <div className="p-4 bg-muted">
                           <div className="flex gap-2 items-center">
@@ -834,13 +923,102 @@ export default function PostDetail() {
                               </DialogContent>
                             </Dialog>
                           ) : attachment.type?.startsWith('image/') ? (
-                            <img
-                              src={attachment.url}
-                              alt={`Attachment ${index + 1}`}
-                              className="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                              onClick={() => window.open(attachment.url, '_blank')}
-                              loading="lazy"
-                            />
+                            <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
+                              <DialogTrigger asChild>
+                                <img
+                                  src={attachment.url}
+                                  alt={`Attachment ${index + 1}`}
+                                  className="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                  loading="lazy"
+                                />
+                              </DialogTrigger>
+                              <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none">
+                                <div className="relative">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white rounded-full"
+                                    onClick={() => setCarouselOpen(false)}
+                                  >
+                                    <X className="h-6 w-6" />
+                                  </Button>
+                                  <Carousel className="w-full">
+                                    <CarouselContent>
+                                      {attachments.map((attachment, idx) => (
+                                        <CarouselItem key={idx}>
+                                          <div className="flex items-center justify-center min-h-[60vh] max-h-[80vh] bg-black rounded-lg">
+                                            {attachment.type?.startsWith('image/') ? (
+                                              <img
+                                                src={attachment.url}
+                                                alt={`Attachment ${idx + 1}`}
+                                                className="max-w-full max-h-full object-contain"
+                                                loading="lazy"
+                                              />
+                                            ) : attachment.type === 'application/pdf' || attachment.type?.includes('pdf') ? (
+                                              <div className="flex flex-col items-center justify-center p-8 text-white">
+                                                <div className="text-6xl mb-4">📄</div>
+                                                <p className="text-xl mb-4">PDF Document</p>
+                                                <div className="flex gap-4">
+                                                  <Button
+                                                    variant="outline"
+                                                    onClick={() => window.open(attachment.url, '_blank')}
+                                                  >
+                                                    View PDF
+                                                  </Button>
+                                                  <Button
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                      const link = document.createElement('a');
+                                                      link.href = attachment.url;
+                                                      link.download = 'document.pdf';
+                                                      link.target = '_blank';
+                                                      document.body.appendChild(link);
+                                                      link.click();
+                                                      document.body.removeChild(link);
+                                                    }}
+                                                  >
+                                                    Download
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <div className="flex flex-col items-center justify-center p-8 text-white">
+                                                <div className="text-6xl mb-4">📎</div>
+                                                <p className="text-xl mb-4">File ({attachment.type || 'Unknown'})</p>
+                                                <div className="flex gap-4">
+                                                  <Button
+                                                    variant="outline"
+                                                    onClick={() => window.open(attachment.url, '_blank')}
+                                                  >
+                                                    View File
+                                                  </Button>
+                                                  <Button
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                      const link = document.createElement('a');
+                                                      link.href = attachment.url;
+                                                      link.download = 'attachment';
+                                                      link.target = '_blank';
+                                                      document.body.appendChild(link);
+                                                      link.click();
+                                                      document.body.removeChild(link);
+                                                    }}
+                                                  >
+                                                    Download
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </CarouselItem>
+                                      ))}
+                                    </CarouselContent>
+                                    <CarouselPrevious className="left-4 bg-black/50 hover:bg-black/70 text-white border-none" />
+                                    <CarouselNext className="right-4 bg-black/50 hover:bg-black/70 text-white border-none" />
+                                  </Carousel>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                           ) : (
                             <div className="w-full h-48 bg-muted flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors"
                                  onClick={() => window.open(attachment.url, '_blank')}>
