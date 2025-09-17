@@ -78,101 +78,111 @@ export function PostItem({
 
   const isOwnPost = currentUserId === post.user_id;
 
-  const renderAttachment = () => {
-    if (!post.attachment_url) return null;
-
-    if (post.attachment_type?.startsWith('image/')) {
-      return (
-        <div className="mt-3 rounded-2xl overflow-hidden border border-border">
-          {!imageError ? (
-            <img
-              src={post.attachment_url}
-              alt="Post attachment"
-              className="w-full max-h-96 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-              onError={() => setImageError(true)}
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(post.attachment_url!, '_blank');
-              }}
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-48 bg-muted flex flex-col items-center justify-center rounded-lg">
-              <FileText className="w-8 h-8 text-muted-foreground mb-2" />
-              <p className="text-muted-foreground text-center text-sm">
-                Failed to load image
-                <br />
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(post.attachment_url!, '_blank');
-                  }}
-                  className="p-0 h-auto text-xs"
-                >
-                  Try opening in new tab
-                </Button>
-              </p>
-            </div>
-          )}
-        </div>
-      );
+  const parseAttachments = () => {
+    if (!post.attachment_url) return [];
+    
+    // Check if it's a JSON array of attachments
+    try {
+      const parsed = JSON.parse(post.attachment_url);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      // Not JSON, treat as single attachment
     }
+    
+    // Single attachment
+    return [{
+      url: post.attachment_url,
+      type: post.attachment_type
+    }];
+  };
 
-    if (post.attachment_type === 'application/pdf' || post.attachment_type?.includes('pdf')) {
-      return (
-        <div className="mt-3 rounded-2xl overflow-hidden border border-border">
-          <div className="p-4 bg-muted">
-            <div className="flex gap-2 items-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(post.attachment_url!, '_blank');
-                }}
-                className="flex-1 justify-start"
-              >
-                📄 View PDF Document
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const link = document.createElement('a');
-                  link.href = post.attachment_url!;
-                  link.download = 'document.pdf';
-                  link.target = '_blank';
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                }}
-                className="px-3"
-              >
-                ⬇️
-              </Button>
-            </div>
-          </div>
-        </div>
-      );
-    }
+  const renderAttachments = () => {
+    const attachments = parseAttachments();
+    if (attachments.length === 0) return null;
 
     return (
-      <div className="mt-3 rounded-2xl overflow-hidden border border-border">
-        <div className="p-4 bg-muted">
-          <div className="flex gap-2 items-center">
+      <div className="mt-3 space-y-2">
+        {attachments.length === 1 ? (
+          // Single attachment - full width
+          <div className="rounded-2xl overflow-hidden border border-border">
+            {renderSingleAttachment(attachments[0], 0)}
+          </div>
+        ) : (
+          // Multiple attachments - grid layout
+          <div className={`grid gap-2 ${
+            attachments.length === 2 ? 'grid-cols-2' : 
+            attachments.length === 3 ? 'grid-cols-2' :
+            'grid-cols-2'
+          }`}>
+            {attachments.slice(0, 4).map((attachment, index) => (
+              <div key={index} className="relative rounded-lg overflow-hidden border border-border">
+                {index === 3 && attachments.length > 4 ? (
+                  <div className="relative">
+                    {renderSingleAttachment(attachment, index)}
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <span className="text-white text-lg font-semibold">
+                        +{attachments.length - 4} more
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  renderSingleAttachment(attachment, index)
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderSingleAttachment = (attachment: {url: string, type?: string}, index: number) => {
+    if (attachment.type?.startsWith('image/')) {
+      return (
+        <img
+          src={attachment.url}
+          alt={`Attachment ${index + 1}`}
+          className="w-full h-full max-h-96 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+              parent.innerHTML = `
+                <div class="w-full h-48 bg-muted flex flex-col items-center justify-center">
+                  <svg class="w-8 h-8 text-muted-foreground mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <p class="text-muted-foreground text-center text-sm">Failed to load image</p>
+                </div>
+              `;
+            }
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            window.open(attachment.url, '_blank');
+          }}
+          loading="lazy"
+        />
+      );
+    }
+
+    if (attachment.type === 'application/pdf' || attachment.type?.includes('pdf')) {
+      return (
+        <div className="p-4 bg-muted h-32 flex items-center">
+          <div className="flex gap-2 items-center w-full">
             <Button
               variant="outline"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                window.open(post.attachment_url!, '_blank');
+                window.open(attachment.url, '_blank');
               }}
               className="flex-1 justify-start"
             >
-              📎 View File ({post.attachment_type || 'Unknown type'})
+              📄 PDF Document
             </Button>
             <Button
               variant="outline"
@@ -180,8 +190,8 @@ export function PostItem({
               onClick={(e) => {
                 e.stopPropagation();
                 const link = document.createElement('a');
-                link.href = post.attachment_url!;
-                link.download = 'attachment';
+                link.href = attachment.url;
+                link.download = 'document.pdf';
                 link.target = '_blank';
                 document.body.appendChild(link);
                 link.click();
@@ -192,6 +202,41 @@ export function PostItem({
               ⬇️
             </Button>
           </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 bg-muted h-32 flex items-center">
+        <div className="flex gap-2 items-center w-full">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(attachment.url, '_blank');
+            }}
+            className="flex-1 justify-start"
+          >
+            📎 File ({attachment.type || 'Unknown'})
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              const link = document.createElement('a');
+              link.href = attachment.url;
+              link.download = 'attachment';
+              link.target = '_blank';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+            className="px-3"
+          >
+            ⬇️
+          </Button>
         </div>
       </div>
     );
@@ -301,7 +346,7 @@ export function PostItem({
             {post.body}
           </p>
 
-          {renderAttachment()}
+          {renderAttachments()}
 
           {(post.school_tag || post.course_tag) && (
             <div className="flex gap-2 mt-3">

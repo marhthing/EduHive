@@ -106,7 +106,7 @@ export default function CreatePost() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.body.trim()) {
       showToast("Please write something in your post", "error");
       return;
@@ -122,18 +122,18 @@ export default function CreatePost() {
 
       let attachment_url = null;
       let attachment_type = null;
-      let attachment_urls = null;
+      
 
+      // Upload files if any
       if (files.length > 0) {
-        if (files.length === 1) {
-          // For single file, maintain backward compatibility
-          const result = await uploadFiles([files[0]]);
-          attachment_url = result[0].url;
-          attachment_type = result[0].type;
+        const uploadedFiles = await uploadFiles(files);
+        if (uploadedFiles.length === 1) {
+          // Single file - store as before for backward compatibility
+          attachment_url = uploadedFiles[0].url;
+          attachment_type = uploadedFiles[0].type;
         } else {
-          // For multiple files, store as JSON array
-          const results = await uploadFiles(files);
-          attachment_urls = JSON.stringify(results);
+          // Multiple files - store as JSON array
+          attachment_url = JSON.stringify(uploadedFiles);
           attachment_type = 'multiple';
         }
       }
@@ -145,7 +145,7 @@ export default function CreatePost() {
           body: formData.body.trim(),
           school_tag: formData.school_tag.trim() || null,
           course_tag: formData.course_tag.trim() || null,
-          attachment_url: attachment_urls || attachment_url,
+          attachment_url: attachment_url,
           attachment_type,
         });
 
@@ -269,7 +269,7 @@ export default function CreatePost() {
                         disabled={loading}
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {files.map((file, index) => (
                         <div key={index} className="relative">
