@@ -467,23 +467,6 @@ export default function Home() {
 
               <div className="flex items-center justify-between mt-3">
                 <div className="flex items-center gap-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    id="image-upload"
-                    disabled={isPosting}
-                  />
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-primary p-2 h-auto rounded-full"
-                    onClick={() => document.getElementById('image-upload')?.click()}
-                    disabled={isPosting}
-                  >
-                    <Image className="h-5 w-5" />
-                  </Button>
                   <Button variant="ghost" size="sm" className="text-primary p-2 h-auto rounded-full" onClick={() => navigate('/post')}>
                     <Upload className="h-5 w-5" />
                   </Button>
