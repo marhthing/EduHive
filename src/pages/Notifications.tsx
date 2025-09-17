@@ -37,6 +37,8 @@ export default function Notifications() {
     if (!user) return;
 
     try {
+      console.log('Fetching notifications for user:', user.id);
+      
       const { data, error } = await supabase
         .from('notifications')
         .select(`
@@ -47,18 +49,53 @@ export default function Notifications() {
           created_at,
           post_id,
           comment_id,
-          from_user:profiles!notifications_from_user_id_fkey(
-            username,
-            name,
-            profile_pic
-          )
+          from_user_id
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
+      console.log('Notifications query result:', { data, error });
+
       if (error) throw error;
 
-      setNotifications(data || []);
+      // Fetch user profiles separately
+      const notificationsWithProfiles = await Promise.all(
+        (data || []).map(async (notification) => {
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('username, name, profile_pic')
+              .eq('user_id', notification.from_user_id)
+              .single();
+
+            if (profileError) {
+              console.error('Error fetching profile for notification:', profileError);
+            }
+
+            return {
+              ...notification,
+              from_user: profileData || {
+                username: 'Unknown',
+                name: null,
+                profile_pic: null
+              }
+            };
+          } catch (profileFetchError) {
+            console.error('Error in profile fetch:', profileFetchError);
+            return {
+              ...notification,
+              from_user: {
+                username: 'Unknown',
+                name: null,
+                profile_pic: null
+              }
+            };
+          }
+        })
+      );
+
+      console.log('Final notifications with profiles:', notificationsWithProfiles);
+      setNotifications(notificationsWithProfiles);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       showToast("Failed to load notifications", "error");

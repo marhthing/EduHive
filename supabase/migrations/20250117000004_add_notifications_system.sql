@@ -32,6 +32,19 @@ FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "System can insert notifications" ON notifications
 FOR INSERT WITH CHECK (true);
 
+-- Ensure profiles are readable for notification purposes
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'profiles' 
+    AND policyname = 'Profiles are viewable by everyone'
+  ) THEN
+    CREATE POLICY "Profiles are viewable by everyone" ON profiles
+    FOR SELECT USING (true);
+  END IF;
+END $$;
+
 -- Function to create notifications
 CREATE OR REPLACE FUNCTION create_notification(
   p_user_id UUID,
