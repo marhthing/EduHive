@@ -29,19 +29,11 @@ interface Profile {
 
 // Mapping between display labels and database numeric codes
 const ACADEMIC_YEAR_MAPPING = {
-  1: "JSS1",
-  2: "JSS2", 
-  3: "JSS3",
-  4: "SSS1",
-  5: "SSS2",
-  6: "SSS3",
-  100: "100L",
-  200: "200L",
-  300: "300L",
-  400: "400L",
-  500: "500L",
-  600: "600L",
-  700: "700L"
+  1: "Junior Secondary",
+  2: "Senior Secondary", 
+  3: "Undergraduate",
+  4: "Graduate",
+  5: "Postgraduate"
 } as const;
 
 // Reverse mapping for saving to database
@@ -192,8 +184,12 @@ export default function Settings() {
         bio: formData.bio.trim() || null,
         school: formData.school.trim() || null,
         department: formData.department.trim() || null,
-        year: formData.year ? ACADEMIC_YEAR_REVERSE_MAPPING[formData.year] || null : null,
       };
+
+      // Only update year if user has selected a value (preserve existing values)
+      if (formData.year && formData.year !== "none") {
+        updateData.year = ACADEMIC_YEAR_REVERSE_MAPPING[formData.year] || null;
+      }
 
       // Only update username if it's changed and user can change it
       const usernameChanged = formData.username.trim() !== profile.username;
@@ -242,7 +238,7 @@ export default function Settings() {
     if (!profile) return;
 
     try {
-      const { data, error } = await supabase.rpc('reactivate_account', {
+      const { data, error } = await supabase.rpc('deactivate_account', {
         target_user_id: profile.user_id
       });
 
