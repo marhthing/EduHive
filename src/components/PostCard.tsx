@@ -188,10 +188,11 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
                                         </Button>
                                         <Button
                                           variant="outline"
-                                          onClick={() => {
+                                          onClick={(e) => {
+                                            e.stopPropagation();
                                             const link = document.createElement('a');
                                             link.href = attachment.url;
-                                            link.download = 'document.pdf';
+                                            link.download = `${post.profile?.username || 'user'}_document_${idx + 1}.pdf`;
                                             link.target = '_blank';
                                             document.body.appendChild(link);
                                             link.click();
@@ -215,10 +216,12 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
                                         </Button>
                                         <Button
                                           variant="outline"
-                                          onClick={() => {
+                                          onClick={(e) => {
+                                            e.stopPropagation();
                                             const link = document.createElement('a');
                                             link.href = attachment.url;
-                                            link.download = 'attachment';
+                                            const fileExtension = attachment.type?.split('/')[1] || 'unknown';
+                                            link.download = `${post.profile?.username || 'user'}_attachment_${idx + 1}.${fileExtension}`;
                                             link.target = '_blank';
                                             document.body.appendChild(link);
                                             link.click();

@@ -427,8 +427,16 @@ export function PostItem({
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
+                const link = document.createElement('a');
+                link.href = attachment.url;
+                link.download = `${post.profile?.username || 'user'}_document.pdf`;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
               }}
               className="px-3"
+              title="Download PDF"
             >
               ⬇️
             </Button>
@@ -456,8 +464,17 @@ export function PostItem({
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
+              const link = document.createElement('a');
+              link.href = attachment.url;
+              const fileExtension = attachment.type?.split('/')[1] || 'unknown';
+              link.download = `${post.profile?.username || 'user'}_file.${fileExtension}`;
+              link.target = '_blank';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
             }}
             className="px-3"
+            title="Download File"
           >
             ⬇️
           </Button>
