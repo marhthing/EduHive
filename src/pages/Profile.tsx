@@ -180,7 +180,7 @@ export default function Profile() {
         (postsData || []).map(async (post) => {
           const [likesResult, commentsResult, userLikeResult, userBookmarkResult, profileResult] = await Promise.all([
             supabase.from("likes").select("id", { count: "exact" }).eq("post_id", post.id),
-            supabase.from("comments").select("id", { count: "exact" }).eq("post_id", post.id),
+            supabase.from("comments").select("id", { count: "exact" }).eq("post_id", post.id).is('parent_comment_id', null),
             user ? supabase.from("likes").select("id").eq("post_id", post.id).eq("user_id", user.id).single() : null,
             user ? supabase.from("bookmarks").select("id").eq("post_id", post.id).eq("user_id", user.id).single() : null,
             supabase.from("profiles").select("username, name, profile_pic, school, department").eq("user_id", post.user_id).single()
