@@ -734,6 +734,11 @@ export default function Profile() {
                           <span className="text-sm font-medium">
                             {reply.post.profile?.name || reply.post.profile?.username}
                           </span>
+                          {reply.post.user_id === profile.user_id && (
+                            <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded-full">
+                              Your post
+                            </span>
+                          )}
                           <span className="text-xs text-muted-foreground">
                             {format(new Date(reply.post.created_at), "MMM dd, yyyy")}
                           </span>
