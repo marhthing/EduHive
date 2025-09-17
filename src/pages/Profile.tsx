@@ -471,7 +471,7 @@ export default function Profile() {
                   <h1 className="text-2xl font-bold">{profile.name || profile.username}</h1>
                   <p className="text-muted-foreground">@{profile.username}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-center md:justify-start">
                   {isOwnProfile ? (
                     <Button asChild variant="outline" size="sm">
                       <Link to="/settings">
@@ -498,7 +498,7 @@ export default function Profile() {
 
               
 
-              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground justify-center md:justify-start">
                 {profile.school && (
                   <div className="flex items-center gap-1">
                     <School className="w-4 h-4" />
