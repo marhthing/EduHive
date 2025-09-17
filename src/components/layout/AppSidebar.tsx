@@ -41,8 +41,8 @@ export function AppSidebar() {
   const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
   const [newPostsCount, setNewPostsCount] = useState<number>(0);
 
-  // Get username from user metadata
-  const username = user?.user_metadata?.username || "";
+  // Get username from localStorage or user metadata
+  const [username, setUsername] = useState<string>("");
 
   const fetchNotificationCount = async () => {
     if (!user) return;
@@ -100,6 +100,48 @@ export function AppSidebar() {
   };
 
   useEffect(() => {
+    const fetchUsername = () => {
+      if (user) {
+        // First try localStorage
+        const storedUsername = localStorage.getItem(`username_${user.id}`);
+        if (storedUsername) {
+          setUsername(storedUsername);
+          return;
+        }
+
+        // Fallback to user metadata
+        const metadataUsername = user.user_metadata?.username;
+        if (metadataUsername) {
+          setUsername(metadataUsername);
+          localStorage.setItem(`username_${user.id}`, metadataUsername);
+          return;
+        }
+
+        // Last fallback - fetch from database
+        const fetchFromDB = async () => {
+          try {
+            const { data, error } = await supabase
+              .from("profiles")
+              .select("username")
+              .eq("user_id", user.id)
+              .single();
+            
+            if (!error && data?.username) {
+              setUsername(data.username);
+              localStorage.setItem(`username_${user.id}`, data.username);
+            }
+          } catch (error) {
+            console.error("Error fetching username:", error);
+          }
+        };
+
+        fetchFromDB();
+      } else {
+        setUsername("");
+      }
+    };
+
+    fetchUsername();
     fetchNotificationCount();
     fetchNewPostsCount();
 

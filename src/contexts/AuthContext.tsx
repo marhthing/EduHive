@@ -181,9 +181,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const deactivated = await checkDeactivationStatus(session.user.id);
           console.log('Auth change deactivation status:', deactivated);
           setIsDeactivated(deactivated);
+
+          // Store username in localStorage for easy access
+          if (session.user.user_metadata?.username) {
+            localStorage.setItem(`username_${session.user.id}`, session.user.user_metadata.username);
+          }
         } else {
           console.log('Auth change: no user or signed out');
           setIsDeactivated(false);
+          
+          // Clear username from localStorage on sign out
+          if (event === 'SIGNED_OUT') {
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('username_')) {
+                localStorage.removeItem(key);
+              }
+            });
+          }
         }
         
         setLoading(false);
