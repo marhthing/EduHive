@@ -295,7 +295,7 @@ export default function Auth() {
 
               <div className="text-center">
                 <Link 
-                  to="/forgot-password-otp" 
+                  to="/forgot-password" 
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   Forgot your password?

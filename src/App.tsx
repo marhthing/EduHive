@@ -23,10 +23,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Notifications = lazy(() => import("@/pages/Notifications"));
 const AccountReactivation = lazy(() => import("@/pages/AccountReactivation"));
 const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
-const ForgotPasswordOTP = lazy(() => import("@/pages/ForgotPasswordOTP"));
-const VerifyOTP = lazy(() => import("@/pages/VerifyOTP"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
-const ResetPasswordOTP = lazy(() => import("@/pages/ResetPasswordOTP"));
 
 const queryClient = new QueryClient();
 
@@ -42,10 +39,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/forgot-password-otp" element={<ForgotPasswordOTP />} />
-                <Route path="/verify-otp" element={<VerifyOTP />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/reset-password-otp" element={<ResetPasswordOTP />} />
                 <Route path="/reactivate" element={<AccountReactivation />} />
                 <Route path="/home" element={<ProtectedRoute><Layout><Home /></Layout></ProtectedRoute>} />
                 <Route path="/search" element={<ProtectedRoute><Layout><Search /></Layout></ProtectedRoute>} />
