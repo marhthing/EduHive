@@ -72,28 +72,28 @@
   <!-- Open Book at bottom -->
   <g class="book">
     <!-- Left page -->
-    <path d="M 40 140 Q 100 130 100 140 L 100 170 Q 100 175 95 175 L 45 175 Q 40 175 40 170 Z" fill="#1f2937" opacity="0.9"/>
+    <path d="M 40 140 Q 100 130 100 140 L 100 170 Q 100 175 95 175 L 45 175 Q 40 175 40 170 Z" fill="#1D4ED8" opacity="0.9"/>
     <!-- Right page -->
-    <path d="M 100 140 Q 160 130 160 140 L 160 170 Q 160 175 155 175 L 105 175 Q 100 175 100 170 Z" fill="#1f2937" opacity="0.9"/>
+    <path d="M 100 140 Q 160 130 160 140 L 160 170 Q 160 175 155 175 L 105 175 Q 100 175 100 170 Z" fill="#1D4ED8" opacity="0.9"/>
     <!-- Book spine/binding -->
-    <rect x="98" y="140" width="4" height="35" fill="#1f2937"/>
+    <rect x="98" y="140" width="4" height="35" fill="#1D4ED8"/>
   </g>
 
   <!-- Center Circle -->
-  <circle cx="100" cy="100" r="8" fill="#1f2937" class="center-circle"/>
+  <circle cx="100" cy="100" r="8" fill="#1D4ED8" class="center-circle"/>
 
   <!-- Top Leaf -->
   <g class="leaf leaf-1">
-    <path d="M 100 60 Q 90 45 100 30 Q 110 45 100 60" fill="#1f2937"/>
+    <path d="M 100 60 Q 90 45 100 30 Q 110 45 100 60" fill="#1D4ED8"/>
   </g>
 
   <!-- Left Leaf -->
   <g class="leaf leaf-2">
-    <path d="M 60 100 Q 45 90 30 100 Q 45 110 60 100" fill="#1f2937"/>
+    <path d="M 60 100 Q 45 90 30 100 Q 45 110 60 100" fill="#1D4ED8"/>
   </g>
 
   <!-- Right Leaf -->
   <g class="leaf leaf-3">
-    <path d="M 140 100 Q 155 90 170 100 Q 155 110 140 100" fill="#1f2937"/>
+    <path d="M 140 100 Q 155 90 170 100 Q 155 110 140 100" fill="#1D4ED8"/>
   </g>
 </svg>
