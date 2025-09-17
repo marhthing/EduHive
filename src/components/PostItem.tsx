@@ -447,7 +447,7 @@ export function PostItem({
 
           {/* School and Department */}
           {(post.profile?.school || post.profile?.department) && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5 md:mb-2 flex-wrap" style={{ marginTop: '-6px !important' }}>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5 md:mb-2 flex-wrap" style={{ marginTop: '-10px !important' }}>
               {post.profile?.school && (
                 <span className="max-w-[200px] truncate">{post.profile.school}</span>
               )}
