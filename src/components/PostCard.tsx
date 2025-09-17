@@ -16,6 +16,7 @@ interface Post {
   created_at: string;
   profile: {
     username: string;
+    name: string | null;
     profile_pic: string | null;
     school: string | null;
     department: string | null;
@@ -171,7 +172,10 @@ export function PostCard({ post, onLike, onBookmark, onComment }: PostCardProps)
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-sm">
-                {post.profile?.username || "Unknown User"}
+                {post.profile?.name || post.profile?.username || "Unknown User"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                @{post.profile?.username || "unknown"}
               </span>
               {post.profile?.school && (
                 <span className="text-xs text-muted-foreground">

@@ -22,6 +22,7 @@ interface Profile {
   id: string; // profiles table primary key
   user_id: string; // auth user id
   username: string;
+  name: string | null;
   email: string;
   bio: string | null;
   school: string | null;
@@ -269,7 +270,10 @@ export default function Profile() {
 
             <div className="flex-1 text-center md:text-left">
               <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
-                <h1 className="text-2xl font-bold">{profile.username}</h1>
+                <div>
+                  <h1 className="text-2xl font-bold">{profile.name || profile.username}</h1>
+                  <p className="text-muted-foreground">@{profile.username}</p>
+                </div>
                 {isOwnProfile && (
                   <Button asChild variant="outline" size="sm">
                     <Link to="/settings">
@@ -374,7 +378,7 @@ export default function Profile() {
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col">
                               <div className="flex items-center gap-2 text-sm">
-                                <span className="font-semibold">{post.profile?.name || "Anonymous"}</span>
+                                <span className="font-semibold">{post.profile?.name || post.profile?.username || "Anonymous"}</span>
                                 <span className="text-muted-foreground">•</span>
                                 <span className="text-muted-foreground">@{post.profile?.username || "anonymous"}</span>
                                 <span className="text-muted-foreground">•</span>

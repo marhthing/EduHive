@@ -7,10 +7,11 @@ SET search_path = public
 AS $$
 BEGIN
   -- Insert minimal profile on auth signup
-  INSERT INTO public.profiles (user_id, username, email)
+  INSERT INTO public.profiles (user_id, username, name, email)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data ->> 'username', split_part(NEW.email, '@', 1)),
+    COALESCE(NEW.raw_user_meta_data ->> 'name', split_part(NEW.email, '@', 1)),
     NEW.email
   );
   RETURN NEW;
