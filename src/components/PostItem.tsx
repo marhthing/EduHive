@@ -462,9 +462,33 @@ export function PostItem({
 
 
           {/* Post Body */}
-          <p className="text-foreground mb-2 md:mb-3 leading-relaxed text-sm md:text-base break-words">
-            {post.body}
-          </p>
+          <div className="text-foreground mb-2 md:mb-3 leading-relaxed text-sm md:text-base break-words">
+            {(() => {
+              const MAX_LENGTH = 280; // Character limit for preview
+              const shouldTruncate = post.body.length > MAX_LENGTH;
+              
+              if (shouldTruncate) {
+                return (
+                  <div>
+                    <p className="mb-2">
+                      {post.body.substring(0, MAX_LENGTH)}...
+                    </p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/post/${post.id}`);
+                      }}
+                      className="text-blue-500 hover:text-blue-600 text-sm font-medium hover:underline transition-colors"
+                    >
+                      Show more
+                    </button>
+                  </div>
+                );
+              }
+              
+              return <p>{post.body}</p>;
+            })()}
+          </div>
 
           {/* Attachments */}
           {renderAttachments()}
