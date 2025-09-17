@@ -38,6 +38,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [composeText, setComposeText] = useState("");
   const [isPosting, setIsPosting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   const { showToast } = useTwitterToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -285,6 +287,61 @@ export default function Home() {
     navigate(`/post/${postId}`);
   };
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("Please select a file smaller than 10MB", "error");
+      return;
+    }
+
+    // Check file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      showToast("Please select an image file (JPEG, PNG, GIF)", "error");
+      return;
+    }
+
+    setSelectedFile(file);
+
+    // Create preview for images
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFilePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadFile = async (file: File) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `attachments/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('attachments')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('attachments')
+      .getPublicUrl(filePath);
+
+    return {
+      url: data.publicUrl,
+      type: file.type.startsWith('image/') ? 'image' : 'file'
+    };
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+  };
+
   const handleQuickPost = async () => {
     if (!user) {
       showToast("Please log in to create posts", "error");
@@ -298,17 +355,31 @@ export default function Home() {
 
     setIsPosting(true);
     try {
+      let attachment_url = null;
+      let attachment_type = null;
+
+      // Upload file if selected
+      if (selectedFile) {
+        const result = await uploadFile(selectedFile);
+        attachment_url = result.url;
+        attachment_type = result.type;
+      }
+
       const { error } = await supabase
         .from('posts')
         .insert({
           body: composeText.trim(),
           user_id: user.id,
+          attachment_url,
+          attachment_type,
         });
 
       if (error) throw error;
 
       setComposeText("");
-      // Removed notification - Twitter doesn't show these
+      setSelectedFile(null);
+      setFilePreview(null);
+      showToast("Post created successfully!", "success");
 
       // Refresh posts
       fetchPosts();
@@ -368,16 +439,49 @@ export default function Home() {
 
             <div className="flex-1">
               <Textarea
-                placeholder="What's happening?"
+                placeholder="Got any school work to share?"
                 value={composeText}
                 onChange={(e) => setComposeText(e.target.value)}
                 className="min-h-[60px] resize-none border-none text-xl placeholder:text-muted-foreground focus-visible:ring-0 p-0"
                 disabled={isPosting}
               />
 
+              {/* File preview */}
+              {filePreview && (
+                <div className="mt-3 relative inline-block">
+                  <img 
+                    src={filePreview} 
+                    alt="Preview" 
+                    className="max-w-full max-h-40 rounded-lg"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeFile}
+                    className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 h-auto"
+                  >
+                    ×
+                  </Button>
+                </div>
+              )}
+
               <div className="flex items-center justify-between mt-3">
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" className="text-primary p-2 h-auto rounded-full">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="image-upload"
+                    disabled={isPosting}
+                  />
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-primary p-2 h-auto rounded-full"
+                    onClick={() => document.getElementById('image-upload')?.click()}
+                    disabled={isPosting}
+                  >
                     <Image className="h-5 w-5" />
                   </Button>
                   <Button variant="ghost" size="sm" className="text-primary p-2 h-auto rounded-full" onClick={() => navigate('/post')}>
@@ -387,7 +491,7 @@ export default function Home() {
 
                 <Button 
                   onClick={handleQuickPost}
-                  disabled={!composeText.trim() || isPosting}
+                  disabled={(!composeText.trim() && !selectedFile) || isPosting}
                   className="rounded-full px-6"
                 >
                   {isPosting ? "Posting..." : "Post"}
