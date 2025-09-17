@@ -17,6 +17,7 @@ import EditPost from "./pages/EditPost";
 import PostDetail from "./pages/PostDetail";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Notifications from "@/pages/Notifications";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="/post" element={<ProtectedRoute><Layout><CreatePost /></Layout></ProtectedRoute>} />
               <Route path="/post/edit/:postId" element={<ProtectedRoute><Layout><EditPost /></Layout></ProtectedRoute>} />
               <Route path="/post/:postId" element={<PostDetail />} />
+              <Route path="/notifications" element={<ProtectedRoute><Layout><Notifications /></Layout></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

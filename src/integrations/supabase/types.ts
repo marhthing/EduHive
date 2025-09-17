@@ -78,6 +78,27 @@ export type Database = {
           },
         ]
       }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string
@@ -106,6 +127,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          comment_id: string | null
+          created_at: string
+          from_user_id: string
+          id: string
+          message: string
+          post_id: string | null
+          read: boolean
+          type: string
+          user_id: string
+        }
+        Insert: {
+          comment_id?: string | null
+          created_at?: string
+          from_user_id: string
+          id?: string
+          message: string
+          post_id?: string | null
+          read?: boolean
+          type: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string | null
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          message?: string
+          post_id?: string | null
+          read?: boolean
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       posts: {
         Row: {
@@ -149,7 +206,11 @@ export type Database = {
           created_at: string
           department: string | null
           email: string
+          followers_count: number
+          following_count: number
           id: string
+          last_username_change: string | null
+          name: string | null
           profile_pic: string | null
           school: string | null
           updated_at: string
@@ -162,7 +223,11 @@ export type Database = {
           created_at?: string
           department?: string | null
           email: string
+          followers_count?: number
+          following_count?: number
           id?: string
+          last_username_change?: string | null
+          name?: string | null
           profile_pic?: string | null
           school?: string | null
           updated_at?: string
@@ -175,7 +240,11 @@ export type Database = {
           created_at?: string
           department?: string | null
           email?: string
+          followers_count?: number
+          following_count?: number
           id?: string
+          last_username_change?: string | null
+          name?: string | null
           profile_pic?: string | null
           school?: string | null
           updated_at?: string

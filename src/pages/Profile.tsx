@@ -243,7 +243,7 @@ export default function Profile() {
       }
 
       // Refresh profile to get updated counts
-      fetchProfile();
+      await fetchProfile();
     } catch (error) {
       console.error("Error toggling follow:", error);
       showToast("Failed to update follow status", "error");

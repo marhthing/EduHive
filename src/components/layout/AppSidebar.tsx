@@ -1,4 +1,4 @@
-import { Home, Search, Bookmark, User, Plus, Settings, Sun, Moon, LogOut } from "lucide-react";
+import { Home, Search, Bookmark, User, Plus, Settings, Sun, Moon, LogOut, Bell } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +16,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+
 
 const getNavigationItems = (username: string) => [
   { title: "Home", url: "/home", icon: Home },
@@ -140,6 +142,14 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        <SidebarMenuItem>
+          <SidebarMenuButton asChild>
+            <NavLink to="/notifications" className={getNavCls}>
+              <Bell className="h-5 w-5" />
+              {!collapsed && <span className="ml-3">Notifications</span>}
+            </NavLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
       </SidebarContent>
     </Sidebar>
   );
