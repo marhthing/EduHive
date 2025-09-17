@@ -241,8 +241,10 @@ export default function Profile() {
         }
 
         setIsFollowing(false);
-        setFollowersCount(prev => prev - 1);
         showToast(`Unfollowed @${profile.username}`, "success");
+        
+        // Refresh the profile to get updated counts from database
+        fetchProfile();
       } else {
         // Follow
         const { error } = await supabase
@@ -253,7 +255,7 @@ export default function Profile() {
           });
 
         if (error) {
-          console// error in follow: { code: '23505', message: 'duplicate key value violates unique constraint "follows_follower_id_following_id_key"', ... }
+          // error in follow: { code: '23505', message: 'duplicate key value violates unique constraint "follows_follower_id_following_id_key"', ... }
           if (error.code === '23505') {
             showToast(`You are already following @${profile.username}`, "warning");
           } else {
@@ -262,8 +264,10 @@ export default function Profile() {
           }
         } else {
           setIsFollowing(true);
-          setFollowersCount(prev => prev + 1);
           showToast(`Following @${profile.username}`, "success");
+          
+          // Refresh the profile to get updated counts from database
+          fetchProfile();
         }
       }
     } catch (error) {
@@ -295,21 +299,21 @@ export default function Profile() {
       fetchUserPosts(profile.user_id);
       setLoading(false);
 
-      // Subscribe to follow changes for this profile
+      // Subscribe to follow changes for this profile to refresh data
       const followsSubscription = supabase
         .channel(`profile-follows-${profile.user_id}`)
         .on('postgres_changes', 
           { event: 'INSERT', schema: 'public', table: 'follows', filter: `following_id=eq.${profile.user_id}` },
           () => {
-            // Someone followed this user
-            setFollowersCount(prev => prev + 1);
+            // Someone followed this user - refresh profile data
+            fetchProfile();
           }
         )
         .on('postgres_changes', 
           { event: 'DELETE', schema: 'public', table: 'follows', filter: `following_id=eq.${profile.user_id}` },
           () => {
-            // Someone unfollowed this user
-            setFollowersCount(prev => Math.max(0, prev - 1));
+            // Someone unfollowed this user - refresh profile data
+            fetchProfile();
           }
         )
         .subscribe();
