@@ -236,11 +236,22 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
-        <Tabs value={isSignUp ? "signup" : "signin"} onValueChange={(value) => setIsSignUp(value === "signup")}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Sign In</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
-          </TabsList>
+        <CardHeader className="text-center space-y-2">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <img src="/logo.svg" alt="EduHive Logo" className="h-8 w-8" />
+            <CardTitle className="text-2xl font-bold text-primary">EduHive</CardTitle>
+          </div>
+          <CardDescription>
+            Join the student community to share notes and resources
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <Tabs value={isSignUp ? "signup" : "signin"} onValueChange={(value) => setIsSignUp(value === "signup")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="signin">Sign In</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
 
           <TabsContent value="signin">
             <form onSubmit={handleLogin} className="space-y-4">
@@ -380,6 +391,7 @@ export default function Auth() {
             </form>
           </TabsContent>
         </Tabs>
+        </CardContent>
       </Card>
     </div>
   );
