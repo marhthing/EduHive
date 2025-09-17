@@ -100,7 +100,7 @@ export function PostItem({
         const fileName = `${post.profile?.username || 'user'}_attachment_${i + 1}.${fileExtension}`;
 
         link.download = fileName;
-        link.target = '_blank';
+        link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
