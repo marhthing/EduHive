@@ -2,42 +2,42 @@
   <!-- Background circle -->
   <circle cx="32" cy="32" r="32" fill="url(#gradient)" />
   
-  <!-- Animated bee logo -->
-  <g transform-origin="32 32">
+  <!-- Static honeycomb hexagons -->
+  <g transform="translate(32,16)">
+    <!-- Top hexagon (orange) -->
+    <polygon points="-6,-10.4 6,-10.4 12,-2.4 6,5.6 -6,5.6 -12,-2.4" fill="#FF8C42" stroke="#333" stroke-width="1"/>
+    
+    <!-- Left hexagon (green) -->
+    <g transform="translate(-12,7)">
+      <polygon points="-6,-5.2 6,-5.2 12,2.8 6,10.8 -6,10.8 -12,2.8" fill="#4CAF50" stroke="#333" stroke-width="1"/>
+    </g>
+    
+    <!-- Right hexagon (blue) -->
+    <g transform="translate(12,7)">
+      <polygon points="-6,-5.2 6,-5.2 12,2.8 6,10.8 -6,10.8 -12,2.8" fill="#2196F3" stroke="#333" stroke-width="1"/>
+    </g>
+    
+    <!-- Bottom left hexagon (purple) -->
+    <g transform="translate(-6,14)">
+      <polygon points="-6,-5.2 6,-5.2 12,2.8 6,10.8 -6,10.8 -12,2.8" fill="#9C27B0" stroke="#333" stroke-width="1"/>
+    </g>
+    
+    <!-- Bottom right hexagon (yellow) -->
+    <g transform="translate(6,14)">
+      <polygon points="-6,-5.2 6,-5.2 12,2.8 6,10.8 -6,10.8 -12,2.8" fill="#FFC107" stroke="#333" stroke-width="1"/>
+    </g>
+  </g>
+  
+  <!-- Animated bee elements -->
+  <g transform-origin="32 44">
     <animateTransform 
       attributeName="transform" 
       attributeType="XML" 
       type="rotate" 
-      from="0 32 32" 
-      to="360 32 32" 
+      from="0 32 44" 
+      to="360 32 44" 
       dur="3s" 
       repeatCount="indefinite"/>
-    
-    <!-- Honeycomb hexagons -->
-    <g transform="translate(32,16)">
-      <!-- Top hexagon (orange) -->
-      <polygon points="-6,-10.4 6,-10.4 12,-2.4 6,5.6 -6,5.6 -12,-2.4" fill="#FF8C42" stroke="#333" stroke-width="1"/>
-      
-      <!-- Left hexagon (green) -->
-      <g transform="translate(-12,7)">
-        <polygon points="-6,-5.2 6,-5.2 12,2.8 6,10.8 -6,10.8 -12,2.8" fill="#4CAF50" stroke="#333" stroke-width="1"/>
-      </g>
-      
-      <!-- Right hexagon (blue) -->
-      <g transform="translate(12,7)">
-        <polygon points="-6,-5.2 6,-5.2 12,2.8 6,10.8 -6,10.8 -12,2.8" fill="#2196F3" stroke="#333" stroke-width="1"/>
-      </g>
-      
-      <!-- Bottom left hexagon (purple) -->
-      <g transform="translate(-6,14)">
-        <polygon points="-6,-5.2 6,-5.2 12,2.8 6,10.8 -6,10.8 -12,2.8" fill="#9C27B0" stroke="#333" stroke-width="1"/>
-      </g>
-      
-      <!-- Bottom right hexagon (yellow) -->
-      <g transform="translate(6,14)">
-        <polygon points="-6,-5.2 6,-5.2 12,2.8 6,10.8 -6,10.8 -12,2.8" fill="#FFC107" stroke="#333" stroke-width="1"/>
-      </g>
-    </g>
     
     <!-- Bee body -->
     <ellipse cx="32" cy="44" rx="8" ry="12" fill="#FFA000" stroke="#333" stroke-width="1"/>
