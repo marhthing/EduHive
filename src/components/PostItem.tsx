@@ -379,7 +379,7 @@ export function PostItem({
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-0.5">
+          <div className="flex items-start justify-between mb-0.5" style={{ marginBottom: '0 !important' }}>
             <div className="flex items-center gap-1 md:gap-2 cursor-pointer min-w-0 flex-1" onClick={handleProfileClick}>
               <span className="font-semibold hover:underline text-sm md:text-base truncate">
                 {post.profile?.name || post.profile?.username || 'Anonymous'}
