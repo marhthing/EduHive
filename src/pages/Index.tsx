@@ -29,7 +29,14 @@ const Index = () => {
 
     // Get initial session
     supabase.auth.getSession()
-      .then(async ({ data: { session } }) => {
+      .then(async ({ data: { session }, error }) => {
+        if (error) {
+          console.error('Session error:', error);
+          // Clear any problematic session
+          await supabase.auth.signOut();
+          performNavigation(null);
+          return;
+        }
         if (session?.user) {
           // Check if account is deactivated
           try {

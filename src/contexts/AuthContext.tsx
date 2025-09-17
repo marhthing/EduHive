@@ -97,22 +97,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Clear any potentially stuck state first
+    const clearStuckState = async () => {
+      try {
+        // Check if there's a session but it might be invalid
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.log('Session error detected, signing out:', error);
+          await supabase.auth.signOut();
+        }
+      } catch (error) {
+        console.log('Error checking session, signing out:', error);
+        await supabase.auth.signOut();
+      }
+    };
+
     // Get initial session
     const getInitialSession = async () => {
+      await clearStuckState();
       try {
         console.log('Getting initial session...');
         const { data: { session } } = await supabase.auth.getSession();
         console.log('Initial session:', session);
-        setSession(session);
-        setUser(session?.user ?? null);
         
         if (session?.user) {
           console.log('User found, checking deactivation status...');
           const deactivated = await checkDeactivationStatus(session.user.id);
           console.log('Deactivation status:', deactivated);
+          setSession(session);
+          setUser(session.user);
           setIsDeactivated(deactivated);
         } else {
-          console.log('No user found');
+          console.log('No user found, clearing auth state');
+          setSession(null);
+          setUser(null);
           setIsDeactivated(false);
         }
       } catch (error) {
