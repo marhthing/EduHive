@@ -500,19 +500,20 @@ export function PostItem({
 
           {/* Tags */}
           {(post.school_tag || post.course_tag) && (
-            <div className="flex gap-1 mb-3 flex-wrap">
+            <div className="flex mb-3 flex-wrap">
               {post.school_tag && (
-                <Badge variant="secondary" className="text-xs px-2 py-0.5 font-medium">
+                <Badge variant="secondary" className="text-xs mr-2">
                   {post.school_tag}
                 </Badge>
               )}
               {post.course_tag && (
-                <Badge variant="outline" className="text-xs px-2 py-0.5 font-medium">
+                <Badge variant="outline" className="text-xs mt-1">
                   {post.course_tag}
                 </Badge>
               )}
             </div>
           )}
+
 
           {/* Actions */}
           <div className="flex items-center justify-between text-muted-foreground -ml-2 md:-ml-0">
