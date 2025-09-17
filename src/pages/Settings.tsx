@@ -64,14 +64,21 @@ export default function Settings() {
       // Check if user can change username (once per month)
       const lastChange = profileData.last_username_change ? new Date(profileData.last_username_change) : null;
       const now = new Date();
-      const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
       
-      const canChange = !lastChange || lastChange <= oneMonthAgo;
-      setCanChangeUsername(canChange);
-      
-      if (!canChange && lastChange) {
-        const nextChange = new Date(lastChange.getFullYear(), lastChange.getMonth() + 1, lastChange.getDate());
-        setNextUsernameChange(nextChange);
+      if (lastChange) {
+        // Calculate next allowed change date (one month after last change)
+        const nextChange = new Date(lastChange);
+        nextChange.setMonth(nextChange.getMonth() + 1);
+        
+        const canChange = now >= nextChange;
+        setCanChangeUsername(canChange);
+        
+        if (!canChange) {
+          setNextUsernameChange(nextChange);
+        }
+      } else {
+        // No previous change, can change anytime
+        setCanChangeUsername(true);
       }
       
       setFormData({
