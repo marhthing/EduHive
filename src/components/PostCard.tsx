@@ -332,11 +332,17 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
             </span>
           </div>
           {(post.profile?.school || post.profile?.department) && (
-            <div className="text-xs text-muted-foreground" style={{ marginTop: '-10px !important', marginLeft: '40px !important' }}>
-              {post.profile?.school && post.profile.school}
-              {post.profile?.school && post.profile?.department && ' • '}
-              {post.profile?.department && post.profile.department}
-            </div>
+      <div
+        className="
+          text-sm md:text-xs text-muted-foreground
+          mt-[-2px] ml-10
+        "
+      >
+        {post.profile?.school && post.profile.school}
+        {post.profile?.school && post.profile?.department && ' • '}
+        {post.profile?.department && post.profile.department}
+      </div>
+
           )}
         </div>
 
