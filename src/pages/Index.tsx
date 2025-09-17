@@ -8,7 +8,7 @@ const Index = () => {
 
   useEffect(() => {
     let didNavigate = false;
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
     let subscription: any;
 
     const performNavigation = (session: any) => {
@@ -21,11 +21,11 @@ const Index = () => {
       }
     };
 
-    // Set up timeout fallback - if auth check takes too long, go to auth page
+    // Set up timeout fallback - if auth check takes too long, stop loading but keep waiting for auth
     timeoutId = setTimeout(() => {
-      console.error("Auth check timeout - redirecting to auth page");
-      performNavigation(null);
-    }, 3000);
+      console.error("Auth check timeout - stopping spinner but continuing to wait for auth");
+      setLoading(false);
+    }, 10000);
 
     // Get initial session
     supabase.auth.getSession()
@@ -62,7 +62,20 @@ const Index = () => {
     );
   }
 
-  return null;
+  // If loading stopped but still here, show a fallback
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center">
+        <p className="text-muted-foreground mb-4">Connection is taking longer than expected...</p>
+        <button 
+          onClick={() => navigate("/auth", { replace: true })}
+          className="text-primary hover:underline"
+        >
+          Continue to Sign In
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default Index;
