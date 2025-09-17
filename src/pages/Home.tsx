@@ -260,109 +260,114 @@ export default function Home() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-2xl">
-      <div className="space-y-6">
+    <div className="max-w-2xl mx-auto">
+      <div className="divide-y divide-border">
         {posts.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No posts yet. Be the first to share something!</p>
-            </CardContent>
-          </Card>
+          <div className="py-12 text-center">
+            <p className="text-muted-foreground">No posts yet. Be the first to share something!</p>
+          </div>
         ) : (
           posts.map((post) => (
-            <Card key={post.id} className="hover:bg-card-hover transition-colors">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={post.profile?.profile_pic || undefined} />
-                      <AvatarFallback>
-                        {post.profile?.username?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{post.profile?.username || 'Anonymous'}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        {post.profile?.school && (
-                          <span>{post.profile.school}</span>
+            <div key={post.id} className="p-4 hover:bg-muted/20 transition-colors cursor-pointer border-b border-border">
+              <div className="flex gap-3">
+                <Avatar className="h-10 w-10 flex-shrink-0">
+                  <AvatarImage src={post.profile?.profile_pic || undefined} />
+                  <AvatarFallback>
+                    {post.profile?.username?.[0]?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-semibold text-foreground">{post.profile?.username || 'Anonymous'}</span>
+                    {post.profile?.school && (
+                      <span className="text-muted-foreground">@{post.profile.school.toLowerCase().replace(/\s+/g, '')}</span>
+                    )}
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-muted-foreground">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                  </div>
+                  
+                  <div className="mt-1">
+                    <p className="text-foreground whitespace-pre-wrap">{post.body}</p>
+                    
+                    {post.attachment_url && (
+                      <div className="mt-3 rounded-2xl overflow-hidden border border-border">
+                        {post.attachment_type?.startsWith('image/') ? (
+                          <img 
+                            src={post.attachment_url} 
+                            alt="Post attachment" 
+                            className="w-full max-h-96 object-cover"
+                          />
+                        ) : (
+                          <div className="p-4 bg-muted">
+                            <p className="text-sm text-muted-foreground">
+                              📎 {post.attachment_type || 'File attachment'}
+                            </p>
+                          </div>
                         )}
-                        <span>•</span>
-                        <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
                       </div>
+                    )}
+                    
+                    {(post.school_tag || post.course_tag) && (
+                      <div className="flex gap-2 mt-3">
+                        {post.school_tag && (
+                          <Badge variant="secondary" className="text-xs">{post.school_tag}</Badge>
+                        )}
+                        {post.course_tag && (
+                          <Badge variant="outline" className="text-xs">{post.course_tag}</Badge>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between mt-3 max-w-md">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLike(post.id);
+                        }}
+                        className={`flex items-center gap-2 text-muted-foreground hover:text-like hover:bg-like/10 rounded-full p-2 h-auto ${post.is_liked ? 'text-like' : ''}`}
+                      >
+                        <Heart className={`h-5 w-5 ${post.is_liked ? 'fill-current' : ''}`} />
+                        <span className="text-sm">{post.likes_count}</span>
+                      </Button>
+
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="flex items-center gap-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full p-2 h-auto"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MessageCircle className="h-5 w-5" />
+                        <span className="text-sm">{post.comments_count}</span>
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBookmark(post.id);
+                        }}
+                        className={`flex items-center gap-2 text-muted-foreground hover:text-bookmark hover:bg-bookmark/10 rounded-full p-2 h-auto ${post.is_bookmarked ? 'text-bookmark' : ''}`}
+                      >
+                        <Bookmark className={`h-5 w-5 ${post.is_bookmarked ? 'fill-current' : ''}`} />
+                      </Button>
+
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="flex items-center gap-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full p-2 h-auto"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Share className="h-5 w-5" />
+                      </Button>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
                 </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                <p className="text-sm leading-relaxed">{post.body}</p>
-
-                {post.attachment_url && (
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    {post.attachment_type?.startsWith('image/') ? (
-                      <img 
-                        src={post.attachment_url} 
-                        alt="Post attachment" 
-                        className="w-full max-h-96 object-cover"
-                      />
-                    ) : (
-                      <div className="p-4 bg-muted">
-                        <p className="text-sm text-muted-foreground">
-                          📎 {post.attachment_type || 'File attachment'}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {(post.school_tag || post.course_tag) && (
-                  <div className="flex gap-2">
-                    {post.school_tag && (
-                      <Badge variant="secondary">{post.school_tag}</Badge>
-                    )}
-                    {post.course_tag && (
-                      <Badge variant="outline">{post.course_tag}</Badge>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-2 border-t border-border">
-                  <div className="flex items-center gap-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleLike(post.id)}
-                      className="flex items-center gap-2 hover:text-like"
-                    >
-                      <Heart className="h-4 w-4" />
-                      <span>{post.likes_count}</span>
-                    </Button>
-
-                    <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                      <MessageCircle className="h-4 w-4" />
-                      <span>{post.comments_count}</span>
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleBookmark(post.id)}
-                      className="hover:text-bookmark"
-                    >
-                      <Bookmark className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon">
-                      <Share className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))
         )}
       </div>
