@@ -1,6 +1,9 @@
-import { Home, Search, Bookmark, User, Plus, Settings, Sun, Moon } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { Home, Search, Bookmark, User, Plus, Settings, Sun, Moon, LogOut } from "lucide-react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "@/hooks/use-theme";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -14,11 +17,11 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 
-const navigationItems = [
+const getNavigationItems = (username: string) => [
   { title: "Home", url: "/home", icon: Home },
   { title: "Search", url: "/search", icon: Search },
   { title: "Bookmarks", url: "/bookmarks", icon: Bookmark },
-  { title: "Profile", url: "/profile", icon: User },
+  { title: "Profile", url: `/profile/${username}`, icon: User },
   { title: "Create Post", url: "/post", icon: Plus },
 ];
 
@@ -26,14 +29,57 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
+  const [username, setUsername] = useState<string>("");
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        try {
+          const { data, error } = await import("@/integrations/supabase/client").then(module => 
+            module.supabase.from("profiles").select("username").eq("user_id", user.id).single()
+          );
+          if (error) throw error;
+          setUsername(data?.username || "");
+        } catch (error) {
+          console.error("Error fetching username:", error);
+          setUsername("");
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
       ? "bg-primary text-primary-foreground font-medium" 
       : "hover:bg-accent hover:text-accent-foreground";
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out.",
+      });
+      navigate("/auth");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const navigationItems = getNavigationItems(username);
 
   return (
     <Sidebar className={collapsed ? "w-16" : "w-64"}>
@@ -84,6 +130,18 @@ export function AppSidebar() {
                     <Settings className="h-5 w-5" />
                     {!collapsed && <span className="ml-3">Settings</span>}
                   </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Button 
+                    variant="ghost" 
+                    onClick={handleSignOut}
+                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    {!collapsed && <span className="ml-3">Sign Out</span>}
+                  </Button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

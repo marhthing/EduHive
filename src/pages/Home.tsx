@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Heart, MessageCircle, Bookmark, Share, MoreHorizontal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 
 interface Profile {
@@ -34,6 +35,7 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchPosts();
@@ -68,14 +70,27 @@ export default function Home() {
       // Get likes and comments counts for each post
       const postIds = postsData?.map(post => post.id) || [];
       
-      const [likesData, commentsData] = await Promise.all([
+      const promises = [
         supabase.from('likes').select('post_id').in('post_id', postIds),
         supabase.from('comments').select('post_id').in('post_id', postIds)
-      ]);
+      ];
+
+      // If user is authenticated, also get their likes and bookmarks
+      if (user) {
+        promises.push(
+          supabase.from('likes').select('post_id').eq('user_id', user.id).in('post_id', postIds),
+          supabase.from('bookmarks').select('post_id').eq('user_id', user.id).in('post_id', postIds)
+        );
+      }
+
+      const results = await Promise.all(promises);
+      const [likesData, commentsData, userLikesData, userBookmarksData] = results;
 
       // Count likes and comments for each post
       const likesCount = new Map();
       const commentsCount = new Map();
+      const userLikes = new Set();
+      const userBookmarks = new Set();
 
       likesData.data?.forEach(like => {
         likesCount.set(like.post_id, (likesCount.get(like.post_id) || 0) + 1);
@@ -85,14 +100,26 @@ export default function Home() {
         commentsCount.set(comment.post_id, (commentsCount.get(comment.post_id) || 0) + 1);
       });
 
+      if (user && userLikesData?.data) {
+        userLikesData.data.forEach(like => {
+          userLikes.add(like.post_id);
+        });
+      }
+
+      if (user && userBookmarksData?.data) {
+        userBookmarksData.data.forEach(bookmark => {
+          userBookmarks.add(bookmark.post_id);
+        });
+      }
+
       // Combine all data
       const processedPosts: Post[] = postsData?.map(post => ({
         ...post,
         profile: profilesMap.get(post.user_id) || null,
         likes_count: likesCount.get(post.id) || 0,
         comments_count: commentsCount.get(post.id) || 0,
-        is_liked: false, // We'll implement this with proper auth
-        is_bookmarked: false,
+        is_liked: userLikes.has(post.id),
+        is_bookmarked: userBookmarks.has(post.id),
       })) || [];
 
       setPosts(processedPosts);
@@ -109,19 +136,119 @@ export default function Home() {
   };
 
   const handleLike = async (postId: string) => {
-    // We'll implement this when auth is ready
-    toast({
-      title: "Authentication Required",
-      description: "Please log in to like posts",
-    });
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to like posts",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+
+      if (post.is_liked) {
+        // Unlike the post
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        setPosts(posts.map(p => 
+          p.id === postId 
+            ? { ...p, is_liked: false, likes_count: p.likes_count - 1 }
+            : p
+        ));
+      } else {
+        // Like the post
+        const { error } = await supabase
+          .from('likes')
+          .insert({ post_id: postId, user_id: user.id });
+
+        if (error) throw error;
+
+        setPosts(posts.map(p => 
+          p.id === postId 
+            ? { ...p, is_liked: true, likes_count: p.likes_count + 1 }
+            : p
+        ));
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update like. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleBookmark = async (postId: string) => {
-    // We'll implement this when auth is ready
-    toast({
-      title: "Authentication Required", 
-      description: "Please log in to bookmark posts",
-    });
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to bookmark posts",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+
+      if (post.is_bookmarked) {
+        // Remove bookmark
+        const { error } = await supabase
+          .from('bookmarks')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        setPosts(posts.map(p => 
+          p.id === postId 
+            ? { ...p, is_bookmarked: false }
+            : p
+        ));
+
+        toast({
+          title: "Removed",
+          description: "Post removed from bookmarks",
+        });
+      } else {
+        // Add bookmark
+        const { error } = await supabase
+          .from('bookmarks')
+          .insert({ post_id: postId, user_id: user.id });
+
+        if (error) throw error;
+
+        setPosts(posts.map(p => 
+          p.id === postId 
+            ? { ...p, is_bookmarked: true }
+            : p
+        ));
+
+        toast({
+          title: "Saved",
+          description: "Post added to bookmarks",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update bookmark. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
