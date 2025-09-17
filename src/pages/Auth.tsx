@@ -7,8 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
-import { Mail, Lock, User, GraduationCap, Building2 } from "lucide-react";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { Mail, Lock, User, GraduationCap, Building2, AlertCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Auth() {
