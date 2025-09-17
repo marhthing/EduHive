@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatTimeShort } from "@/lib/timeFormat";
-import { Heart, MessageCircle, Bookmark, Share, MoreHorizontal, Edit, Trash2, Flag, FileText, ExternalLink, X, Download } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share, MoreHorizontal, Edit, Trash2, Flag, FileText, X, Download } from "lucide-react";
 import { downloadUrl } from "@/lib/download";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -95,9 +95,8 @@ export function PostItem({
     for (let i = 0; i < attachments.length; i++) {
       const attachment = attachments[i];
       try {
-        // Create a meaningful filename
-        const fileExtension = attachment.type?.split('/')[1] || 'unknown';
-        const fileName = `${post.profile?.username || 'user'}_attachment_${i + 1}.${fileExtension}`;
+        // Use original filename if available, otherwise create a meaningful filename
+        const fileName = attachment.name || `${post.profile?.username || 'user'}_attachment_${i + 1}.${attachment.type?.split('/')[1] || 'unknown'}`;
 
         await downloadUrl(attachment.url, fileName);
 
@@ -267,7 +266,7 @@ export function PostItem({
                     : `File (${attachment.type || 'Unknown type'})`}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Click to view or download
+                  Click to download
                 </p>
               </div>
 
@@ -275,25 +274,12 @@ export function PostItem({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(attachment.url, '_blank');
-                  }}
-                  className="h-8 px-3"
-                >
-                  <ExternalLink className="h-3 w-3 mr-1" />
-                  View
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
                   onClick={async (e) => {
                     e.stopPropagation();
                     if (!currentUserId) return;
                     
-                    const fileExtension = attachment.type?.includes('pdf') ? 'pdf' : 
-                                        attachment.type?.split('/')[1] || 'unknown';
-                    const fileName = `${post.profile?.username || 'user'}_attachment_${index + 1}.${fileExtension}`;
+                    // Use original filename if available, otherwise create a meaningful filename
+                    const fileName = attachment.name || `${post.profile?.username || 'user'}_attachment_${index + 1}.${attachment.type?.includes('pdf') ? 'pdf' : attachment.type?.split('/')[1] || 'unknown'}`;
                     await downloadUrl(attachment.url, fileName);
                   }}
                   className="h-8 px-3"

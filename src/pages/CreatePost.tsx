@@ -151,7 +151,7 @@ export default function CreatePost() {
         .from('attachments')
         .getPublicUrl(filePath);
 
-      return { url: publicUrl, type: file.type };
+      return { url: publicUrl, type: file.type, name: file.name };
     });
 
     return await Promise.all(uploadPromises);
@@ -181,8 +181,8 @@ export default function CreatePost() {
       if (files.length > 0) {
         const uploadedFiles = await uploadFiles(files);
         if (uploadedFiles.length === 1) {
-          // Single file - store as before for backward compatibility
-          attachment_url = uploadedFiles[0].url;
+          // Single file - store as JSON array to preserve filename
+          attachment_url = JSON.stringify(uploadedFiles);
           attachment_type = uploadedFiles[0].type;
         } else {
           // Multiple files - store as JSON array
