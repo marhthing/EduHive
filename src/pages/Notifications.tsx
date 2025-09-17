@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, MessageCircle, UserPlus, Bell, BellOff, ChevronLeft, ChevronRight } from "lucide-react";
@@ -35,7 +34,7 @@ export default function Notifications() {
   const { showToast } = useTwitterToast();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   const ITEMS_PER_PAGE = 15;
 
   const fetchNotifications = async (page = 1) => {
@@ -47,16 +46,16 @@ export default function Notifications() {
     } else {
       setPaginationLoading(true);
     }
-    
+
     try {
-      console.log('Fetching notifications for user:', user.id);
-      
+      // console.log('Fetching notifications for user:', user.id);
+
       // First get the total count
       const { count } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
-      
+
       setTotalCount(count || 0);
 
       // Then get the paginated data
@@ -79,7 +78,7 @@ export default function Notifications() {
         .order('created_at', { ascending: false })
         .range(from, to);
 
-      console.log('Notifications query result:', { data, error });
+      // console.log('Notifications query result:', { data, error });
 
       if (error) throw error;
 
@@ -94,7 +93,7 @@ export default function Notifications() {
               .single();
 
             if (profileError) {
-              console.error('Error fetching profile for notification:', profileError);
+              // console.error('Error fetching profile for notification:', profileError);
             }
 
             return {
@@ -106,7 +105,7 @@ export default function Notifications() {
               }
             };
           } catch (profileFetchError) {
-            console.error('Error in profile fetch:', profileFetchError);
+            // console.error('Error in profile fetch:', profileFetchError);
             return {
               ...notification,
               from_user: {
@@ -119,10 +118,10 @@ export default function Notifications() {
         })
       );
 
-      console.log('Final notifications with profiles:', notificationsWithProfiles);
+      // console.log('Final notifications with profiles:', notificationsWithProfiles);
       setNotifications(notificationsWithProfiles as Notification[]);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      // console.error('Error fetching notifications:', error);
       showToast("Failed to load notifications", "error");
     } finally {
       setLoading(false);
@@ -143,7 +142,7 @@ export default function Notifications() {
         n.id === notificationId ? { ...n, read: true } : n
       ));
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      // console.error('Error marking notification as read:', error);
     }
   };
 
@@ -163,7 +162,7 @@ export default function Notifications() {
       setNotifications(notifications.map(n => ({ ...n, read: true })));
       showToast("All notifications marked as read", "success");
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+      // console.error('Error marking all notifications as read:', error);
       showToast("Failed to mark all as read", "error");
     } finally {
       setMarkingAllRead(false);
@@ -201,7 +200,7 @@ export default function Notifications() {
         navigate(`/post/${data.post_id}`);
       }
     } catch (error) {
-      console.error('Error fetching post for comment:', error);
+      // console.error('Error fetching post for comment:', error);
       showToast("Failed to navigate to post", "error");
     }
   };
@@ -239,7 +238,7 @@ export default function Notifications() {
 
   useEffect(() => {
     fetchNotifications(1);
-    
+
     // Mark all notifications as read when user visits the page
     const markAsReadOnVisit = async () => {
       if (user && notifications.length > 0) {
@@ -252,7 +251,7 @@ export default function Notifications() {
 
           if (error) throw error;
         } catch (error) {
-          console.error('Error marking notifications as read:', error);
+          // console.error('Error marking notifications as read:', error);
         }
       }
     };

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,16 +51,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Get initial session
     const getInitialSession = async () => {
       try {
-        console.log('Getting initial session...');
+        // console.log('Getting initial session...');
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('Initial session:', session);
+        // console.log('Initial session:', session);
 
         if (session?.user) {
-          console.log('User found in initial session');
+          // console.log('User found in initial session');
           setSession(session);
           setUser(session.user);
         } else {
-          console.log('No user found, clearing auth state');
+          // console.log('No user found, clearing auth state');
           setSession(null);
           setUser(null);
         }
@@ -70,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(null);
         setUser(null);
       } finally {
-        console.log('Setting loading to false');
+        // console.log('Setting loading to false');
         setLoading(false);
       }
     };
@@ -80,12 +79,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session);
+        // console.log('Auth state change:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
 
         if (event === 'SIGNED_OUT') {
-          console.log('User signed out');
+          // console.log('User signed out');
           // Clear username from localStorage
           Object.keys(localStorage).forEach(key => {
             if (key.startsWith('username_')) {
