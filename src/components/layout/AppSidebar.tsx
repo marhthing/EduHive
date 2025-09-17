@@ -146,20 +146,53 @@ export function AppSidebar() {
     }
   };
 
-  const getProfileUrl = () => {
+  const getProfileUrl = async () => {
     if (!user) return "/profile";
     
-    // Get username from localStorage when needed
+    // Get username from localStorage first
     const storedUsername = localStorage.getItem(`username_${user.id}`);
-    return storedUsername ? `/profile/${storedUsername}` : "/profile";
+    if (storedUsername) {
+      return `/profile/${storedUsername}`;
+    }
+    
+    // If not in localStorage, try to fetch and store it
+    try {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (profileData?.username) {
+        localStorage.setItem(`username_${user.id}`, profileData.username);
+        return `/profile/${profileData.username}`;
+      }
+    } catch (error) {
+      console.error("Error fetching username:", error);
+    }
+    
+    return "/profile";
   };
+
+  const [profileUrl, setProfileUrl] = useState("/profile");
+
+  useEffect(() => {
+    const updateProfileUrl = async () => {
+      const url = await getProfileUrl();
+      setProfileUrl(url);
+    };
+    
+    if (user) {
+      updateProfileUrl();
+    }
+  }, [user]);
 
   const getNavigationItems = () => [
     { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : undefined },
     { title: "Search", url: "/search", icon: Search },
     { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : undefined },
     { title: "Bookmarks", url: "/bookmarks", icon: Bookmark },
-    { title: "Profile", url: getProfileUrl(), icon: User },
+    { title: "Profile", url: profileUrl, icon: User },
     { title: "Create Post", url: "/post", icon: Plus },
   ];
 

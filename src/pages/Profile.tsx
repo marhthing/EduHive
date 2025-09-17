@@ -99,6 +99,13 @@ export default function Profile() {
           return;
         }
 
+        // Try localStorage first for faster redirect
+        const storedUsername = localStorage.getItem(`username_${user.id}`);
+        if (storedUsername) {
+          navigate(`/profile/${storedUsername}`, { replace: true });
+          return;
+        }
+
         // Fetch current user's profile
         const result = await supabase
           .from("profiles")
@@ -108,6 +115,9 @@ export default function Profile() {
         
         if (result.error) throw result.error;
         if (!result.data) throw new Error("Profile not found");
+        
+        // Store for future use
+        localStorage.setItem(`username_${user.id}`, result.data.username);
         
         // Immediately redirect to the proper profile URL
         navigate(`/profile/${result.data.username}`, { replace: true });
