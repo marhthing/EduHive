@@ -727,15 +727,10 @@ export default function PostDetail() {
                                                 <Button
                                                   variant="outline"
                                                   disabled={!user}
-                                                  onClick={() => {
-                                                    if (!user) return;
-                                                    const link = document.createElement('a');
-                                                    link.href = attachment.url;
-                                                    link.download = 'document.pdf';
-                                                    link.target = '_blank';
-                                                    document.body.appendChild(link);
-                                                    link.click();
-                                                    document.body.removeChild(link);
+                                                  onClick={async () => {
+                                                    const { downloadUrl } = await import("@/lib/download");
+                                                    const fileName = attachment.name || `${post.profile?.username || 'user'}_document.pdf`;
+                                                    await downloadUrl(attachment.url, fileName);
                                                   }}
                                                 >
                                                   Download
@@ -756,15 +751,10 @@ export default function PostDetail() {
                                                 <Button
                                                   variant="outline"
                                                   disabled={!user}
-                                                  onClick={() => {
-                                                    if (!user) return;
-                                                    const link = document.createElement('a');
-                                                    link.href = attachment.url;
-                                                    link.download = 'attachment';
-                                                    link.target = '_blank';
-                                                    document.body.appendChild(link);
-                                                    link.click();
-                                                    document.body.removeChild(link);
+                                                  onClick={async () => {
+                                                    const { downloadUrl } = await import("@/lib/download");
+                                                    const fileName = attachment.name || `${post.profile?.username || 'user'}_attachment.${attachment.type?.split('/')[1] || 'unknown'}`;
+                                                    await downloadUrl(attachment.url, fileName);
                                                   }}
                                                 >
                                                   Download
@@ -798,15 +788,10 @@ export default function PostDetail() {
                               variant="outline"
                               size="sm"
                               disabled={!user}
-                              onClick={() => {
-                                if (!user) return;
-                                const link = document.createElement('a');
-                                link.href = attachments[0].url;
-                                link.download = 'document.pdf';
-                                link.target = '_blank';
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
+                              onClick={async () => {
+                                const { downloadUrl } = await import("@/lib/download");
+                                const fileName = attachments[0].name || `${post.profile?.username || 'user'}_document.pdf`;
+                                await downloadUrl(attachments[0].url, fileName);
                               }}
                               className="px-3"
                               title={user ? "Download PDF" : "Login to download"}
@@ -830,15 +815,10 @@ export default function PostDetail() {
                               variant="outline"
                               size="sm"
                               disabled={!user}
-                              onClick={() => {
-                                if (!user) return;
-                                const link = document.createElement('a');
-                                link.href = attachments[0].url;
-                                link.download = 'attachment';
-                                link.target = '_blank';
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
+                              onClick={async () => {
+                                const { downloadUrl } = await import("@/lib/download");
+                                const fileName = attachments[0].name || `${post.profile?.username || 'user'}_attachment.${attachments[0].type?.split('/')[1] || 'unknown'}`;
+                                await downloadUrl(attachments[0].url, fileName);
                               }}
                               className="px-3"
                               title={user ? "Download file" : "Login to download"}
@@ -922,14 +902,10 @@ export default function PostDetail() {
                                                   </Button>
                                                   <Button
                                                     variant="outline"
-                                                    onClick={() => {
-                                                      const link = document.createElement('a');
-                                                      link.href = attachment.url;
-                                                      link.download = 'document.pdf';
-                                                      link.target = '_blank';
-                                                      document.body.appendChild(link);
-                                                      link.click();
-                                                      document.body.removeChild(link);
+                                                    onClick={async () => {
+                                                      const { downloadUrl } = await import("@/lib/download");
+                                                      const fileName = attachment.name || `${post.profile?.username || 'user'}_document.pdf`;
+                                                      await downloadUrl(attachment.url, fileName);
                                                     }}
                                                   >
                                                     Download
@@ -949,14 +925,10 @@ export default function PostDetail() {
                                                   </Button>
                                                   <Button
                                                     variant="outline"
-                                                    onClick={() => {
-                                                      const link = document.createElement('a');
-                                                      link.href = attachment.url;
-                                                      link.download = 'attachment';
-                                                      link.target = '_blank';
-                                                      document.body.appendChild(link);
-                                                      link.click();
-                                                      document.body.removeChild(link);
+                                                    onClick={async () => {
+                                                      const { downloadUrl } = await import("@/lib/download");
+                                                      const fileName = attachment.name || `${post.profile?.username || 'user'}_attachment.${attachment.type?.split('/')[1] || 'unknown'}`;
+                                                      await downloadUrl(attachment.url, fileName);
                                                     }}
                                                   >
                                                     Download
@@ -1037,14 +1009,10 @@ export default function PostDetail() {
                                                     </Button>
                                                     <Button
                                                       variant="outline"
-                                                      onClick={() => {
-                                                        const link = document.createElement('a');
-                                                        link.href = attachment.url;
-                                                        link.download = 'document.pdf';
-                                                        link.target = '_blank';
-                                                        document.body.appendChild(link);
-                                                        link.click();
-                                                        document.body.removeChild(link);
+                                                      onClick={async () => {
+                                                        const { downloadUrl } = await import("@/lib/download");
+                                                        const fileName = attachment.name || `${post.profile?.username || 'user'}_document.pdf`;
+                                                        await downloadUrl(attachment.url, fileName);
                                                       }}
                                                     >
                                                       Download
@@ -1064,14 +1032,10 @@ export default function PostDetail() {
                                                     </Button>
                                                     <Button
                                                       variant="outline"
-                                                      onClick={() => {
-                                                        const link = document.createElement('a');
-                                                        link.href = attachment.url;
-                                                        link.download = 'attachment';
-                                                        link.target = '_blank';
-                                                        document.body.appendChild(link);
-                                                        link.click();
-                                                        document.body.removeChild(link);
+                                                      onClick={async () => {
+                                                        const { downloadUrl } = await import("@/lib/download");
+                                                        const fileName = attachment.name || `${post.profile?.username || 'user'}_attachment.${attachment.type?.split('/')[1] || 'unknown'}`;
+                                                        await downloadUrl(attachment.url, fileName);
                                                       }}
                                                     >
                                                       Download
