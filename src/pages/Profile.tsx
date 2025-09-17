@@ -75,6 +75,8 @@ export default function Profile() {
       if (error) throw error;
       
       console.log("Profile data fetched:", profileData);
+      console.log("Followers count from DB:", profileData.followers_count);
+      console.log("Following count from DB:", profileData.following_count);
       
       setProfile(profileData);
       setFollowersCount(profileData.followers_count || 0);
@@ -247,8 +249,9 @@ export default function Profile() {
 
         // Force refresh the profile to get updated counts from database
         setTimeout(() => {
+          console.log("Refreshing profile after unfollow...");
           fetchProfile();
-        }, 500);
+        }, 1000);
       } else {
         // Follow
         const { error } = await supabase
@@ -272,8 +275,9 @@ export default function Profile() {
 
           // Force refresh the profile to get updated counts from database
           setTimeout(() => {
+            console.log("Refreshing profile after follow...");
             fetchProfile();
-          }, 500);
+          }, 1000);
         }
       }
     } catch (error) {
@@ -311,17 +315,23 @@ export default function Profile() {
         .on('postgres_changes', 
           { event: 'INSERT', schema: 'public', table: 'follows', filter: `following_id=eq.${profile.user_id}` },
           (payload) => {
-            console.log("Follow INSERT detected:", payload);
+            console.log("Follow INSERT detected for this user being followed:", payload);
             // Someone followed this user - refresh profile data
-            fetchProfile();
+            setTimeout(() => {
+              console.log("Real-time refresh after follow INSERT");
+              fetchProfile();
+            }, 1000);
           }
         )
         .on('postgres_changes', 
           { event: 'DELETE', schema: 'public', table: 'follows', filter: `following_id=eq.${profile.user_id}` },
           (payload) => {
-            console.log("Follow DELETE detected:", payload);
+            console.log("Follow DELETE detected for this user being unfollowed:", payload);
             // Someone unfollowed this user - refresh profile data
-            fetchProfile();
+            setTimeout(() => {
+              console.log("Real-time refresh after follow DELETE");
+              fetchProfile();
+            }, 1000);
           }
         )
         .on('postgres_changes', 
