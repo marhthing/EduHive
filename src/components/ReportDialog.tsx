@@ -110,7 +110,7 @@ export function ReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle>Report {type === 'post' ? 'Post' : 'Comment'}</DialogTitle>
         </DialogHeader>

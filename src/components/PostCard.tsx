@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Heart, MessageCircle, Bookmark, Share2, X, Download } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, X, Download, FileText, ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
