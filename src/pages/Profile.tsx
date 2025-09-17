@@ -215,67 +215,104 @@ export default function Profile() {
       console.log("Fetching replies for user:", userId);
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { data: repliesData, error } = await supabase
+      // First get all comments by this user
+      const { data: commentsData, error: commentsError } = await supabase
         .from("comments")
-        .select(`
-          id,
-          body,
-          created_at,
-          user_id,
-          post_id,
-          parent_comment_id,
-          post:posts!inner (
-            id,
-            body,
-            user_id,
-            created_at,
-            profile:profiles!posts_user_id_fkey (
-              username,
-              name,
-              profile_pic
-            )
-          ),
-          profile:profiles!comments_user_id_fkey (
-            username,
-            name,
-            profile_pic,
-            school,
-            department
-          )
-        `)
+        .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error in replies query:", error);
-        throw error;
+      if (commentsError) {
+        console.error("Error fetching comments:", commentsError);
+        throw commentsError;
       }
 
-      console.log("Raw replies data:", repliesData);
+      console.log("Raw comments data:", commentsData);
 
-      if (!repliesData || repliesData.length === 0) {
-        console.log("No replies found for user");
+      if (!commentsData || commentsData.length === 0) {
+        console.log("No comments found for user");
         setReplies([]);
         return;
       }
 
-      const repliesWithCounts = await Promise.all(
-        repliesData.map(async (reply) => {
-          const [likesResult, userLikeResult] = await Promise.all([
-            supabase.from("comment_likes").select("id", { count: "exact" }).eq("comment_id", reply.id),
-            user ? supabase.from("comment_likes").select("id").eq("comment_id", reply.id).eq("user_id", user.id).single() : null,
-          ]);
+      // Get all unique post IDs
+      const postIds = [...new Set(commentsData.map(comment => comment.post_id))];
+      
+      // Get post data for these comments
+      const { data: postsData, error: postsError } = await supabase
+        .from("posts")
+        .select("id, body, user_id, created_at")
+        .in("id", postIds);
 
-          return {
-            ...reply,
-            likes_count: likesResult.count || 0,
-            is_liked: !!userLikeResult?.data,
-          };
-        })
-      );
+      if (postsError) {
+        console.error("Error fetching posts:", postsError);
+        throw postsError;
+      }
 
-      console.log("Final replies with counts:", repliesWithCounts);
-      setReplies(repliesWithCounts);
+      // Get profiles for post authors
+      const postUserIds = [...new Set(postsData?.map(post => post.user_id) || [])];
+      const { data: postProfilesData, error: postProfilesError } = await supabase
+        .from("profiles")
+        .select("user_id, username, name, profile_pic")
+        .in("user_id", postUserIds);
+
+      if (postProfilesError) {
+        console.error("Error fetching post profiles:", postProfilesError);
+      }
+
+      // Get profile for the comment author (current user)
+      const { data: userProfileData, error: userProfileError } = await supabase
+        .from("profiles")
+        .select("user_id, username, name, profile_pic, school, department")
+        .eq("user_id", userId)
+        .single();
+
+      if (userProfileError) {
+        console.error("Error fetching user profile:", userProfileError);
+      }
+
+      // Create maps for easy lookup
+      const postsMap = new Map(postsData?.map(post => [post.id, post]) || []);
+      const postProfilesMap = new Map(postProfilesData?.map(profile => [profile.user_id, profile]) || []);
+
+      // Combine the data
+      const repliesWithPostData = commentsData.map(comment => {
+        const post = postsMap.get(comment.post_id);
+        const postProfile = post ? postProfilesMap.get(post.user_id) : null;
+
+        return {
+          ...comment,
+          post: post ? {
+            ...post,
+            profile: postProfile
+          } : null,
+          profile: userProfileData
+        };
+      });
+
+      // Get like counts and user likes
+      const commentIds = commentsData.map(c => c.id);
+      const [likesData, userLikesData] = await Promise.all([
+        supabase.from("comment_likes").select("comment_id").in("comment_id", commentIds),
+        user ? supabase.from("comment_likes").select("comment_id").eq("user_id", user.id).in("comment_id", commentIds) : Promise.resolve({ data: [] })
+      ]);
+
+      // Count likes per comment
+      const likesMap = new Map();
+      likesData.data?.forEach(like => {
+        likesMap.set(like.comment_id, (likesMap.get(like.comment_id) || 0) + 1);
+      });
+
+      const userLikesSet = new Set(userLikesData.data?.map(l => l.comment_id) || []);
+
+      const finalReplies = repliesWithPostData.map(reply => ({
+        ...reply,
+        likes_count: likesMap.get(reply.id) || 0,
+        is_liked: userLikesSet.has(reply.id)
+      }));
+
+      console.log("Final replies with counts:", finalReplies);
+      setReplies(finalReplies);
     } catch (error) {
       console.error("Error fetching user replies:", error);
       setReplies([]);
