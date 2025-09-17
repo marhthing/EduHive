@@ -20,13 +20,13 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 
-const getNavigationItems = (username: string, unreadNotifications: number, newPostsCount: number) => [
-  { title: "Home", url: "/home", icon: Home, badge: newPostsCount },
-  { title: "Search", url: "/search", icon: Search },
-  { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications },
-  { title: "Bookmarks", url: "/bookmarks", icon: Bookmark },
-  { title: "Profile", url: `/profile/${username}`, icon: User },
-  { title: "Create Post", url: "/post", icon: Plus },
+const getNavigationItems = (username: string, unreadNotifications: number, newPostsCount: number, handleNavClick: (url: string) => void) => [
+  { title: "Home", url: "/home", icon: Home, badge: newPostsCount, onClick: () => handleNavClick("/home") },
+  { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
+  { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications, onClick: () => handleNavClick("/notifications") },
+  { title: "Bookmarks", url: "/bookmarks", icon: Bookmark, onClick: () => handleNavClick("/bookmarks") },
+  { title: "Profile", url: `/profile/${username}`, icon: User, onClick: () => handleNavClick(`/profile/${username}`) },
+  { title: "Create Post", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
 ];
 
   const renderBadge = (count: number) => {
@@ -163,7 +163,26 @@ export function AppSidebar() {
     }
   };
 
-  const navigationItems = getNavigationItems(username, unreadNotifications, newPostsCount);
+  const handleNavClick = async (url: string) => {
+    if (url === "/notifications" && user && unreadNotifications > 0) {
+      // Mark all notifications as read
+      try {
+        await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('user_id', user.id)
+          .eq('read', false);
+        setUnreadNotifications(0);
+      } catch (error) {
+        console.error('Error marking notifications as read:', error);
+      }
+    } else if (url === "/home" && newPostsCount > 0) {
+      // Reset new posts count (user has seen them)
+      setNewPostsCount(0);
+    }
+  };
+
+  const navigationItems = getNavigationItems(username, unreadNotifications, newPostsCount, handleNavClick);
 
   return (
     <Sidebar className={collapsed ? "w-16" : "w-64"}>
@@ -178,7 +197,7 @@ export function AppSidebar() {
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className={getNavCls}>
+                    <NavLink to={item.url} end className={getNavCls} onClick={item.onClick}>
                       <div className="relative">
                         <item.icon className="h-5 w-5" />
                         {item.badge && item.badge > 0 && renderBadge(item.badge)}

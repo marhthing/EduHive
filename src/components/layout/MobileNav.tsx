@@ -5,12 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const getNavigationItems = (username: string, notificationCount: number, newPostsCount: number) => [
-  { title: "Home", url: "/home", icon: Home, badge: newPostsCount },
-  { title: "Search", url: "/search", icon: Search },
-  { title: "Notifications", url: "/notifications", icon: Bell, badge: notificationCount },
-  { title: "Create", url: "/post", icon: Plus },
-  { title: "Profile", url: `/profile/${username}`, icon: User },
+const getNavigationItems = (username: string, notificationCount: number, newPostsCount: number, handleNavClick: (url: string) => void) => [
+  { title: "Home", url: "/home", icon: Home, badge: newPostsCount, onClick: () => handleNavClick("/home") },
+  { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
+  { title: "Notifications", url: "/notifications", icon: Bell, badge: notificationCount, onClick: () => handleNavClick("/notifications") },
+  { title: "Create", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
+  { title: "Profile", url: `/profile/${username}`, icon: User, onClick: () => handleNavClick(`/profile/${username}`) },
 ];
 
 export function MobileNav() {
@@ -114,8 +114,27 @@ export function MobileNav() {
     }
   }, [user]);
 
+  const handleNavClick = async (url: string) => {
+    if (url === "/notifications" && user && unreadNotifications > 0) {
+      // Mark all notifications as read
+      try {
+        await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('user_id', user.id)
+          .eq('read', false);
+        setUnreadNotifications(0);
+      } catch (error) {
+        console.error('Error marking notifications as read:', error);
+      }
+    } else if (url === "/home" && newPostsCount > 0) {
+      // Reset new posts count (user has seen them)
+      setNewPostsCount(0);
+    }
+  };
+
   const isActive = (path: string) => currentPath === path;
-  const navigationItems = getNavigationItems(username, unreadNotifications, newPostsCount);
+  const navigationItems = getNavigationItems(username, unreadNotifications, newPostsCount, handleNavClick);
 
   const renderBadge = (count: number) => {
     if (count === 0) return null;
@@ -130,7 +149,7 @@ export function MobileNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden">
       <div className="flex items-center justify-around py-2">
         {navigationItems.map((item) => (
-          <NavLink key={item.title} to={item.url}>
+          <NavLink key={item.title} to={item.url} onClick={item.onClick}>
             <Button
               variant={isActive(item.url) ? "default" : "ghost"}
               size="sm"
