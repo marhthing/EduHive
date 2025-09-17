@@ -393,12 +393,24 @@ export default function Home() {
         
         console.log('Bookmark removed successfully');
       } else {
-        const { error, data } = await supabase
+        // Check if bookmark already exists to prevent duplicate key error
+        const { data: existingBookmark, error: checkError } = await supabase
           .from('bookmarks')
-          .insert({ post_id: postId, user_id: user.id });
+          .select('id')
+          .eq('post_id', postId)
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-        console.log('Insert bookmark result:', { error, data });
-        if (error) throw error;
+        if (checkError) throw checkError;
+
+        if (!existingBookmark) {
+          const { error, data } = await supabase
+            .from('bookmarks')
+            .insert({ post_id: postId, user_id: user.id });
+
+          console.log('Insert bookmark result:', { error, data });
+          if (error) throw error;
+        }
 
         setPosts(posts.map(p => 
           p.id === postId 
