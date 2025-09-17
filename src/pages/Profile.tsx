@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Calendar, MapPin, School, Settings, Edit3 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -64,7 +64,7 @@ export default function Profile() {
   const [followingCount, setFollowingCount] = useState(0);
 
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const { data: profileData, error } = await supabase
         .from("profiles")
@@ -76,7 +76,6 @@ export default function Profile() {
       setProfile(profileData);
       setFollowersCount(profileData.followers_count || 0);
       setFollowingCount(profileData.following_count || 0);
-
 
       // Check if current user is following this profile
       if (currentUser && profileData) {
@@ -93,7 +92,7 @@ export default function Profile() {
       console.error("Error fetching profile:", error);
       showToast("Profile not found", "error");
     }
-  };
+  }, [username, currentUser, showToast]);
 
   const fetchUserPosts = async (userId: string) => {
     try {
@@ -242,7 +241,7 @@ export default function Profile() {
 
         setIsFollowing(false);
         showToast(`Unfollowed @${profile.username}`, "success");
-        
+
         // Refresh the profile to get updated counts from database
         fetchProfile();
       } else {
@@ -265,7 +264,7 @@ export default function Profile() {
         } else {
           setIsFollowing(true);
           showToast(`Following @${profile.username}`, "success");
-          
+
           // Refresh the profile to get updated counts from database
           fetchProfile();
         }
@@ -292,7 +291,7 @@ export default function Profile() {
     if (username) {
       fetchProfile();
     }
-  }, [username, currentUser]); // Added currentUser dependency
+  }, [username, currentUser, fetchProfile]); // Added fetchProfile dependency
 
   useEffect(() => {
     if (profile) {
@@ -322,7 +321,7 @@ export default function Profile() {
         followsSubscription.unsubscribe();
       };
     }
-  }, [profile]);
+  }, [profile, fetchProfile]); // Added fetchProfile dependency
 
   if (loading) {
     return (
