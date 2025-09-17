@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
+import { format } from "date-fns";
 
 interface Profile {
   id: string;
@@ -322,7 +323,7 @@ export default function Settings() {
               />
               {!canChangeUsername && nextUsernameChange && (
                 <p className="text-sm text-muted-foreground">
-                  You can change your username again on {nextUsernameChange.toLocaleDateString()}
+                  You can change your username again on {format(nextUsernameChange, 'MMMM d, yyyy')}
                 </p>
               )}
             </div>
