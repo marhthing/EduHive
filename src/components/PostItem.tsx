@@ -500,14 +500,14 @@ export function PostItem({
 
           {/* Tags */}
           {(post.school_tag || post.course_tag) && (
-            <div className="flex mb-3 flex-wrap">
+            <div className="flex gap-2 mb-3 mt-3 flex-wrap">
               {post.school_tag && (
-                <Badge variant="secondary" className="text-xs mr-2">
+                <Badge variant="secondary" className="text-xs">
                   {post.school_tag}
                 </Badge>
               )}
               {post.course_tag && (
-                <Badge variant="outline" className="text-xs mt-1">
+                <Badge variant="outline" className="text-xs">
                   {post.course_tag}
                 </Badge>
               )}
