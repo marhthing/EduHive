@@ -59,7 +59,7 @@ export function PostCard({ post, onLike, onBookmark, onComment }: PostCardProps)
 
     if (post.attachment_type?.startsWith('image/')) {
       return (
-        <div className="mt-3 rounded-lg overflow-hidden">
+        <div className="mt-3 rounded-lg overflow-hidden border border-border">
           {!imageError ? (
             <img
               src={post.attachment_url}
@@ -67,33 +67,93 @@ export function PostCard({ post, onLike, onBookmark, onComment }: PostCardProps)
               className="w-full max-h-96 object-cover cursor-pointer hover:opacity-90 transition-opacity"
               onError={() => setImageError(true)}
               onClick={() => window.open(post.attachment_url!, '_blank')}
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-48 bg-muted flex items-center justify-center rounded-lg">
-              <p className="text-muted-foreground">Failed to load image</p>
+              <FileText className="w-8 h-8 text-muted-foreground mb-2" />
+              <p className="text-muted-foreground text-center">
+                Failed to load image
+                <br />
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => window.open(post.attachment_url!, '_blank')}
+                  className="p-0 h-auto text-xs"
+                >
+                  Try opening in new tab
+                </Button>
+              </p>
             </div>
           )}
         </div>
       );
     }
 
-    if (post.attachment_type === 'application/pdf') {
+    if (post.attachment_type === 'application/pdf' || post.attachment_type?.includes('pdf')) {
       return (
         <div className="mt-3">
-          <Button
-            variant="outline"
-            onClick={() => window.open(post.attachment_url!, '_blank')}
-            className="w-full justify-start"
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            View PDF Document
-            <ExternalLink className="w-4 h-4 ml-auto" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => window.open(post.attachment_url!, '_blank')}
+              className="flex-1 justify-start"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              View PDF Document
+              <ExternalLink className="w-4 h-4 ml-auto" />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = post.attachment_url!;
+                link.download = 'document.pdf';
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+              className="px-3"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       );
     }
 
-    return null;
+    // Handle other file types
+    return (
+      <div className="mt-3">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => window.open(post.attachment_url!, '_blank')}
+            className="flex-1 justify-start"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            View File ({post.attachment_type || 'Unknown type'})
+            <ExternalLink className="w-4 h-4 ml-auto" />
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              const link = document.createElement('a');
+              link.href = post.attachment_url!;
+              link.download = 'attachment';
+              link.target = '_blank';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+            className="px-3"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    );
   };
 
   return (
