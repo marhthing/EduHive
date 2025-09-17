@@ -5,13 +5,23 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const getNavigationItems = (username: string, notificationCount: number, newPostsCount: number, handleNavClick: (url: string) => void) => [
-  { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : undefined, onClick: () => handleNavClick("/home") },
-  { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
-  { title: "Notifications", url: "/notifications", icon: Bell, badge: notificationCount > 0 ? notificationCount : undefined, onClick: () => handleNavClick("/notifications") },
-  { title: "Create", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
-  { title: "Profile", url: username ? `/profile/${username}` : "/profile", icon: User, onClick: () => handleNavClick(username ? `/profile/${username}` : "/profile") },
-];
+const getNavigationItems = (user: any, notificationCount: number, newPostsCount: number, handleNavClick: (url: string) => void) => {
+  const getProfileUrl = () => {
+    if (!user) return "/profile";
+    
+    // Get username from localStorage when needed
+    const storedUsername = localStorage.getItem(`username_${user.id}`);
+    return storedUsername ? `/profile/${storedUsername}` : "/profile";
+  };
+
+  return [
+    { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : undefined, onClick: () => handleNavClick("/home") },
+    { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
+    { title: "Notifications", url: "/notifications", icon: Bell, badge: notificationCount > 0 ? notificationCount : undefined, onClick: () => handleNavClick("/notifications") },
+    { title: "Create", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
+    { title: "Profile", url: getProfileUrl(), icon: User, onClick: () => handleNavClick(getProfileUrl()) },
+  ];
+};
 
 export function MobileNav() {
   const location = useLocation();
@@ -19,9 +29,6 @@ export function MobileNav() {
   const currentPath = location.pathname;
   const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
   const [newPostsCount, setNewPostsCount] = useState<number>(0);
-
-  // Get username from localStorage or user metadata
-  const [username, setUsername] = useState<string>("");
 
   const fetchNotificationCount = async () => {
     if (!user) return;
@@ -78,48 +85,6 @@ export function MobileNav() {
   };
 
   useEffect(() => {
-    const fetchUsername = () => {
-      if (user) {
-        // First try localStorage
-        const storedUsername = localStorage.getItem(`username_${user.id}`);
-        if (storedUsername) {
-          setUsername(storedUsername);
-          return;
-        }
-
-        // Fallback to user metadata
-        const metadataUsername = user.user_metadata?.username;
-        if (metadataUsername) {
-          setUsername(metadataUsername);
-          localStorage.setItem(`username_${user.id}`, metadataUsername);
-          return;
-        }
-
-        // Last fallback - fetch from database
-        const fetchFromDB = async () => {
-          try {
-            const { data, error } = await supabase
-              .from("profiles")
-              .select("username")
-              .eq("user_id", user.id)
-              .single();
-            
-            if (!error && data?.username) {
-              setUsername(data.username);
-              localStorage.setItem(`username_${user.id}`, data.username);
-            }
-          } catch (error) {
-            console.error("Error fetching username:", error);
-          }
-        };
-
-        fetchFromDB();
-      } else {
-        setUsername("");
-      }
-    };
-
-    fetchUsername();
     fetchNotificationCount();
     fetchNewPostsCount();
 
@@ -173,7 +138,7 @@ export function MobileNav() {
   };
 
   const isActive = (path: string) => currentPath === path;
-  const navigationItems = getNavigationItems(username, unreadNotifications, newPostsCount, handleNavClick);
+  const navigationItems = getNavigationItems(user, unreadNotifications, newPostsCount, handleNavClick);
 
   const renderBadge = (count: number | undefined) => {
     if (!count || count === 0) return null;

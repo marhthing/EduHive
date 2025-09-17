@@ -41,9 +41,6 @@ export function AppSidebar() {
   const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
   const [newPostsCount, setNewPostsCount] = useState<number>(0);
 
-  // Get username from localStorage or user metadata
-  const [username, setUsername] = useState<string>("");
-
   const fetchNotificationCount = async () => {
     if (!user) return;
     
@@ -100,48 +97,6 @@ export function AppSidebar() {
   };
 
   useEffect(() => {
-    const fetchUsername = () => {
-      if (user) {
-        // First try localStorage
-        const storedUsername = localStorage.getItem(`username_${user.id}`);
-        if (storedUsername) {
-          setUsername(storedUsername);
-          return;
-        }
-
-        // Fallback to user metadata
-        const metadataUsername = user.user_metadata?.username;
-        if (metadataUsername) {
-          setUsername(metadataUsername);
-          localStorage.setItem(`username_${user.id}`, metadataUsername);
-          return;
-        }
-
-        // Last fallback - fetch from database
-        const fetchFromDB = async () => {
-          try {
-            const { data, error } = await supabase
-              .from("profiles")
-              .select("username")
-              .eq("user_id", user.id)
-              .single();
-            
-            if (!error && data?.username) {
-              setUsername(data.username);
-              localStorage.setItem(`username_${user.id}`, data.username);
-            }
-          } catch (error) {
-            console.error("Error fetching username:", error);
-          }
-        };
-
-        fetchFromDB();
-      } else {
-        setUsername("");
-      }
-    };
-
-    fetchUsername();
     fetchNotificationCount();
     fetchNewPostsCount();
 
@@ -191,6 +146,14 @@ export function AppSidebar() {
     }
   };
 
+  const getProfileUrl = () => {
+    if (!user) return "/profile";
+    
+    // Get username from localStorage when needed
+    const storedUsername = localStorage.getItem(`username_${user.id}`);
+    return storedUsername ? `/profile/${storedUsername}` : "/profile";
+  };
+
   const handleNavClick = async (url: string) => {
     if (url === "/notifications" && user && unreadNotifications > 0) {
       // Mark all notifications as read
@@ -217,7 +180,7 @@ export function AppSidebar() {
     { title: "Search", url: "/search", icon: Search, onClick: () => handleNavClick("/search") },
     { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : undefined, onClick: () => handleNavClick("/notifications") },
     { title: "Bookmarks", url: "/bookmarks", icon: Bookmark, onClick: () => handleNavClick("/bookmarks") },
-    { title: "Profile", url: username ? `/profile/${username}` : "/profile", icon: User, onClick: () => handleNavClick(username ? `/profile/${username}` : "/profile") },
+    { title: "Profile", url: getProfileUrl(), icon: User, onClick: () => handleNavClick(getProfileUrl()) },
     { title: "Create Post", url: "/post", icon: Plus, onClick: () => handleNavClick("/post") },
   ];
 
