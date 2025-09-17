@@ -326,27 +326,24 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap mb-0">
               <span className="font-semibold text-sm">
                 {post.profile?.name || post.profile?.username || "Unknown User"}
               </span>
               <span className="text-xs text-muted-foreground">
                 @{post.profile?.username || "unknown"}
               </span>
-              {post.profile?.school && (
-                <span className="text-xs text-muted-foreground">
-                  • {post.profile.school}
-                </span>
-              )}
-              {post.profile?.department && (
-                <span className="text-xs text-muted-foreground">
-                  • {post.profile.department}
-                </span>
-              )}
+              <span className="text-xs text-muted-foreground">
+                • {formatTimeShort(post.created_at)}
+              </span>
             </div>
-            <div className="text-xs text-muted-foreground">
-              {formatTimeShort(post.created_at)}
-            </div>
+            {(post.profile?.school || post.profile?.department) && (
+              <div className="text-xs text-muted-foreground" style={{ marginTop: '-2px' }}>
+                {post.profile?.school && post.profile.school}
+                {post.profile?.school && post.profile?.department && ' • '}
+                {post.profile?.department && post.profile.department}
+              </div>
+            )}
           </div>
         </div>
 

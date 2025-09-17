@@ -587,7 +587,7 @@ export default function PostDetail() {
                   <span className="text-muted-foreground">•</span>
                   <span className="text-muted-foreground">{formatTimeShort(post.created_at)}</span>
                 </div>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1 text-sm text-muted-foreground" style={{ marginTop: '-2px' }}>
                   {post.profile?.school && (
                     <span>{post.profile.school}</span>
                   )}
