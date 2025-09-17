@@ -95,6 +95,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const deactivated = await checkDeactivationStatus(session.user.id);
+          setIsDeactivated(deactivated);
+        } else {
+          setIsDeactivated(false);
+        }
       } catch (error) {
         console.error('Error getting initial session:', error);
       } finally {
