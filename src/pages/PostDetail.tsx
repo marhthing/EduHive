@@ -1073,7 +1073,10 @@ export default function PostDetail() {
           comments.map((comment) => (
             <div key={comment.id} className="border border-border rounded-lg p-4">
               <div className="flex gap-3">
-                <Avatar className="h-10 w-10 flex-shrink-0">
+                <Avatar 
+                  className="h-10 w-10 flex-shrink-0 cursor-pointer"
+                  onClick={() => comment.profile?.username && navigate(`/profile/${comment.profile.username}`)}
+                >
                   <AvatarImage src={comment.profile?.profile_pic || undefined} />
                   <AvatarFallback>
                     {comment.profile?.username?.[0]?.toUpperCase() || 'U'}
@@ -1083,7 +1086,12 @@ export default function PostDetail() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="font-semibold text-foreground">{comment.profile?.username || 'Anonymous'}</span>
+                      <span 
+                        className="font-semibold text-foreground cursor-pointer hover:underline"
+                        onClick={() => comment.profile?.username && navigate(`/profile/${comment.profile.username}`)}
+                      >
+                        {comment.profile?.username || 'Anonymous'}
+                      </span>
                       <span className="text-muted-foreground">•</span>
                       <span className="text-muted-foreground">{formatTimeShort(comment.created_at)}</span>
                     </div>
@@ -1193,7 +1201,10 @@ export default function PostDetail() {
                     <div className="mt-3 pl-4 border-l-2 border-border space-y-3">
                       {comment.replies.map((reply) => (
                         <div key={reply.id} className="flex gap-3">
-                          <Avatar className="h-8 w-8 flex-shrink-0">
+                          <Avatar 
+                            className="h-8 w-8 flex-shrink-0 cursor-pointer"
+                            onClick={() => reply.profile?.username && navigate(`/profile/${reply.profile.username}`)}
+                          >
                             <AvatarImage src={reply.profile?.profile_pic || undefined} />
                             <AvatarFallback>
                               {reply.profile?.username?.[0]?.toUpperCase() || 'U'}
@@ -1203,7 +1214,12 @@ export default function PostDetail() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center gap-2 text-sm">
-                                <span className="font-semibold text-foreground">{reply.profile?.username || 'Anonymous'}</span>
+                                <span 
+                                  className="font-semibold text-foreground cursor-pointer hover:underline"
+                                  onClick={() => reply.profile?.username && navigate(`/profile/${reply.profile.username}`)}
+                                >
+                                  {reply.profile?.username || 'Anonymous'}
+                                </span>
                                 <span className="text-muted-foreground">•</span>
                                 <span className="text-muted-foreground">{formatTimeShort(reply.created_at)}</span>
                               </div>
