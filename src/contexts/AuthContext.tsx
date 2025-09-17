@@ -188,6 +188,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (session.user.user_metadata?.username) {
             localStorage.setItem(`username_${session.user.id}`, session.user.user_metadata.username);
           }
+
+          // Sync Google avatar to profile if available and not already set
+          if (session.user.user_metadata?.avatar_url && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+            try {
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('profile_pic')
+                .eq('user_id', session.user.id)
+                .single();
+
+              // Only update if profile_pic is null/empty or different from Google avatar
+              if (!profileData?.profile_pic || profileData.profile_pic !== session.user.user_metadata.avatar_url) {
+                await supabase
+                  .from('profiles')
+                  .update({ profile_pic: session.user.user_metadata.avatar_url })
+                  .eq('user_id', session.user.id);
+                console.log('Synced Google avatar to profile');
+              }
+            } catch (error) {
+              console.error('Error syncing Google avatar:', error);
+            }
+          }
         } else {
           console.log('Auth change: no user or signed out');
           setIsDeactivated(false);
