@@ -26,8 +26,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDeactivated, setIsDeactivated] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const checkDeactivationStatus = async (userId: string) => {
+    // Don't check again if we already completed initial load and user hasn't changed
+    if (initialLoadComplete && user?.id === userId) {
+      return isDeactivated;
+    }
+
     try {
       console.log('Checking deactivation status for user:', userId);
       console.log('Starting Supabase query...');
@@ -237,11 +243,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         setLoading(false);
+        setInitialLoadComplete(true);
       }
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [initialLoadComplete, user?.id, isDeactivated]);
 
   const value = {
     user,

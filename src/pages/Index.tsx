@@ -25,7 +25,7 @@ const Index = () => {
     timeoutId = setTimeout(() => {
       console.error("Auth check timeout - stopping spinner but continuing to wait for auth");
       setLoading(false);
-    }, 10000);
+    }, 3000);
 
     // Get initial session
     supabase.auth.getSession()

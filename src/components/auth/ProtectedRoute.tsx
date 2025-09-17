@@ -24,7 +24,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <img src="/logo-animated.svg" alt="Loading" className="h-8 w-8 mx-auto" />
           <p className="mt-2 text-muted-foreground">Loading...</p>
