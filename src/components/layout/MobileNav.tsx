@@ -164,7 +164,7 @@ export function MobileNav() {
             className={({ isActive }) => 
               `flex flex-col items-center gap-0.5 h-auto py-1.5 px-1 relative w-full min-w-0 flex-1 rounded-md ${
                 isActive 
-                  ? "bg-primary text-primary-foreground" 
+                  ? "text-primary border-b-2 border-primary" 
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               }`
             }
