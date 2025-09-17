@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { supabase } from "@/lib/supabaseClient"; // Assuming supabase client is imported
+import { supabase } from "@/integrations/supabase/client";
 
 interface Profile {
   username: string;
@@ -72,8 +72,7 @@ export function PostItem({
   const [carouselStartIndex, setCarouselStartIndex] = useState(0);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const navigate = useNavigate();
-  // Assuming you have a way to get the current user, e.g., from context or a hook
-  const user = null; // Replace with actual user fetching logic if not available globally
+  // Use currentUserId prop for user authentication check
 
   const handleProfileClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -395,7 +394,7 @@ export function PostItem({
   };
 
   const handleBookmark = async () => {
-    if (!user) {
+    if (!currentUserId) {
       console.error('User not authenticated');
       return;
     }
@@ -408,7 +407,7 @@ export function PostItem({
           .from('bookmarks')
           .delete()
           .eq('post_id', post.id)
-          .eq('user_id', user.id);
+          .eq('user_id', currentUserId);
 
         if (error) {
           console.error('Error removing bookmark:', error);
@@ -419,7 +418,7 @@ export function PostItem({
       } else {
         const { error } = await supabase
           .from('bookmarks')
-          .insert({ post_id: post.id, user_id: user.id });
+          .insert({ post_id: post.id, user_id: currentUserId });
 
         if (error) {
           console.error('Error adding bookmark:', error);
