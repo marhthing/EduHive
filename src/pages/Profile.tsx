@@ -86,23 +86,28 @@ export default function Profile() {
           .single();
         profileData = result.data;
         error = result.error;
-      } else if (currentUser) {
-        // No username provided, fetch current user's profile
+      } else {
+        // No username provided, we need to redirect to current user's profile
+        // First try to get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate('/auth');
+          return;
+        }
+
+        // Fetch current user's profile
         const result = await supabase
           .from("profiles")
           .select("*")
-          .eq("user_id", currentUser.id)
+          .eq("user_id", user.id)
           .single();
-        profileData = result.data;
-        error = result.error;
         
-        // If we found the profile and we're on /profile without username, redirect to /profile/username
-        if (profileData && !username) {
-          navigate(`/profile/${profileData.username}`, { replace: true });
-          return;
-        }
-      } else {
-        throw new Error("No user found");
+        if (result.error) throw result.error;
+        if (!result.data) throw new Error("Profile not found");
+        
+        // Immediately redirect to the proper profile URL
+        navigate(`/profile/${result.data.username}`, { replace: true });
+        return;
       }
 
       if (error) throw error;

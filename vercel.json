@@ -1,5 +1,12 @@
 
 {
+  "redirects": [
+    {
+      "source": "/profile",
+      "destination": "/profile/",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
