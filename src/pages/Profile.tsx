@@ -70,6 +70,10 @@ export default function Profile() {
   // Modal states
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
+  
+  // State for fetching username from localStorage
+  const [fetchingUsername, setFetchingUsername] = useState(false);
+  const [fetchedUsername, setFetchedUsername] = useState<string>("");
 
 
   const fetchProfile = useCallback(async () => {
@@ -341,6 +345,53 @@ export default function Profile() {
     }
   };
 
+  const handleFetchUsernameFromStorage = async () => {
+    setFetchingUsername(true);
+    setFetchedUsername("");
+    
+    try {
+      // Show processing for a bit longer
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Look for username in localStorage
+      let foundUsername = "";
+      
+      // Check different possible localStorage keys
+      const possibleKeys = ['username', 'user_username', 'current_username'];
+      
+      // Also check for keys that might be prefixed with user ID
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('username') || key.startsWith('username_')) {
+          const value = localStorage.getItem(key);
+          if (value && !foundUsername) {
+            foundUsername = value;
+          }
+        }
+      });
+      
+      // Check the specific possible keys
+      for (const key of possibleKeys) {
+        const value = localStorage.getItem(key);
+        if (value && !foundUsername) {
+          foundUsername = value;
+          break;
+        }
+      }
+      
+      if (foundUsername) {
+        setFetchedUsername(foundUsername);
+        showToast(`Found username: @${foundUsername}`, "success");
+      } else {
+        showToast("No username found in localStorage", "info");
+      }
+    } catch (error) {
+      console.error("Error fetching username from localStorage:", error);
+      showToast("Error fetching username from localStorage", "error");
+    } finally {
+      setFetchingUsername(false);
+    }
+  };
+
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -457,27 +508,47 @@ export default function Profile() {
                   <h1 className="text-2xl font-bold">{profile.name || profile.username}</h1>
                   <p className="text-muted-foreground">@{profile.username}</p>
                 </div>
-                {isOwnProfile ? (
-                  <Button asChild variant="outline" size="sm">
-                    <Link to="/settings">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Edit Profile
-                    </Link>
-                  </Button>
-                ) : currentUser ? (
-                  <Button
-                    onClick={handleFollowToggle}
-                    disabled={followingUser}
-                    variant={isFollowing ? "outline" : "default"}
-                    size="sm"
-                  >
-                    {followingUser ? "..." : isFollowing ? "Unfollow" : "Follow"}
-                  </Button>
-                ) : null}
+                <div className="flex gap-2">
+                  {isOwnProfile ? (
+                    <>
+                      <Button asChild variant="outline" size="sm">
+                        <Link to="/settings">
+                          <Settings className="w-4 h-4 mr-2" />
+                          Edit Profile
+                        </Link>
+                      </Button>
+                      <Button
+                        onClick={handleFetchUsernameFromStorage}
+                        disabled={fetchingUsername}
+                        variant="secondary"
+                        size="sm"
+                      >
+                        {fetchingUsername ? "Fetching..." : "Fetch Username"}
+                      </Button>
+                    </>
+                  ) : currentUser ? (
+                    <Button
+                      onClick={handleFollowToggle}
+                      disabled={followingUser}
+                      variant={isFollowing ? "outline" : "default"}
+                      size="sm"
+                    >
+                      {followingUser ? "..." : isFollowing ? "Unfollow" : "Follow"}
+                    </Button>
+                  ) : null}
+                </div>
               </div>
 
               {profile.bio && (
                 <p className="text-muted-foreground mb-4">{profile.bio}</p>
+              )}
+
+              {fetchedUsername && (
+                <div className="bg-secondary/50 rounded-lg p-3 mb-4">
+                  <p className="text-sm font-medium text-secondary-foreground">
+                    Username from localStorage: <span className="text-primary">@{fetchedUsername}</span>
+                  </p>
+                </div>
               )}
 
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
