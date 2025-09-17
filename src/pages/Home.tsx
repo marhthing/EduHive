@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Image } from "lucide-react";
+import { Upload, RefreshCw } from "lucide-react";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { PostItem } from "@/components/PostItem";
@@ -33,9 +34,50 @@ interface Post {
   is_bookmarked: boolean;
 }
 
+// Cache management
+const POSTS_PER_BATCH = 3;
+const CACHE_KEY = 'eduhive_posts_cache';
+const CACHE_TIMESTAMP_KEY = 'eduhive_posts_cache_timestamp';
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+
+interface PostsCache {
+  posts: Post[];
+  page: number;
+  hasMore: boolean;
+  followedUserIds: string[];
+}
+
+const saveToCache = (data: PostsCache) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+  } catch (error) {
+    console.error('Error saving to cache:', error);
+  }
+};
+
+const loadFromCache = (): PostsCache | null => {
+  try {
+    const timestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+    if (!timestamp || Date.now() - parseInt(timestamp) > CACHE_EXPIRY) {
+      return null;
+    }
+    
+    const cached = localStorage.getItem(CACHE_KEY);
+    return cached ? JSON.parse(cached) : null;
+  } catch (error) {
+    console.error('Error loading from cache:', error);
+    return null;
+  }
+};
+
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [followedUserIds, setFollowedUserIds] = useState<string[]>([]);
   const [composeText, setComposeText] = useState("");
   const [isPosting, setIsPosting] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -44,37 +86,75 @@ export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Load initial data (cache first, then fresh data)
   useEffect(() => {
-    fetchPosts();
+    loadInitialPosts();
   }, []);
 
-  const fetchPosts = async () => {
-    try {
-      // Get posts with priority for followed users
-      let followedUserIds: string[] = [];
+  const loadInitialPosts = async () => {
+    // Try to load from cache first
+    const cached = loadFromCache();
+    if (cached && cached.posts.length > 0) {
+      setPosts(cached.posts);
+      setPage(cached.page);
+      setHasMore(cached.hasMore);
+      setFollowedUserIds(cached.followedUserIds);
+      setLoading(false);
       
+      // Load fresh data in background
+      setTimeout(() => {
+        fetchPosts(0, true);
+      }, 1000);
+    } else {
+      // No cache, fetch fresh data
+      fetchPosts(0);
+    }
+  };
+
+  const fetchPosts = async (pageNum: number, isBackgroundRefresh = false) => {
+    try {
+      if (!isBackgroundRefresh) {
+        if (pageNum === 0) {
+          setLoading(true);
+        } else {
+          setLoadingMore(true);
+        }
+      }
+
+      // Get followed users
+      let currentFollowedUserIds: string[] = [];
       if (user) {
-        // Get list of users the current user follows
         const { data: followsData } = await supabase
           .from('follows')
           .select('following_id')
           .eq('follower_id', user.id);
         
-        followedUserIds = followsData?.map(f => f.following_id) || [];
+        currentFollowedUserIds = followsData?.map(f => f.following_id) || [];
+        setFollowedUserIds(currentFollowedUserIds);
       }
 
-      // First get all posts
+      // Fetch posts with pagination
+      const offset = pageNum * POSTS_PER_BATCH;
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(offset, offset + POSTS_PER_BATCH - 1);
 
-      console.log('Posts fetch result:', { postsData, postsError });
       if (postsError) throw postsError;
 
+      const hasMorePosts = postsData && postsData.length === POSTS_PER_BATCH;
+
+      if (!postsData || postsData.length === 0) {
+        if (pageNum === 0) {
+          setPosts([]);
+        }
+        setHasMore(false);
+        return;
+      }
+
       // Get all unique user IDs
-      const userIds = [...new Set(postsData?.map(post => post.user_id) || [])];
-      console.log('User IDs to fetch profiles for:', userIds);
+      const userIds = [...new Set(postsData.map(post => post.user_id))];
 
       // Get profiles for these users
       const { data: profilesData, error: profilesError } = await supabase
@@ -82,10 +162,8 @@ export default function Home() {
         .select('user_id, username, name, profile_pic, school, department')
         .in('user_id', userIds);
 
-      console.log('Profiles fetch result:', { profilesData, profilesError });
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
-        // Continue without profiles rather than throwing
       }
 
       // Create a map of user_id to profile
@@ -94,7 +172,7 @@ export default function Home() {
       );
 
       // Get likes and comments counts for each post
-      const postIds = postsData?.map(post => post.id) || [];
+      const postIds = postsData.map(post => post.id);
 
       const promises = [
         supabase.from('likes').select('post_id').in('post_id', postIds),
@@ -139,35 +217,70 @@ export default function Home() {
       }
 
       // Combine all data
-      const processedPosts: Post[] = postsData?.map(post => ({
+      const processedPosts: Post[] = postsData.map(post => ({
         ...post,
         profile: profilesMap.get(post.user_id) || null,
         likes_count: likesCount.get(post.id) || 0,
         comments_count: commentsCount.get(post.id) || 0,
         is_liked: userLikes.has(post.id),
         is_bookmarked: userBookmarks.has(post.id),
-      })) || [];
+      }));
 
       // Sort posts: followed users first, then others by date
       const sortedPosts = processedPosts.sort((a, b) => {
-        const aIsFollowed = followedUserIds.includes(a.user_id);
-        const bIsFollowed = followedUserIds.includes(b.user_id);
+        const aIsFollowed = currentFollowedUserIds.includes(a.user_id);
+        const bIsFollowed = currentFollowedUserIds.includes(b.user_id);
         
-        // If one is followed and other is not, prioritize followed
         if (aIsFollowed && !bIsFollowed) return -1;
         if (!aIsFollowed && bIsFollowed) return 1;
         
-        // If both are followed or both are not followed, sort by date
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
-      setPosts(sortedPosts);
+      if (pageNum === 0 || isBackgroundRefresh) {
+        setPosts(sortedPosts);
+      } else {
+        setPosts(prevPosts => {
+          const existingIds = new Set(prevPosts.map(p => p.id));
+          const newPosts = sortedPosts.filter(p => !existingIds.has(p.id));
+          return [...prevPosts, ...newPosts];
+        });
+      }
+
+      setPage(pageNum);
+      setHasMore(hasMorePosts);
+
+      // Save to cache (only save first few pages to avoid storage issues)
+      if (pageNum <= 5) {
+        const cacheData: PostsCache = {
+          posts: pageNum === 0 ? sortedPosts : posts.concat(sortedPosts),
+          page: pageNum,
+          hasMore: hasMorePosts,
+          followedUserIds: currentFollowedUserIds
+        };
+        saveToCache(cacheData);
+      }
+
     } catch (error) {
       console.error('Error fetching posts:', error);
       showToast("Failed to load posts", "error");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const loadMorePosts = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      fetchPosts(page + 1);
+    }
+  }, [page, loadingMore, hasMore]);
+
+  const refreshPosts = () => {
+    // Clear cache and fetch fresh data
+    localStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+    fetchPosts(0);
   };
 
   const handleLike = async (postId: string) => {
@@ -181,7 +294,6 @@ export default function Home() {
       if (!post) return;
 
       if (post.is_liked) {
-        // Unlike the post
         const { error } = await supabase
           .from('likes')
           .delete()
@@ -196,7 +308,6 @@ export default function Home() {
             : p
         ));
       } else {
-        // Like the post
         const { error } = await supabase
           .from('likes')
           .insert({ post_id: postId, user_id: user.id });
@@ -226,7 +337,6 @@ export default function Home() {
       if (!post) return;
 
       if (post.is_bookmarked) {
-        // Remove bookmark
         const { error } = await supabase
           .from('bookmarks')
           .delete()
@@ -240,10 +350,7 @@ export default function Home() {
             ? { ...p, is_bookmarked: false }
             : p
         ));
-
-        // Removed notification - Twitter doesn't show these
       } else {
-        // Add bookmark
         const { error } = await supabase
           .from('bookmarks')
           .insert({ post_id: postId, user_id: user.id });
@@ -255,8 +362,6 @@ export default function Home() {
             ? { ...p, is_bookmarked: true }
             : p
         ));
-
-        // Removed notification - Twitter doesn't show these
       }
     } catch (error) {
       console.error('Error toggling bookmark:', error);
@@ -275,9 +380,7 @@ export default function Home() {
           url: postUrl,
         });
       } else {
-        // Fallback: copy to clipboard
         await navigator.clipboard.writeText(postUrl);
-        // Removed notification - Twitter doesn't show clipboard actions
       }
     } catch (error) {
       console.error('Error sharing:', error);
@@ -285,7 +388,6 @@ export default function Home() {
   };
 
   const handleComment = (postId: string) => {
-    // Navigate to post detail page for comments
     navigate(`/post/${postId}`);
   };
 
@@ -293,7 +395,6 @@ export default function Home() {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    // Check if adding these files would exceed the limit (max 3 files for quick post)
     if (selectedFiles.length + files.length > 3) {
       showToast("You can upload a maximum of 3 files in quick post", "error");
       return;
@@ -303,13 +404,11 @@ export default function Home() {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
 
     for (const file of files) {
-      // Check file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
         showToast(`File "${file.name}" is too large. Please select files smaller than 10MB`, "error");
         continue;
       }
 
-      // Check file type
       if (!allowedTypes.includes(file.type)) {
         showToast(`File "${file.name}" is not supported. Please select image files (JPEG, PNG, GIF)`, "error");
         continue;
@@ -317,7 +416,6 @@ export default function Home() {
 
       validFiles.push(file);
 
-      // Create preview for images
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -384,15 +482,12 @@ export default function Home() {
       let attachment_type = null;
       let attachment_urls = null;
 
-      // Upload files if selected
       if (selectedFiles.length > 0) {
         if (selectedFiles.length === 1) {
-          // For single file, maintain backward compatibility
           const results = await uploadFiles([selectedFiles[0]]);
           attachment_url = results[0].url;
           attachment_type = results[0].type;
         } else {
-          // For multiple files, store as JSON array
           const results = await uploadFiles(selectedFiles);
           attachment_urls = JSON.stringify(results);
           attachment_type = 'multiple';
@@ -415,8 +510,10 @@ export default function Home() {
       setFilePreviews([]);
       showToast("Post created successfully!", "success");
 
-      // Refresh posts
-      fetchPosts();
+      // Clear cache and refresh posts
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+      fetchPosts(0);
     } catch (error) {
       console.error('Error creating post:', error);
       showToast("Failed to create post. Please try again.", "error");
@@ -433,12 +530,15 @@ export default function Home() {
         .from('posts')
         .delete()
         .eq('id', postId)
-        .eq('user_id', user.id); // Ensure only owner can delete
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
       setPosts(posts.filter(p => p.id !== postId));
-      // Removed notification - Twitter doesn't show these
+      
+      // Clear cache since we modified posts
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIMESTAMP_KEY);
     } catch (error) {
       console.error('Error deleting post:', error);
       showToast("Failed to delete post. Please try again.", "error");
@@ -446,11 +546,10 @@ export default function Home() {
   };
 
   const handleEditPost = (postId: string) => {
-    // Navigate to edit post page or open edit modal
     navigate(`/post/edit/${postId}`);
   };
 
-  if (loading) {
+  if (loading && posts.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -460,6 +559,19 @@ export default function Home() {
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Refresh button */}
+      <div className="mx-2 md:mx-4 mb-2 flex justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={refreshPosts}
+          className="text-muted-foreground"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </div>
+
       {/* Twitter-style compose area */}
       {user && (
         <div className="mx-2 md:mx-4 mb-3 md:mb-4 p-3 md:p-4 border border-border rounded-lg bg-background/80 backdrop-blur-sm">
@@ -543,25 +655,55 @@ export default function Home() {
         </div>
       )}
 
+      {/* Posts feed */}
       <div className="space-y-2 md:space-y-4 px-2 md:px-0">
         {posts.length === 0 ? (
           <div className="py-8 md:py-12 text-center">
             <p className="text-muted-foreground text-sm md:text-base">No posts yet. Be the first to share something!</p>
           </div>
         ) : (
-          posts.map((post) => (
-            <PostItem
-              key={post.id}
-              post={post}
-              currentUserId={user?.id}
-              onLike={handleLike}
-              onBookmark={handleBookmark}
-              onComment={handleComment}
-              onShare={handleShare}
-              onEdit={handleEditPost}
-              onDelete={handleDeletePost}
-            />
-          ))
+          <>
+            {posts.map((post) => (
+              <PostItem
+                key={post.id}
+                post={post}
+                currentUserId={user?.id}
+                onLike={handleLike}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onShare={handleShare}
+                onEdit={handleEditPost}
+                onDelete={handleDeletePost}
+              />
+            ))}
+            
+            {/* Load more button */}
+            {hasMore && (
+              <div className="flex justify-center py-4">
+                <Button
+                  onClick={loadMorePosts}
+                  disabled={loadingMore}
+                  variant="outline"
+                  className="px-6"
+                >
+                  {loadingMore ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                      Loading...
+                    </div>
+                  ) : (
+                    'Load More Posts'
+                  )}
+                </Button>
+              </div>
+            )}
+            
+            {!hasMore && posts.length > 0 && (
+              <div className="text-center py-4 text-muted-foreground text-sm">
+                You've reached the end of the feed
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
