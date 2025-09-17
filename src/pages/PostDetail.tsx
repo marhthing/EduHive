@@ -1125,11 +1125,11 @@ export default function PostDetail() {
 
         {/* Actions - aligned with post body */}
         <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLike}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLike}
                   className={`flex items-center gap-2 hover:bg-red-500/10 rounded-full p-2 h-auto transition-colors ${
                     post.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
                   }`}
@@ -1138,21 +1138,21 @@ export default function PostDetail() {
                   <span className="text-sm">{post.likes_count}</span>
                 </Button>
 
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex items-center gap-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors"
-                >
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-2 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors"
+            >
                   <MessageCircle className="h-5 w-5" />
                   <span className="text-sm">{post.comments_count}</span>
                 </Button>
-              </div>
+          </div>
 
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBookmark}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBookmark}
                   className={`flex items-center gap-2 hover:bg-blue-500/10 rounded-full p-2 h-auto transition-colors ${
                     post.is_bookmarked ? 'text-blue-500' : 'text-muted-foreground hover:text-blue-500'
                   }`}
@@ -1224,7 +1224,6 @@ export default function PostDetail() {
               </div>
             </div>
         </div>
-      </div>
 
       {/* Comment Form or Login Prompt */}
       {user ? (
