@@ -460,7 +460,7 @@ export default function Profile() {
               </div>
 
               <div className="flex gap-4 mt-4 justify-center md:justify-start">
-                <div className="text-center">
+                <div className="text-center p-2">
                   <div className="font-bold">{posts.length}</div>
                   <div className="text-sm text-muted-foreground">Posts</div>
                 </div>
@@ -478,7 +478,7 @@ export default function Profile() {
                   <div className="font-bold">{followingCount}</div>
                   <div className="text-sm text-muted-foreground">Following</div>
                 </div>
-                <div className="text-center">
+                <div className="text-center p-2">
                   <div className="font-bold">
                     {posts.reduce((acc, post) => acc + post.likes_count, 0)}
                   </div>
