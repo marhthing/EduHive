@@ -367,8 +367,7 @@ export function PostItem({
       className={`p-3 md:p-4 hover:bg-muted/20 transition-colors cursor-pointer border border-border rounded-lg ${className}`}
       onClick={() => navigate(`/post/${post.id}`)}
     >
-      {/* Header with avatar and user info */}
-      <div className="flex gap-2 md:gap-3 mb-2">
+      <div className="flex gap-2 md:gap-3">
         <Avatar
           className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={handleProfileClick}
@@ -460,109 +459,108 @@ export function PostItem({
               )}
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Content section - aligned with the start of username */}
-      <div className="ml-10 md:ml-12">
-        {/* Post Body */}
-        <p className="text-foreground mb-2 md:mb-3 leading-relaxed text-sm md:text-base break-words">
-          {post.body}
-        </p>
 
-        {/* Attachments */}
-        {renderAttachments()}
+          {/* Post Body */}
+          <p className="text-foreground mb-2 md:mb-3 leading-relaxed text-sm md:text-base break-words">
+            {post.body}
+          </p>
 
-        {/* Tags */}
-        {(post.school_tag || post.course_tag) && (
-          <div className="flex gap-2 mb-3 mt-3 flex-wrap">
-            {post.school_tag && (
-              <Badge variant="secondary" className="text-xs">
-                {post.school_tag}
-              </Badge>
-            )}
-            {post.course_tag && (
-              <Badge variant="outline" className="text-xs">
-                {post.course_tag}
-              </Badge>
-            )}
-          </div>
-        )}
+          {/* Attachments */}
+          {renderAttachments()}
 
-        {/* Actions */}
-        <div className="flex items-center justify-between text-muted-foreground -ml-2 md:-ml-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onComment(post.id);
-            }}
-            className="flex items-center gap-1 md:gap-2 text-comment hover:text-comment hover:bg-comment/10 rounded-full p-1.5 md:p-2 transition-colors"
-          >
-            <MessageCircle className="h-3.5 w-3.5 md:h-4 md:w-4" />
-            <span className="text-xs md:text-sm">{post.comments_count}</span>
-          </Button>
+          {/* Tags */}
+          {(post.school_tag || post.course_tag) && (
+            <div className="flex gap-2 mb-3 mt-3 flex-wrap">
+              {post.school_tag && (
+                <Badge variant="secondary" className="text-xs">
+                  {post.school_tag}
+                </Badge>
+              )}
+              {post.course_tag && (
+                <Badge variant="outline" className="text-xs">
+                  {post.course_tag}
+                </Badge>
+              )}
+            </div>
+          )}
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onLike(post.id);
-            }}
-            className={`flex items-center gap-1 md:gap-2 rounded-full p-1.5 md:p-2 transition-colors ${
-              post.is_liked
-                ? "text-like hover:text-like hover:bg-like/10"
-                : "text-muted-foreground hover:text-like hover:bg-like/10"
-            }`}
-          >
-            <Heart className={`h-3.5 w-3.5 md:h-4 md:w-4 ${post.is_liked ? "fill-current" : ""}`} />
-            <span className="text-xs md:text-sm">{post.likes_count}</span>
-          </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onShare(post);
-            }}
-            className="flex items-center gap-1 md:gap-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full p-1.5 md:p-2 transition-colors"
-          >
-            <Share className="h-3.5 w-3.5 md:h-4 md:w-4" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onBookmark(post.id);
-            }}
-            className={`flex items-center gap-1 md:gap-2 rounded-full p-1.5 md:p-2 transition-colors ${
-              post.is_bookmarked
-                ? "text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
-                : "text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
-            }`}
-          >
-            <Bookmark className={`h-3.5 w-3.5 md:h-4 md:w-4 ${post.is_bookmarked ? "fill-current" : ""}`} />
-          </Button>
-
-          {parseAttachments().length > 0 && (
+          {/* Actions */}
+          <div className="flex items-center justify-between text-muted-foreground -ml-2 md:-ml-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                handleDownloadAll();
+                onComment(post.id);
               }}
-              className="flex items-center gap-1 md:gap-2 text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10 rounded-full p-1.5 md:p-2 transition-colors"
-              disabled={!currentUserId}
+              className="flex items-center gap-1 md:gap-2 text-comment hover:text-comment hover:bg-comment/10 rounded-full p-1.5 md:p-2 transition-colors"
             >
-              <Download className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <MessageCircle className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="text-xs md:text-sm">{post.comments_count}</span>
             </Button>
-          )}
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onLike(post.id);
+              }}
+              className={`flex items-center gap-1 md:gap-2 rounded-full p-1.5 md:p-2 transition-colors ${
+                post.is_liked
+                  ? "text-like hover:text-like hover:bg-like/10"
+                  : "text-muted-foreground hover:text-like hover:bg-like/10"
+              }`}
+            >
+              <Heart className={`h-3.5 w-3.5 md:h-4 md:w-4 ${post.is_liked ? "fill-current" : ""}`} />
+              <span className="text-xs md:text-sm">{post.likes_count}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onShare(post);
+              }}
+              className="flex items-center gap-1 md:gap-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full p-1.5 md:p-2 transition-colors"
+            >
+              <Share className="h-3.5 w-3.5 md:h-4 md:w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onBookmark(post.id);
+              }}
+              className={`flex items-center gap-1 md:gap-2 rounded-full p-1.5 md:p-2 transition-colors ${
+                post.is_bookmarked
+                  ? "text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                  : "text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
+              }`}
+            >
+              <Bookmark className={`h-3.5 w-3.5 md:h-4 md:w-4 ${post.is_bookmarked ? "fill-current" : ""}`} />
+            </Button>
+
+            {parseAttachments().length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownloadAll();
+                }}
+                className="flex items-center gap-1 md:gap-2 text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10 rounded-full p-1.5 md:p-2 transition-colors"
+                disabled={!currentUserId}
+              >
+                <Download className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

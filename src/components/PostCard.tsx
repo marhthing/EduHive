@@ -343,29 +343,29 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
           </div>
         </div>
 
-        {/* Post Body - aligned with avatar */}
-        <div>
+        {/* Post Body - aligned with the start of username */}
+        <div style={{ marginLeft: '52px !important' }}>
           <p className="text-foreground whitespace-pre-wrap mb-3 text-lg">{post.body}</p>
           {renderAttachments()}
-        </div>
 
+          {/* Tags */}
+          {(post.school_tag || post.course_tag) && (
+            <div className="flex gap-2 mb-3">
+              {post.school_tag && (
+                <Badge variant="secondary" className="text-xs">
+                  {post.school_tag}
+                </Badge>
+              )}
+              {post.course_tag && (
+                <Badge variant="outline" className="text-xs">
+                  {post.course_tag}
+                </Badge>
+              )}
+            </div>
+          )}
 
-        {/* Tags and Actions */}
-        {(post.school_tag || post.course_tag) && (
-          <div className="flex gap-2 mb-3">
-            {post.school_tag && (
-              <Badge variant="secondary" className="text-xs">
-                {post.school_tag}
-              </Badge>
-            )}
-            {post.course_tag && (
-              <Badge variant="outline" className="text-xs">
-                {post.course_tag}
-              </Badge>
-            )}
-          </div>
-        )}
-        <div className="flex items-center justify-between pt-2 border-t">
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-2 border-t" style={{ marginLeft: '-52px !important', paddingLeft: '52px !important' }}>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -408,6 +408,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
             <Button variant="ghost" size="sm" onClick={handleShare}>
               <Share2 className="w-4 h-4" />
             </Button>
+          </div>
           </div>
         </div>
       </CardContent>
