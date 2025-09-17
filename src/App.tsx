@@ -1,7 +1,7 @@
 import { TwitterToastProvider } from "@/components/ui/twitter-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -27,6 +27,27 @@ const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 
 const queryClient = new QueryClient();
 
+// Preloader to eliminate blank screens
+const PreloadComponents = () => {
+  useEffect(() => {
+    // Preload critical navigation components after initial mount
+    const preloadTimer = setTimeout(() => {
+      // Import all navigation components in background
+      import("./pages/Home");
+      import("./pages/Search"); 
+      import("./pages/Bookmarks");
+      import("./pages/Profile");
+      import("./pages/Notifications");
+      import("./pages/Settings");
+      import("./pages/CreatePost");
+    }, 100); // Very short delay to not block initial render
+
+    return () => clearTimeout(preloadTimer);
+  }, []);
+
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -34,6 +55,7 @@ const App = () => (
         <TooltipProvider>
           <TwitterToastProvider>
           <BrowserRouter>
+            <PreloadComponents />
             <Suspense fallback={
               <div className="min-h-screen flex items-center justify-center bg-background transition-opacity duration-150 ease-in">
                 <div className="text-center animate-fadeIn">

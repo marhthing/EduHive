@@ -135,6 +135,16 @@ export function MobileNav() {
           <NavLink
             key={item.title}
             to={item.url}
+            onMouseEnter={() => {
+              // Preload component on hover
+              if (item.url === "/home") import("@/pages/Home");
+              else if (item.url === "/search") import("@/pages/Search");
+              else if (item.url === "/bookmarks") import("@/pages/Bookmarks");
+              else if (item.url === "/profile") import("@/pages/Profile");
+              else if (item.url === "/notifications") import("@/pages/Notifications");
+              else if (item.url === "/settings") import("@/pages/Settings");
+              else if (item.url === "/post") import("@/pages/CreatePost");
+            }}
             onClick={() => {
               if (item.url === "/notifications" && user && unreadNotifications > 0) {
                 // Mark all notifications as read
@@ -143,8 +153,7 @@ export function MobileNav() {
                   .update({ read: true })
                   .eq('user_id', user.id)
                   .eq('read', false)
-                  .then(() => setUnreadNotifications(0))
-                  .catch(error => console.error('Error marking notifications as read:', error));
+                  .then(() => setUnreadNotifications(0));
               } else if (item.url === "/home" && newPostsCount > 0) {
                 // Reset new posts count (user has seen them)
                 setNewPostsCount(0);
