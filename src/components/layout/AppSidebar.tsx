@@ -150,7 +150,7 @@ export function AppSidebar() {
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
       ? "bg-primary text-primary-foreground font-medium" 
-      : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
+      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
 
   const handleSignOut = async () => {
     try {
@@ -230,7 +230,7 @@ export function AppSidebar() {
                   <Button 
                     variant="ghost" 
                     onClick={toggleTheme}
-                    className="w-full justify-start"
+                    className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   >
                     {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                     {!collapsed && (
@@ -243,7 +243,11 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/settings" className={getNavCls}>
+                  <NavLink to="/settings" className={({ isActive }) => 
+                    isActive 
+                      ? "bg-primary text-primary-foreground font-medium flex items-center w-full p-2 rounded-md" 
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground flex items-center w-full p-2 rounded-md"
+                  }>
                     <Settings className="h-5 w-5" />
                     {!collapsed && <span className="ml-3">Settings</span>}
                   </NavLink>
