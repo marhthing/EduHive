@@ -243,14 +243,17 @@ export type Database = {
         Row: {
           bio: string | null
           created_at: string
+          deactivated_at: string | null
           department: string | null
           email: string
           followers_count: number
           following_count: number
           id: string
+          is_deactivated: boolean | null
           last_username_change: string | null
           name: string | null
           profile_pic: string | null
+          scheduled_deletion_at: string | null
           school: string | null
           updated_at: string
           user_id: string
@@ -260,14 +263,17 @@ export type Database = {
         Insert: {
           bio?: string | null
           created_at?: string
+          deactivated_at?: string | null
           department?: string | null
           email: string
           followers_count?: number
           following_count?: number
           id?: string
+          is_deactivated?: boolean | null
           last_username_change?: string | null
           name?: string | null
           profile_pic?: string | null
+          scheduled_deletion_at?: string | null
           school?: string | null
           updated_at?: string
           user_id: string
@@ -277,14 +283,17 @@ export type Database = {
         Update: {
           bio?: string | null
           created_at?: string
+          deactivated_at?: string | null
           department?: string | null
           email?: string
           followers_count?: number
           following_count?: number
           id?: string
+          is_deactivated?: boolean | null
           last_username_change?: string | null
           name?: string | null
           profile_pic?: string | null
+          scheduled_deletion_at?: string | null
           school?: string | null
           updated_at?: string
           user_id?: string
@@ -333,7 +342,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      reactivate_account: {
+        Args: {
+          target_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
