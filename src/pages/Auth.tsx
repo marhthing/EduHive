@@ -88,7 +88,34 @@ export default function Auth() {
       // Only navigate to home if account is active
       navigate("/");
     } catch (error: any) {
-      showToast(`Login failed: ${error.message}`, "error");
+      let errorMessage = "Login failed";
+      
+      // Check for specific error types
+      if (error.message?.includes("Invalid login credentials")) {
+        // First check if email exists in the system
+        try {
+          const { data: userData } = await supabase.auth.resetPasswordForEmail(loginData.email, {
+            redirectTo: 'https://example.com' // dummy URL to test if email exists
+          });
+          // If no error thrown, email exists - so password is incorrect
+          errorMessage = "Incorrect password. Please try again.";
+        } catch (resetError: any) {
+          // If email doesn't exist, show generic message for security
+          if (resetError.message?.includes("User not found")) {
+            errorMessage = "Invalid email or password.";
+          } else {
+            errorMessage = "Incorrect password. Please try again.";
+          }
+        }
+      } else if (error.message?.includes("Email not confirmed")) {
+        errorMessage = "Please check your email and click the verification link before signing in.";
+      } else if (error.message?.includes("Too many requests")) {
+        errorMessage = "Too many login attempts. Please wait a moment and try again.";
+      } else {
+        errorMessage = `Login failed: ${error.message}`;
+      }
+      
+      showToast(errorMessage, "error");
     } finally {
       setLoading(false);
     }
