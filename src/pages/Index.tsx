@@ -37,38 +37,7 @@ const Index = () => {
           performNavigation(null);
           return;
         }
-        if (session?.user) {
-          // Check if account is deactivated
-          try {
-            const { data: profileData, error } = await supabase
-              .from('profiles')
-              .select('is_deactivated, scheduled_deletion_at')
-              .eq('user_id', session.user.id)
-              .single();
-
-            if (!error && profileData?.is_deactivated) {
-              const deletionDate = new Date(profileData.scheduled_deletion_at);
-              const now = new Date();
-              
-              if (deletionDate > now) {
-                // Redirect to reactivation page
-                didNavigate = true;
-                setLoading(false);
-                navigate(`/reactivate?email=${encodeURIComponent(session.user.email || '')}`, { replace: true });
-                if (timeoutId) clearTimeout(timeoutId);
-                if (subscription) subscription.unsubscribe();
-                return;
-              } else {
-                // Account expired - sign out
-                await supabase.auth.signOut();
-                performNavigation(null);
-                return;
-              }
-            }
-          } catch (error) {
-            console.error('Error checking deactivation status:', error);
-          }
-        }
+        // Deactivation is handled in Auth.tsx during actual login
         performNavigation(session);
       })
       .catch((error) => {

@@ -150,56 +150,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     getInitialSession();
 
-    // Listen for auth changes - only check deactivation on SIGNED_IN event
+    // Listen for auth changes - don't check deactivation here to avoid infinite loops
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user && event === 'SIGNED_IN') {
-          // Only check deactivation on fresh sign-in, not on route changes
-          console.log('New sign-in detected, checking deactivation status...');
-          const deactivated = await checkDeactivationStatus(session.user.id);
-          console.log('Sign-in deactivation status:', deactivated);
-          setIsDeactivated(deactivated);
-
-          // Store username in localStorage for easy access
-          if (session.user.user_metadata?.username) {
-            localStorage.setItem(`username_${session.user.id}`, session.user.user_metadata.username);
-          }
-
-          // Sync Google avatar to profile if available and not already set
-          if (session.user.user_metadata?.avatar_url) {
-            setTimeout(async () => {
-              try {
-                const { data: profileData, error: profileError } = await supabase
-                  .from('profiles')
-                  .select('profile_pic')
-                  .eq('user_id', session.user.id)
-                  .single();
-
-                if (profileError) {
-                  console.log('Profile not ready for avatar sync yet');
-                  return;
-                }
-
-                if (!profileData?.profile_pic || profileData.profile_pic !== session.user.user_metadata.avatar_url) {
-                  const { error: updateError } = await supabase
-                    .from('profiles')
-                    .update({ profile_pic: session.user.user_metadata.avatar_url })
-                    .eq('user_id', session.user.id);
-
-                  if (!updateError) {
-                    console.log('Synced Google avatar to profile');
-                  }
-                }
-              } catch (error) {
-                console.log('Avatar sync skipped');
-              }
-            }, 1000);
-          }
-        } else if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT') {
           console.log('User signed out');
           setIsDeactivated(false);
           
