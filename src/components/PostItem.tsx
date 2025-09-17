@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
-import { Heart, MessageCircle, Bookmark, Share, MoreHorizontal, Edit, Trash2, Flag, FileText, ExternalLink, X } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share, MoreHorizontal, Edit, Trash2, Flag, FileText, ExternalLink, X, Download } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { ReportDialog } from "@/components/ReportDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,6 +68,7 @@ export function PostItem({
   const [imageError, setImageError] = useState(false);
   const [carouselOpen, setCarouselOpen] = useState(false);
   const [carouselStartIndex, setCarouselStartIndex] = useState(0);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleProfileClick = (e: React.MouseEvent) => {
@@ -81,6 +83,37 @@ export function PostItem({
   };
 
   const isOwnPost = currentUserId === post.user_id;
+
+  const handleDownloadAll = async () => {
+    const attachments = parseAttachments();
+    if (attachments.length === 0) return;
+
+    // Download each attachment one by one
+    for (let i = 0; i < attachments.length; i++) {
+      const attachment = attachments[i];
+      try {
+        const link = document.createElement('a');
+        link.href = attachment.url;
+        
+        // Create a meaningful filename
+        const fileExtension = attachment.type?.split('/')[1] || 'unknown';
+        const fileName = `${post.profile?.username || 'user'}_attachment_${i + 1}.${fileExtension}`;
+        
+        link.download = fileName;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Add a small delay between downloads to avoid browser blocking
+        if (i < attachments.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (error) {
+        console.error(`Failed to download attachment ${i + 1}:`, error);
+      }
+    }
+  };
 
   const parseAttachments = () => {
     if (!post.attachment_url) return [];
@@ -521,7 +554,12 @@ export function PostItem({
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenuItem 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setReportDialogOpen(true);
+                    }}
+                  >
                     <Flag className="h-4 w-4 mr-2" />
                     Report post
                   </DropdownMenuItem>
@@ -593,6 +631,20 @@ export function PostItem({
               <Bookmark className={`h-5 w-5 ${post.is_bookmarked ? 'fill-current text-blue-500' : ''}`} />
             </Button>
 
+            {parseAttachments().length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownloadAll();
+                }}
+                className="flex items-center gap-2 text-muted-foreground hover:text-purple-500 hover:bg-purple-500/10 rounded-full p-2 h-auto transition-colors"
+              >
+                <Download className="h-5 w-5" />
+              </Button>
+            )}
+
             <Button
               variant="ghost"
               size="sm"
@@ -607,6 +659,14 @@ export function PostItem({
           </div>
         </div>
       </div>
+
+      <ReportDialog
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+        postId={post.id}
+        reportedUserId={post.user_id}
+        type="post"
+      />
     </div>
   );
 }

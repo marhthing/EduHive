@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Heart, MessageCircle, Bookmark, Share2, FileText, ExternalLink, X } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, FileText, ExternalLink, X, Download } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,6 +57,37 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href);
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    const attachments = parseAttachments();
+    if (attachments.length === 0) return;
+
+    // Download each attachment one by one
+    for (let i = 0; i < attachments.length; i++) {
+      const attachment = attachments[i];
+      try {
+        const link = document.createElement('a');
+        link.href = attachment.url;
+        
+        // Create a meaningful filename
+        const fileExtension = attachment.type?.split('/')[1] || 'unknown';
+        const fileName = `${post.profile?.username || 'user'}_attachment_${i + 1}.${fileExtension}`;
+        
+        link.download = fileName;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Add a small delay between downloads to avoid browser blocking
+        if (i < attachments.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (error) {
+        console.error(`Failed to download attachment ${i + 1}:`, error);
+      }
     }
   };
 
@@ -379,6 +410,17 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
             >
               <Bookmark className={`w-4 h-4 ${post.is_bookmarked ? "fill-current" : ""}`} />
             </Button>
+
+            {parseAttachments().length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDownloadAll}
+                className="text-muted-foreground hover:text-purple-500"
+              >
+                <Download className="w-4 h-4" />
+              </Button>
+            )}
 
             <Button variant="ghost" size="sm" onClick={handleShare}>
               <Share2 className="w-4 h-4" />
