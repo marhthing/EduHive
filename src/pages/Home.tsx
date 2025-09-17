@@ -342,10 +342,10 @@ export default function Home() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto mt-4 mb-4">
       {/* Twitter-style compose area */}
       {user && (
-        <div className="p-4 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="mx-4 mb-4 p-4 border border-border rounded-lg bg-background/80 backdrop-blur-sm">
           <div className="flex gap-3">
             <Avatar className="h-10 w-10 flex-shrink-0">
               <AvatarImage src={user.user_metadata?.avatar_url} />
@@ -386,14 +386,18 @@ export default function Home() {
         </div>
       )}
 
-      <div className="divide-y divide-border">
+      <div className="space-y-4">
         {posts.length === 0 ? (
           <div className="py-12 text-center">
             <p className="text-muted-foreground">No posts yet. Be the first to share something!</p>
           </div>
         ) : (
           posts.map((post) => (
-            <div key={post.id} className="p-4 hover:bg-muted/20 transition-colors cursor-pointer border-b border-border">
+            <div 
+              key={post.id} 
+              className="p-4 hover:bg-muted/20 transition-colors cursor-pointer border border-border rounded-lg"
+              onClick={() => navigate(`/post/${post.id}`)}
+            >
               <div className="flex gap-3">
                 <Avatar className="h-10 w-10 flex-shrink-0">
                   <AvatarImage src={post.profile?.profile_pic || undefined} />
