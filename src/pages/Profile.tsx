@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { PostItem } from "@/components/PostItem";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { format } from "date-fns";
+import { FollowersModal } from "@/components/FollowersModal";
+import { FollowingModal } from "@/components/FollowingModal";
 
 interface Profile {
   id: string; // profiles table primary key
@@ -62,6 +64,10 @@ export default function Profile() {
   // State for follower counts, to be managed locally before fetching from DB again if needed
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  
+  // Modal states
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
 
 
   const fetchProfile = useCallback(async () => {
@@ -457,11 +463,17 @@ export default function Profile() {
                   <div className="font-bold">{posts.length}</div>
                   <div className="text-sm text-muted-foreground">Posts</div>
                 </div>
-                <div className="text-center">
+                <div 
+                  className="text-center cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors"
+                  onClick={() => setShowFollowersModal(true)}
+                >
                   <div className="font-bold">{followersCount}</div>
                   <div className="text-sm text-muted-foreground">Followers</div>
                 </div>
-                <div className="text-center">
+                <div 
+                  className="text-center cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors"
+                  onClick={() => setShowFollowingModal(true)}
+                >
                   <div className="font-bold">{followingCount}</div>
                   <div className="text-sm text-muted-foreground">Following</div>
                 </div>
@@ -525,6 +537,24 @@ export default function Profile() {
         </TabsContent>
         {/* Add other TabsContent components here if needed */}
       </Tabs>
+
+      {/* Modals */}
+      {profile && (
+        <>
+          <FollowersModal
+            isOpen={showFollowersModal}
+            onClose={() => setShowFollowersModal(false)}
+            profileUserId={profile.user_id}
+            currentUserId={currentUser?.id || null}
+          />
+          <FollowingModal
+            isOpen={showFollowingModal}
+            onClose={() => setShowFollowingModal(false)}
+            profileUserId={profile.user_id}
+            currentUserId={currentUser?.id || null}
+          />
+        </>
+      )}
     </div>
   );
 }
