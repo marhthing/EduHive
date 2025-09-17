@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { AppSidebar } from "./AppSidebar";
 import { MobileNav } from "./MobileNav";
-import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
+import { SidebarProvider, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
