@@ -150,7 +150,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
                                       <div className="flex gap-4">
                                         <Button
                                           variant="outline"
-                                          onClick={() => window.open(attachment.url, '_blank')}
+                                          onClick={(e) => e.stopPropagation()}
                                         >
                                           View PDF
                                         </Button>
@@ -177,7 +177,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
                                       <div className="flex gap-4">
                                         <Button
                                           variant="outline"
-                                          onClick={() => window.open(attachment.url, '_blank')}
+                                          onClick={(e) => e.stopPropagation()}
                                         >
                                           View File
                                         </Button>
@@ -209,108 +209,9 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
                     </DialogContent>
                   </Dialog>
                 ) : (
-                  <Dialog open={carouselOpen} onOpenChange={setCarouselOpen}>
-                    <DialogTrigger asChild>
-                      <div className="cursor-pointer">
-                        {renderSingleAttachment(attachment, index, attachments, () => {
-                          setCarouselStartIndex(index); // Set the start index to the clicked image
-                          setCarouselOpen(true);
-                        })}
-                      </div>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl w-full p-0 bg-transparent border-none">
-                      <div className="relative">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                          onClick={() => setCarouselOpen(false)}
-                        >
-                          <X className="h-6 w-6" />
-                        </Button>
-                        <Carousel
-                          className="w-full"
-                          opts={{
-                            startIndex: carouselStartIndex,
-                            loop: true
-                          }}
-                        >
-                          <CarouselContent>
-                            {attachments.map((attachment, idx) => (
-                              <CarouselItem key={idx}>
-                                <div className="flex items-center justify-center min-h-[60vh] max-h-[80vh] bg-black rounded-lg">
-                                  {attachment.type?.startsWith('image/') ? (
-                                    <img
-                                      src={attachment.url}
-                                      alt={`Attachment ${idx + 1}`}
-                                      className="max-w-full max-h-full object-contain"
-                                      loading="lazy"
-                                    />
-                                  ) : attachment.type === 'application/pdf' || attachment.type?.includes('pdf') ? (
-                                    <div className="flex flex-col items-center justify-center p-8 text-white">
-                                      <div className="text-6xl mb-4">📄</div>
-                                      <p className="text-xl mb-4">PDF Document</p>
-                                      <div className="flex gap-4">
-                                        <Button
-                                          variant="outline"
-                                          onClick={() => window.open(attachment.url, '_blank')}
-                                        >
-                                          View PDF
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          onClick={() => {
-                                            const link = document.createElement('a');
-                                            link.href = attachment.url;
-                                            link.download = 'document.pdf';
-                                            link.target = '_blank';
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
-                                          }}
-                                        >
-                                          Download
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="flex flex-col items-center justify-center p-8 text-white">
-                                      <div className="text-6xl mb-4">📎</div>
-                                      <p className="text-xl mb-4">File ({attachment.type || 'Unknown'})</p>
-                                      <div className="flex gap-4">
-                                        <Button
-                                          variant="outline"
-                                          onClick={() => window.open(attachment.url, '_blank')}
-                                        >
-                                          View File
-                                        </Button>
-                                        <Button
-                                          variant="outline"
-                                          onClick={() => {
-                                            const link = document.createElement('a');
-                                            link.href = attachment.url;
-                                            link.download = 'attachment';
-                                            link.target = '_blank';
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
-                                          }}
-                                        >
-                                          Download
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </CarouselItem>
-                            ))}
-                          </CarouselContent>
-                          <CarouselPrevious className="left-4 bg-black/50 hover:bg-black/70 text-white border-none" />
-                          <CarouselNext className="right-4 bg-black/50 hover:bg-black/70 text-white border-none" />
-                        </Carousel>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <div className="cursor-pointer" onClick={onComment}>
+                    {renderSingleAttachment(attachment, index)}
+                  </div>
                 )}
               </div>
             ))}
@@ -346,7 +247,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
             if (attachments && attachments.length > 1 && openCarousel) {
               openCarousel();
             } else {
-              window.open(attachment.url, '_blank');
+              onComment(); // Navigate to post details
             }
           }}
           loading="lazy"
@@ -361,7 +262,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open(attachment.url, '_blank')}
+              onClick={(e) => { e.stopPropagation(); onComment(); }}
               className="flex-1 justify-start text-xs"
             >
               <FileText className="w-3 h-3 mr-1" />
@@ -379,7 +280,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.open(attachment.url, '_blank')}
+            onClick={(e) => { e.stopPropagation(); onComment(); }}
             className="flex-1 justify-start text-xs"
           >
             <FileText className="w-3 h-3 mr-1" />

@@ -280,20 +280,16 @@ export function PostItem({
                                       <div className="flex gap-4">
                                         <Button
                                           variant="outline"
-                                          onClick={() => window.open(attachment.url, '_blank')}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                          }}
                                         >
                                           View PDF
                                         </Button>
                                         <Button
                                           variant="outline"
-                                          onClick={() => {
-                                            const link = document.createElement('a');
-                                            link.href = attachment.url;
-                                            link.download = 'document.pdf';
-                                            link.target = '_blank';
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
+                                          onClick={(e) => {
+                                            e.stopPropagation();
                                           }}
                                         >
                                           Download
@@ -307,20 +303,16 @@ export function PostItem({
                                       <div className="flex gap-4">
                                         <Button
                                           variant="outline"
-                                          onClick={() => window.open(attachment.url, '_blank')}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                          }}
                                         >
                                           View File
                                         </Button>
                                         <Button
                                           variant="outline"
-                                          onClick={() => {
-                                            const link = document.createElement('a');
-                                            link.href = attachment.url;
-                                            link.download = 'attachment';
-                                            link.target = '_blank';
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
+                                          onClick={(e) => {
+                                            e.stopPropagation();
                                           }}
                                         >
                                           Download
@@ -374,7 +366,7 @@ export function PostItem({
             if (attachments && attachments.length > 1 && openCarousel) {
               openCarousel();
             } else {
-              window.open(attachment.url, '_blank');
+              navigate(`/post/${post.id}`);
             }
           }}
           loading="lazy"
@@ -391,7 +383,7 @@ export function PostItem({
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                window.open(attachment.url, '_blank');
+                navigate(`/post/${post.id}`);
               }}
               className="flex-1 justify-start"
             >
@@ -402,13 +394,6 @@ export function PostItem({
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                const link = document.createElement('a');
-                link.href = attachment.url;
-                link.download = 'document.pdf';
-                link.target = '_blank';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
               }}
               className="px-3"
             >
@@ -427,7 +412,7 @@ export function PostItem({
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              window.open(attachment.url, '_blank');
+              navigate(`/post/${post.id}`);
             }}
             className="flex-1 justify-start"
           >
@@ -438,13 +423,6 @@ export function PostItem({
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              const link = document.createElement('a');
-              link.href = attachment.url;
-              link.download = 'attachment';
-              link.target = '_blank';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
             }}
             className="px-3"
           >
