@@ -1022,9 +1022,9 @@ export default function PostDetail() {
 
       {/* Comment Form or Login Prompt */}
       {user ? (
-        <div className="border border-border rounded-lg p-4 mb-4">
+        <div className="border border-border rounded-xl p-3 mb-4">
           <div className="flex gap-3">
-            <Avatar className="h-10 w-10 flex-shrink-0">
+            <Avatar className="h-9 w-9 flex-shrink-0">
               <AvatarImage src={user.user_metadata?.avatar_url} />
               <AvatarFallback>
                 {user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
@@ -1036,7 +1036,7 @@ export default function PostDetail() {
                 placeholder="Write a comment..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                className="min-h-[80px] resize-none border-none text-base placeholder:text-muted-foreground focus-visible:ring-0 p-0 mb-3"
+                className="min-h-[48px] resize-none border-none text-sm placeholder:text-muted-foreground focus-visible:ring-0 p-0 mb-2"
                 disabled={submitting}
               />
 
@@ -1044,21 +1044,20 @@ export default function PostDetail() {
                 <Button
                   onClick={handleSubmitComment}
                   disabled={!commentText.trim() || submitting}
-                  className="rounded-full px-6"
+                  className="rounded-full px-4 py-1 h-8 text-sm"
                 >
                   {submitting ? "Posting..." : "Comment"}
-                  <Send className="h-4 w-4 ml-2" />
                 </Button>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="border border-border rounded-lg p-4 mb-4 text-center">
-          <p className="text-muted-foreground mb-4">
+        <div className="border border-border rounded-xl p-3 mb-4 text-center">
+          <p className="text-muted-foreground text-sm mb-3">
             Join the conversation! Log in to like, comment, and interact with posts.
           </p>
-          <Button onClick={() => navigate('/auth')} className="rounded-full px-6">
+          <Button onClick={() => navigate('/auth')} className="rounded-full px-4 py-1 h-8 text-sm">
             Log In / Sign Up
           </Button>
         </div>
