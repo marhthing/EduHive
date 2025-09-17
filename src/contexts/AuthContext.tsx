@@ -28,46 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isDeactivated, setIsDeactivated] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
-  const checkDeactivationStatus = async (userId: string) => {
-    try {
-      console.log('Checking deactivation status for user:', userId);
-
-      const { data: profileData, error } = await supabase
-        .from('profiles')
-        .select('is_deactivated, scheduled_deletion_at')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking deactivation status:', error);
-        return false;
-      }
-
-      // If no profile found, this means the user doesn't have a proper profile
-      if (!profileData) {
-        console.log('No profile found for user - signing out incomplete account');
-        await supabase.auth.signOut();
-        throw new Error('User profile not found - account incomplete');
-      }
-
-      if (profileData.is_deactivated) {
-        const deletionDate = new Date(profileData.scheduled_deletion_at);
-        const now = new Date();
-
-        if (deletionDate <= now) {
-          // Account is past deletion date - sign out
-          console.log('Account past deletion date, signing out');
-          await supabase.auth.signOut();
-          return false;
-        }
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error checking deactivation status:', error);
-      return false;
-    }
-  };
+  
 
   const refreshUser = async () => {
     try {
