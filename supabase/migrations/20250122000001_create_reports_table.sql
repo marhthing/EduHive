@@ -24,6 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 CREATE INDEX IF NOT EXISTS idx_reports_reporter_id ON reports(reporter_id);
 CREATE INDEX IF NOT EXISTS idx_reports_post_id ON reports(post_id);
 CREATE INDEX IF NOT EXISTS idx_reports_comment_id ON reports(comment_id);
+CREATE INDEX IF NOT EXISTS idx_reports_reported_user_id ON reports(reported_user_id);
 
 -- Enable RLS
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;

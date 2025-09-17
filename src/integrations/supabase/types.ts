@@ -304,28 +304,40 @@ export type Database = {
       }
       reports: {
         Row: {
+          comment_id: string | null
           created_at: string
+          description: string | null
           id: string
-          post_id: string
+          post_id: string | null
           reason: string
+          reported_user_id: string | null
           reporter_id: string
           status: string | null
+          updated_at: string
         }
         Insert: {
+          comment_id?: string | null
           created_at?: string
+          description?: string | null
           id?: string
-          post_id: string
+          post_id?: string | null
           reason: string
+          reported_user_id?: string | null
           reporter_id: string
           status?: string | null
+          updated_at?: string
         }
         Update: {
+          comment_id?: string | null
           created_at?: string
+          description?: string | null
           id?: string
-          post_id?: string
+          post_id?: string | null
           reason?: string
+          reported_user_id?: string | null
           reporter_id?: string
           status?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
