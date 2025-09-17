@@ -70,7 +70,7 @@ export default function Home() {
       // Get profiles for these users
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, username, profile_pic, school')
+        .select('user_id, username, profile_pic, school, department')
         .in('user_id', userIds);
 
       if (profilesError) throw profilesError;
@@ -396,13 +396,22 @@ export default function Home() {
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-semibold text-foreground">{post.profile?.username || 'Anonymous'}</span>
-                      {post.profile?.school && (
-                        <span className="text-muted-foreground">@{post.profile.school.toLowerCase().replace(/\s+/g, '')}</span>
-                      )}
-                      <span className="text-muted-foreground">•</span>
-                      <span className="text-muted-foreground">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-foreground">{post.profile?.username || 'Anonymous'}</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-muted-foreground">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        {post.profile?.school && (
+                          <>
+                            <span>• {post.profile.school}</span>
+                          </>
+                        )}
+                        {post.profile?.department && (
+                          <span>• {post.profile.department}</span>
+                        )}
+                      </div>
                     </div>
                     
                     <DropdownMenu>
