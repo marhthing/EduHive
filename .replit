@@ -1,5 +1,7 @@
+
 modules = ["nodejs-20", "web"]
-run = "node index.js"
+run = "npm run dev"
+
 [agent]
 expertMode = true
 integrations = ["javascript_mem_db==1.0.0"]
@@ -9,28 +11,27 @@ channel = "stable-25_05"
 packages = ["ffmpeg", "python3", "yt-dlp", "libreoffice"]
 
 [workflows]
-runButton = "Project"
+runButton = "Development Server"
 
 [[workflows.workflow]]
-name = "Project"
-mode = "parallel"
+name = "Development Server"
+mode = "sequential"
 author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "MATDEV Bot"
-
-[[workflows.workflow]]
-name = "MATDEV Bot"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node bot.js"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Build Project"
+mode = "sequential"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run build"
 
 [deployment]
-deploymentTarget = "vm"
-run = ["node", "bot.js"]
+deploymentTarget = "static"
+build = "npm run build"
+publicDir = "dist"
