@@ -202,67 +202,67 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
       );
     }
 
-    // For documents/mixed content, use list layout like PostItem - each attachment gets its own row
+    // For documents/mixed content, separate images and documents - show each in their own container
+    const imageAttachments = attachments.filter(att => att.type?.startsWith('image/'));
+    const documentAttachments = attachments.filter(att => !att.type?.startsWith('image/'));
+
     return (
       <div className="mt-3 space-y-2">
-        {attachments.map((attachment, index) => {
-          if (attachment.type?.startsWith('image/')) {
-            return (
-              <div key={index} className="rounded-lg overflow-hidden border border-border">
-                <img
-                  src={attachment.url}
-                  alt={`Attachment ${index + 1}`}
-                  className="w-full h-full max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={onComment}
-                  loading="lazy"
-                />
-              </div>
-            );
-          }
-
-          // Document/file list item - each file gets its own full-width row like PostItem
-          return (
-            <div key={index} className="flex items-center gap-3 p-3 bg-muted rounded-lg border border-border">
-              <div className="flex-shrink-0">
-                {attachment.type === 'application/pdf' || attachment.type?.includes('pdf') ? (
-                  <FileText className="h-8 w-8 text-red-500" />
-                ) : (
-                  <FileText className="h-8 w-8 text-muted-foreground" />
-                )}
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {attachment.type === 'application/pdf' || attachment.type?.includes('pdf') 
-                    ? 'PDF Document' 
-                    : `File (${attachment.type || 'Unknown type'})`}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Click to download
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    
-                    // Use original filename if available, otherwise create a meaningful filename
-                    const fileName = attachment.name || `${post.profile?.username || 'user'}_attachment_${index + 1}.${attachment.type?.includes('pdf') ? 'pdf' : attachment.type?.split('/')[1] || 'unknown'}`;
-                    await downloadUrl(attachment.url, fileName);
-                  }}
-                  className="h-8 px-3"
-                  title="Download file"
-                >
-                  <Download className="h-3 w-3 mr-1" />
-                  Download
-                </Button>
-              </div>
+        {/* Render images first if any */}
+        {imageAttachments.map((attachment, index) => (
+          <div key={`image-${index}`} className="rounded-lg overflow-hidden border border-border">
+            <img
+              src={attachment.url}
+              alt={`Attachment ${index + 1}`}
+              className="w-full h-full max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={onComment}
+              loading="lazy"
+            />
+          </div>
+        ))}
+        
+        {/* Render documents in list format - each file gets its own full-width row */}
+        {documentAttachments.map((attachment, index) => (
+          <div key={`doc-${index}`} className="flex items-center gap-3 p-3 bg-muted rounded-lg border border-border">
+            <div className="flex-shrink-0">
+              {attachment.type === 'application/pdf' || attachment.type?.includes('pdf') ? (
+                <FileText className="h-8 w-8 text-red-500" />
+              ) : (
+                <FileText className="h-8 w-8 text-muted-foreground" />
+              )}
             </div>
-          );
-        })}
+            
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">
+                {attachment.type === 'application/pdf' || attachment.type?.includes('pdf') 
+                  ? 'PDF Document' 
+                  : `File (${attachment.type || 'Unknown type'})`}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Click to download
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  
+                  // Use original filename if available, otherwise create a meaningful filename
+                  const fileName = attachment.name || `${post.profile?.username || 'user'}_attachment_${index + 1}.${attachment.type?.includes('pdf') ? 'pdf' : attachment.type?.split('/')[1] || 'unknown'}`;
+                  await downloadUrl(attachment.url, fileName);
+                }}
+                className="h-8 px-3"
+                title="Download file"
+              >
+                <Download className="h-3 w-3 mr-1" />
+                Download
+              </Button>
+            </div>
+          </div>
+        ))}
       </div>
     );
   };
