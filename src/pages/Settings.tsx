@@ -210,9 +210,23 @@ export default function Settings() {
   };
 
   const handleDeleteAccount = async () => {
-    // Note: This would require additional backend logic to properly delete
-    // user data while maintaining referential integrity
-    showToast("Account deletion is not currently available. Please contact support.", "info");
+    if (!profile) return;
+
+    try {
+      const { data, error } = await supabase.rpc('deactivate_account', {
+        target_user_id: profile.user_id
+      });
+
+      if (error) throw error;
+
+      showToast("Account deactivated. You have 60 days to reactivate before permanent deletion.", "info");
+      
+      // Sign out the user
+      await handleSignOut();
+    } catch (error: any) {
+      console.error('Error deactivating account:', error);
+      showToast(error.message || "Failed to deactivate account", "error");
+    }
   };
 
   useEffect(() => {
