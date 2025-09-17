@@ -22,7 +22,6 @@ interface Profile {
   id: string; // profiles table primary key
   user_id: string; // auth user id
   username: string;
-  name: string | null;
   email: string;
   bio: string | null;
   school: string | null;

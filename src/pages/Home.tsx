@@ -63,17 +63,20 @@ export default function Home() {
         .select('*')
         .order('created_at', { ascending: false });
 
+      console.log('Posts fetch result:', { postsData, postsError });
       if (postsError) throw postsError;
 
       // Get all unique user IDs
       const userIds = [...new Set(postsData?.map(post => post.user_id) || [])];
+      console.log('User IDs to fetch profiles for:', userIds);
 
       // Get profiles for these users
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, username, name, profile_pic, school, department')
+        .select('user_id, username, profile_pic, school, department')
         .in('user_id', userIds);
 
+      console.log('Profiles fetch result:', { profilesData, profilesError });
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
         // Continue without profiles rather than throwing
