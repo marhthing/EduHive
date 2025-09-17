@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, School, Settings, Edit3 } from "lucide-react";
+import { Calendar, MapPin, School, Settings, Edit3, MessageCircle, Heart } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,6 +54,8 @@ export default function Profile() {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [replies, setReplies] = useState<any[]>([]);
+  const [mediaPosts, setMediaPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
@@ -198,8 +200,65 @@ export default function Profile() {
       );
 
       setPosts(postsWithCounts);
+      
+      // Filter media posts (posts with attachments)
+      const mediaPostsFiltered = postsWithCounts.filter(post => post.attachment_url);
+      setMediaPosts(mediaPostsFiltered);
     } catch (error) {
       console.error("Error fetching user posts:", error);
+    }
+  };
+
+  const fetchUserReplies = async (userId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data: repliesData, error } = await supabase
+        .from("comments")
+        .select(`
+          *,
+          post:posts (
+            id,
+            body,
+            user_id,
+            created_at,
+            profile:profiles!posts_user_id_fkey (
+              username,
+              name,
+              profile_pic
+            )
+          ),
+          profile:profiles!comments_user_id_fkey (
+            username,
+            name,
+            profile_pic,
+            school,
+            department
+          )
+        `)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const repliesWithCounts = await Promise.all(
+        (repliesData || []).map(async (reply) => {
+          const [likesResult, userLikeResult] = await Promise.all([
+            supabase.from("comment_likes").select("id", { count: "exact" }).eq("comment_id", reply.id),
+            user ? supabase.from("comment_likes").select("id").eq("comment_id", reply.id).eq("user_id", user.id).single() : null,
+          ]);
+
+          return {
+            ...reply,
+            likes_count: likesResult.count || 0,
+            is_liked: !!userLikeResult?.data,
+          };
+        })
+      );
+
+      setReplies(repliesWithCounts);
+    } catch (error) {
+      console.error("Error fetching user replies:", error);
     }
   };
 
@@ -280,10 +339,45 @@ export default function Profile() {
       if (error) throw error;
 
       setPosts(posts.filter(p => p.id !== postId));
+      setMediaPosts(mediaPosts.filter(p => p.id !== postId));
       showToast("Post deleted successfully", "success");
     } catch (error) {
       console.error('Error deleting post:', error);
       showToast("Failed to delete post. Please try again.", "error");
+    }
+  };
+
+  const handleReplyLike = async (replyId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const reply = replies.find(r => r.id === replyId);
+      if (!reply) return;
+
+      if (reply.is_liked) {
+        await supabase
+          .from("comment_likes")
+          .delete()
+          .eq("comment_id", replyId)
+          .eq("user_id", user.id);
+      } else {
+        await supabase
+          .from("comment_likes")
+          .insert({ comment_id: replyId, user_id: user.id });
+      }
+
+      setReplies(replies.map(r =>
+        r.id === replyId
+          ? {
+              ...r,
+              is_liked: !r.is_liked,
+              likes_count: r.is_liked ? r.likes_count - 1 : r.likes_count + 1
+            }
+          : r
+      ));
+    } catch (error) {
+      console.error("Error toggling reply like:", error);
     }
   };
 
@@ -374,6 +468,7 @@ export default function Profile() {
   useEffect(() => {
     if (profile) {
       fetchUserPosts(profile.user_id);
+      fetchUserReplies(profile.user_id);
       setLoading(false);
 
       // Subscribe to follow changes for this profile to refresh data
@@ -559,7 +654,12 @@ export default function Profile() {
           <TabsTrigger value="posts" className="flex-1">
             Posts ({posts.length})
           </TabsTrigger>
-          {/* Add other tabs here if needed, e.g., Followers, Following */}
+          <TabsTrigger value="replies" className="flex-1">
+            Replies ({replies.length})
+          </TabsTrigger>
+          <TabsTrigger value="media" className="flex-1">
+            Media ({mediaPosts.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="posts" className="mt-6">
@@ -600,7 +700,137 @@ export default function Profile() {
             </div>
           )}
         </TabsContent>
-        {/* Add other TabsContent components here if needed */}
+
+        <TabsContent value="replies" className="mt-6">
+          {replies.length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <MessageCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No replies yet</h3>
+                <p className="text-muted-foreground">
+                  {isOwnProfile
+                    ? "When you reply to posts, they'll show up here"
+                    : `${profile.username} hasn't replied to any posts yet`
+                  }
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {replies.map((reply) => (
+                <Card key={reply.id} className="p-4">
+                  <CardContent className="p-0">
+                    {/* Original post context */}
+                    {reply.post && (
+                      <div className="mb-3 p-3 bg-muted/50 rounded-lg border-l-4 border-primary">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={reply.post.profile?.profile_pic || ""} />
+                            <AvatarFallback className="text-xs">
+                              {reply.post.profile?.username?.[0]?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium">
+                            {reply.post.profile?.name || reply.post.profile?.username}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(reply.post.created_at), "MMM dd, yyyy")}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {reply.post.body}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Reply content */}
+                    <div className="flex gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={reply.profile?.profile_pic || ""} />
+                        <AvatarFallback>
+                          {reply.profile?.username?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-sm">
+                            {reply.profile?.name || reply.profile?.username}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            @{reply.profile?.username}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            • {formatTimeShort(reply.created_at)}
+                          </span>
+                        </div>
+                        <p className="text-sm mb-2">{reply.body}</p>
+                        <div className="flex items-center gap-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleReplyLike(reply.id)}
+                            className={`flex items-center gap-1 hover:bg-red-500/10 rounded-full p-1 h-auto transition-colors ${
+                              reply.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
+                            }`}
+                          >
+                            <Heart className={`h-3 w-3 ${reply.is_liked ? 'fill-current text-red-500' : ''}`} />
+                            <span className="text-xs">{reply.likes_count}</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/post/${reply.post_id}`)}
+                            className="text-xs text-muted-foreground hover:text-primary"
+                          >
+                            View conversation
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="media" className="mt-6">
+          {mediaPosts.length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <div className="w-16 h-16 bg-muted rounded-lg mx-auto mb-4 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No media posts yet</h3>
+                <p className="text-muted-foreground">
+                  {isOwnProfile
+                    ? "Posts with photos, videos, or files will appear here"
+                    : `${profile.username} hasn't shared any media posts yet`
+                  }
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {mediaPosts.map((post) => (
+                <PostItem
+                  key={post.id}
+                  post={post}
+                  currentUserId={currentUser?.id}
+                  onLike={handleToggleLike}
+                  onBookmark={handleToggleBookmark}
+                  onComment={(postId) => navigate(`/post/${postId}`)}
+                  onShare={() => {}} // Placeholder for share functionality
+                  onEdit={handleEditPost}
+                  onDelete={handleDeletePost}
+                  showDropdown={isOwnProfile}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* Modals */}
