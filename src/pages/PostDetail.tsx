@@ -775,7 +775,8 @@ export default function PostDetail() {
                               </Carousel>
                             </div>
                           </DialogContent>
-                        </Dialog>
+                        )}
+                      </Dialog>
                       ) : attachments[0].type === 'application/pdf' || attachments[0].type?.includes('pdf') ? (
                         <div className="p-4 bg-muted">
                           <div className="flex gap-2 items-center">
