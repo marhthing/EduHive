@@ -71,9 +71,7 @@ export default function Profile() {
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   
-  // State for fetching username from localStorage
-  const [fetchingUsername, setFetchingUsername] = useState(false);
-  const [fetchedUsername, setFetchedUsername] = useState<string>("");
+  
 
 
   const fetchProfile = useCallback(async () => {
@@ -355,53 +353,7 @@ export default function Profile() {
     }
   };
 
-  const handleFetchUsernameFromDB = async () => {
-    setFetchingUsername(true);
-    setFetchedUsername("");
-    
-    try {
-      if (!currentUser?.id) {
-        showToast("You need to be logged in", "error");
-        return;
-      }
-      
-      // Show processing for a bit
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Fetch username from database using the current user's ID
-      const { data: profileData, error } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("user_id", currentUser.id)
-        .single();
-      
-      if (error) {
-        console.error("Error fetching profile:", error);
-        showToast("Error fetching your profile from database", "error");
-        return;
-      }
-      
-      if (profileData?.username) {
-        setFetchedUsername(profileData.username);
-        showToast(`Found your username: @${profileData.username}`, "success");
-        
-        // Store in localStorage for future use
-        localStorage.setItem(`username_${currentUser.id}`, profileData.username);
-        
-        // Redirect to the proper profile URL
-        setTimeout(() => {
-          navigate(`/profile/${profileData.username}`, { replace: true });
-        }, 1000);
-      } else {
-        showToast("No username found in your profile", "info");
-      }
-    } catch (error) {
-      console.error("Error fetching username:", error);
-      showToast("Error fetching username", "error");
-    } finally {
-      setFetchingUsername(false);
-    }
-  };
+  
 
 
   useEffect(() => {
@@ -521,22 +473,12 @@ export default function Profile() {
                 </div>
                 <div className="flex gap-2">
                   {isOwnProfile ? (
-                    <>
-                      <Button asChild variant="outline" size="sm">
-                        <Link to="/settings">
-                          <Settings className="w-4 h-4 mr-2" />
-                          Edit Profile
-                        </Link>
-                      </Button>
-                      <Button
-                        onClick={handleFetchUsernameFromDB}
-                        disabled={fetchingUsername}
-                        variant="secondary"
-                        size="sm"
-                      >
-                        {fetchingUsername ? "Fetching..." : "Fetch My Username"}
-                      </Button>
-                    </>
+                    <Button asChild variant="outline" size="sm">
+                      <Link to="/settings">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Edit Profile
+                      </Link>
+                    </Button>
                   ) : currentUser ? (
                     <Button
                       onClick={handleFollowToggle}
@@ -554,13 +496,7 @@ export default function Profile() {
                 <p className="text-muted-foreground mb-4">{profile.bio}</p>
               )}
 
-              {fetchedUsername && (
-                <div className="bg-secondary/50 rounded-lg p-3 mb-4">
-                  <p className="text-sm font-medium text-secondary-foreground">
-                    Username from localStorage: <span className="text-primary">@{fetchedUsername}</span>
-                  </p>
-                </div>
-              )}
+              
 
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                 {profile.school && (
