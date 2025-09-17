@@ -30,6 +30,7 @@ interface Profile {
 
 interface Post {
   id: string;
+  user_id: string;
   body: string;
   attachment_url: string | null;
   attachment_type: string | null;
@@ -270,7 +271,7 @@ export default function Profile() {
         if (error) {
           // error in follow: { code: '23505', message: 'duplicate key value violates unique constraint "follows_follower_id_following_id_key"', ... }
           if (error.code === '23505') {
-            showToast(`You are already following @${profile.username}`, "warning");
+            showToast(`You are already following @${profile.username}`, "info");
           } else {
             console.error('Follow error:', error);
             throw error;

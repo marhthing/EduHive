@@ -38,22 +38,25 @@ export function FollowersModal({ isOpen, onClose, profileUserId, currentUserId }
       // Get followers of this profile
       const { data: followersData, error } = await supabase
         .from('follows')
-        .select(`
-          follower_id,
-          profiles!follows_follower_id_fkey (
-            user_id,
-            username,
-            name,
-            profile_pic,
-            school,
-            department
-          )
-        `)
+        .select('follower_id')
         .eq('following_id', profileUserId);
 
       if (error) throw error;
 
-      const followersList = followersData?.map(follow => follow.profiles).filter(Boolean) || [];
+      let followersList: FollowerUser[] = [];
+      
+      if (followersData && followersData.length > 0) {
+        const followerIds = followersData.map(f => f.follower_id);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, username, name, profile_pic, school, department')
+          .in('user_id', followerIds);
+
+        if (profilesError) throw profilesError;
+        
+        followersList = profilesData || [];
+      }
+      
       setFollowers(followersList);
 
       // Check follow states for current user
@@ -110,7 +113,7 @@ export function FollowersModal({ isOpen, onClose, profileUserId, currentUserId }
 
         if (error) {
           if (error.code === '23505') {
-            showToast(`You are already following @${targetUsername}`, 'warning');
+            showToast(`You are already following @${targetUsername}`, 'info');
           } else {
             throw error;
           }

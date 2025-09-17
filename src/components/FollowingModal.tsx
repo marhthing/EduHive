@@ -37,23 +37,25 @@ export function FollowingModal({ isOpen, onClose, profileUserId, currentUserId }
       // Get users that this profile is following
       const { data: followingData, error } = await supabase
         .from('follows')
-        .select(`
-          following_id,
-          profiles!follows_following_id_fkey (
-            user_id,
-            username,
-            name,
-            profile_pic,
-            school,
-            department
-          )
-        `)
+        .select('following_id')
         .eq('follower_id', profileUserId);
 
       if (error) throw error;
 
-      const followingList = followingData?.map(follow => follow.profiles).filter(Boolean) || [];
-      setFollowing(followingList);
+      if (followingData && followingData.length > 0) {
+        const followingIds = followingData.map(f => f.following_id);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, username, name, profile_pic, school, department')
+          .in('user_id', followingIds);
+
+        if (profilesError) throw profilesError;
+        
+        const followingList = profilesData || [];
+        setFollowing(followingList);
+      } else {
+        setFollowing([]);
+      }
     } catch (error) {
       console.error('Error fetching following:', error);
       showToast('Failed to load following', 'error');
