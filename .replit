@@ -50,7 +50,7 @@ outputType = "webview"
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
 publicDir = "dist"
-run = ["npm", "run", "preview"]
+run = ["npx", "serve", "-s", "dist", "-l", "5000"]
 
 [[ports]]
 localPort = 5000
