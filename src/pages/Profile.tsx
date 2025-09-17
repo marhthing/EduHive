@@ -212,13 +212,19 @@ export default function Profile() {
 
   const fetchUserReplies = async (userId: string) => {
     try {
+      console.log("Fetching replies for user:", userId);
       const { data: { user } } = await supabase.auth.getUser();
 
       const { data: repliesData, error } = await supabase
         .from("comments")
         .select(`
-          *,
-          post:posts (
+          id,
+          body,
+          created_at,
+          user_id,
+          post_id,
+          parent_comment_id,
+          post:posts!inner (
             id,
             body,
             user_id,
@@ -240,10 +246,21 @@ export default function Profile() {
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error in replies query:", error);
+        throw error;
+      }
+
+      console.log("Raw replies data:", repliesData);
+
+      if (!repliesData || repliesData.length === 0) {
+        console.log("No replies found for user");
+        setReplies([]);
+        return;
+      }
 
       const repliesWithCounts = await Promise.all(
-        (repliesData || []).map(async (reply) => {
+        repliesData.map(async (reply) => {
           const [likesResult, userLikeResult] = await Promise.all([
             supabase.from("comment_likes").select("id", { count: "exact" }).eq("comment_id", reply.id),
             user ? supabase.from("comment_likes").select("id").eq("comment_id", reply.id).eq("user_id", user.id).single() : null,
@@ -257,9 +274,11 @@ export default function Profile() {
         })
       );
 
+      console.log("Final replies with counts:", repliesWithCounts);
       setReplies(repliesWithCounts);
     } catch (error) {
       console.error("Error fetching user replies:", error);
+      setReplies([]);
     }
   };
 
