@@ -92,20 +92,27 @@ export default function Auth() {
       
       // Check for specific error types
       if (error.message?.includes("Invalid login credentials")) {
-        // First check if email exists in the system
+        // Check if email exists by looking in the profiles table
         try {
-          const { data: userData } = await supabase.auth.resetPasswordForEmail(loginData.email, {
-            redirectTo: 'https://example.com' // dummy URL to test if email exists
-          });
-          // If no error thrown, email exists - so password is incorrect
-          errorMessage = "Incorrect password. Please try again.";
-        } catch (resetError: any) {
-          // If email doesn't exist, show generic message for security
-          if (resetError.message?.includes("User not found")) {
-            errorMessage = "Invalid email or password.";
-          } else {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('email', loginData.email)
+            .single();
+
+          if (profileError && profileError.code === 'PGRST116') {
+            // No profile found - email doesn't exist in the system
+            errorMessage = "Account profile not found. Please contact support.";
+          } else if (profileData) {
+            // Profile exists but login failed - incorrect password
             errorMessage = "Incorrect password. Please try again.";
+          } else {
+            // Generic fallback
+            errorMessage = "Invalid email or password.";
           }
+        } catch (profileCheckError: any) {
+          // If profile check fails, show password error (safer assumption)
+          errorMessage = "Incorrect password. Please try again.";
         }
       } else if (error.message?.includes("Email not confirmed")) {
         errorMessage = "Please check your email and click the verification link before signing in.";
