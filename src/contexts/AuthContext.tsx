@@ -74,10 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       
-      if (user) {
-        const deactivated = await checkDeactivationStatus(user.id);
-        setIsDeactivated(deactivated);
-      } else {
+      if (!user) {
         setIsDeactivated(false);
       }
     } catch (error) {
@@ -127,13 +124,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('User found in initial session');
           setSession(session);
           setUser(session.user);
-          setIsDeactivated(false); // Deactivation is only checked during actual login
         } else {
           console.log('No user found, clearing auth state');
           setSession(null);
           setUser(null);
-          setIsDeactivated(false);
         }
+        setIsDeactivated(false); // Deactivation is only checked during actual login
       } catch (error) {
         console.error('Error getting initial session:', error);
         setSession(null);
