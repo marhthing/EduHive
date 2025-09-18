@@ -913,7 +913,7 @@ export default function Messages() {
 
                   {message.isUser && (
                     <Avatar className="h-8 w-8 mt-1">
-                      <AvatarImage src={user?.user_metadata?.avatar_url || user?.user_metadata?.profile_pic} alt={user?.user_metadata?.name || user?.user_metadata?.username || user?.email} />
+                      <AvatarImage src={user?.user_metadata?.profile_pic || user?.user_metadata?.avatar_url} alt={user?.user_metadata?.name || user?.user_metadata?.username || user?.email} />
                       <AvatarFallback className="bg-secondary">
                         {(user?.user_metadata?.name || user?.user_metadata?.username || user?.email)?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
