@@ -40,8 +40,12 @@ export const MentionText: React.FC<MentionTextProps> = ({ text, className = '' }
             key={index}
             className="text-blue-600 font-medium hover:underline hover:text-blue-800 transition-colors cursor-pointer"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               navigate(`/profile/${username}`);
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
             }}
           >
             @{username}
