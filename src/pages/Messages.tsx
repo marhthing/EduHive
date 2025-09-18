@@ -1052,41 +1052,52 @@ export default function Messages() {
         {/* Input Area */}
         <div className="p-4 md:p-4">
           {isRecording ? (
-            /* Voice Recording UI - Expanded like ChatGPT */
-            <div className="space-y-3">
-              <div className="flex items-center justify-center p-6 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+            /* Voice Recording UI with Waveform - Like ChatGPT */
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center animate-pulse">
-                      <Mic className="h-6 w-6 text-white" />
-                    </div>
-                    <div className="absolute -inset-2 bg-red-400/20 rounded-full animate-ping"></div>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-red-600 dark:text-red-400 font-medium">Recording...</p>
-                    <p className="text-sm text-red-500 dark:text-red-500">Click send when done</p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      stopRecording();
+                      setSelectedFile(null);
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    ×
+                  </Button>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">See text</span>
+                </div>
+                
+                {/* Waveform Visualization */}
+                <div className="flex-1 mx-4 flex items-center justify-center">
+                  <div className="flex items-end gap-1 h-8">
+                    {Array.from({ length: 40 }, (_, i) => (
+                      <div
+                        key={i}
+                        className="bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse"
+                        style={{
+                          width: '2px',
+                          height: `${Math.random() * 24 + 8}px`,
+                          animationDelay: `${i * 0.05}s`,
+                          animationDuration: `${0.5 + Math.random() * 0.5}s`
+                        }}
+                      />
+                    ))}
                   </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add a message with your voice note (optional)..."
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  disabled={isLoading || isProcessingAudio}
-                  className="flex-1"
-                />
+
                 <Button 
                   onClick={sendMessage}
                   disabled={isLoading || isProcessingAudio}
                   size="sm"
-                  className="bg-red-500 hover:bg-red-600"
+                  className="rounded-full w-10 h-10 bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-200"
                 >
                   {isLoading || isProcessingAudio ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin text-white dark:text-black" />
                   ) : (
-                    <Send className="h-4 w-4" />
+                    <div className="w-0 h-0 border-l-[6px] border-l-white dark:border-l-black border-y-[4px] border-y-transparent ml-0.5" />
                   )}
                 </Button>
               </div>
