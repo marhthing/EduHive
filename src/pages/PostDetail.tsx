@@ -21,6 +21,7 @@ import { formatTimeShort } from "@/lib/timeFormat";
 import { useToast } from "@/hooks/use-toast";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { MentionInput } from "@/components/MentionInput";
+import { MentionText } from "@/components/MentionText";
 import { processAIBotMention, parseAIBotMention, type AIBotRequest } from "@/lib/aiBot";
 
 interface Profile {
@@ -231,14 +232,14 @@ export default function PostDetail() {
 
       commentsWithProfiles.forEach(comment => {
         // Handle AI bot comments with special profile
-        if (comment.user_id === 'ai-bot') {
+        if (comment.user_id === 'ai-bot-uuid') {
           comment.profile = {
-            user_id: 'ai-bot',
+            user_id: 'ai-bot-uuid',
             username: 'eduhive',
-            profile_pic: null,
-            school: null,
+            profile_pic: '/logo.svg',
+            school: 'EduHive Platform',
             name: 'EduHive Assistant',
-            department: 'AI Bot'
+            department: 'AI Assistant'
           };
         }
         
@@ -296,18 +297,25 @@ export default function PostDetail() {
       if (aiResponse) {
         // Create a bot comment with a delay for better UX
         setTimeout(async () => {
-          // For now, skip the database insertion to avoid constraint issues
-          // TODO: Create a proper bot user in the database or use server-side endpoint
-          console.log('AI Bot Response:', aiResponse);
-          
-          // Show the bot response in a toast for now
-          toast({
-            title: "🤖 EduHive Assistant",
-            description: aiResponse.substring(0, 100) + (aiResponse.length > 100 ? '...' : ''),
-          });
-          
-          // Refresh comments anyway
-          fetchComments();
+          try {
+            await supabase
+              .from('comments')
+              .insert({
+                body: aiResponse,
+                post_id: postId,
+                user_id: 'ai-bot-uuid', // Use the proper bot UUID
+              });
+            
+            // Refresh comments to show bot response
+            fetchComments();
+          } catch (error) {
+            console.error('Error inserting bot comment:', error);
+            // Fallback to toast if database insert fails
+            toast({
+              title: "🤖 EduHive Assistant",
+              description: aiResponse.substring(0, 100) + (aiResponse.length > 100 ? '...' : ''),
+            });
+          }
         }, 1000);
       }
 
@@ -702,7 +710,10 @@ export default function PostDetail() {
         </div>
 
         {/* Post body - now starts from the left */}
-        <p className="text-foreground whitespace-pre-wrap mb-3 text-lg">{post.body}</p>
+        <MentionText 
+          text={post.body} 
+          className="text-foreground whitespace-pre-wrap mb-3 text-lg block" 
+        />
 
             {/* Attachments - aligned with post body */}
         {(() => {
@@ -1177,7 +1188,10 @@ export default function PostDetail() {
                     </DropdownMenu>
                   </div>
 
-                  <p className="text-foreground whitespace-pre-wrap mb-2">{comment.body}</p>
+                  <MentionText 
+                    text={comment.body} 
+                    className="text-foreground whitespace-pre-wrap mb-2 block" 
+                  />
 
                   <div className="flex items-center gap-4">
                     <Button
@@ -1309,7 +1323,10 @@ export default function PostDetail() {
                               </DropdownMenu>
                             </div>
 
-                            <p className="text-foreground whitespace-pre-wrap text-sm mb-2">{reply.body}</p>
+                            <MentionText 
+                              text={reply.body} 
+                              className="text-foreground whitespace-pre-wrap text-sm mb-2 block" 
+                            />
 
                             <Button
                               variant="ghost"

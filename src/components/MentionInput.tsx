@@ -112,7 +112,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
             id: 'ai-bot',
             username: 'eduhive',
             name: 'EduHive Assistant',
-            profile_pic: null
+            profile_pic: '/logo.svg'
           });
         }
         
@@ -145,7 +145,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
           id: 'ai-bot',
           username: 'eduhive',
           name: 'EduHive Assistant',
-          profile_pic: null
+          profile_pic: '/logo.svg'
         });
       }
     }
@@ -253,7 +253,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
             >
               <Avatar className="h-8 w-8">
                 <AvatarImage src={suggestion.profile_pic || undefined} />
-                <AvatarFallback className={suggestion.id === 'ai-bot' ? 'bg-green-500 text-white' : ''}>
+                <AvatarFallback className={suggestion.id === 'ai-bot' ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : ''}>
                   {suggestion.id === 'ai-bot' ? '🤖' : suggestion.name?.[0]?.toUpperCase() || suggestion.username[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>

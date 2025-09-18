@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { MentionInput } from "@/components/MentionInput";
+import { MentionText } from "@/components/MentionText";
 
 export default function CreatePost() {
   const navigate = useNavigate();

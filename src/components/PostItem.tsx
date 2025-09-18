@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
+import { MentionText } from "@/components/MentionText";
 
 interface Profile {
   username: string;
@@ -470,9 +471,12 @@ export function PostItem({
               if (shouldTruncate) {
                 return (
                   <div>
-                    <p className="mb-2">
-                      {post.body.substring(0, MAX_LENGTH)}...
-                    </p>
+                    <div className="mb-2">
+                      <MentionText 
+                        text={post.body.substring(0, MAX_LENGTH) + "..."} 
+                        className="block"
+                      />
+                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -486,7 +490,7 @@ export function PostItem({
                 );
               }
               
-              return <p>{post.body}</p>;
+              return <MentionText text={post.body} className="block" />;
             })()}
           </div>
 

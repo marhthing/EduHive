@@ -1,0 +1,57 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+interface MentionTextProps {
+  text: string;
+  className?: string;
+}
+
+export const MentionText: React.FC<MentionTextProps> = ({ text, className = '' }) => {
+  // Function to parse text and make @mentions clickable
+  const parseText = (text: string) => {
+    // Split by @mentions but keep the mentions in the result
+    const parts = text.split(/(@\w+)/g);
+    
+    return parts.map((part, index) => {
+      // Check if this part is a mention
+      const mentionMatch = part.match(/^@(\w+)$/);
+      
+      if (mentionMatch) {
+        const username = mentionMatch[1];
+        
+        // Special handling for AI bot
+        if (username === 'eduhive') {
+          return (
+            <span
+              key={index}
+              className="text-blue-600 font-medium hover:underline cursor-pointer bg-blue-50 px-1 rounded"
+              title="EduHive AI Assistant"
+            >
+              @{username}
+            </span>
+          );
+        }
+        
+        // Regular user mention - make it clickable to their profile
+        return (
+          <Link
+            key={index}
+            to={`/profile/${username}`}
+            className="text-blue-600 font-medium hover:underline hover:text-blue-800 transition-colors"
+          >
+            @{username}
+          </Link>
+        );
+      }
+      
+      // Regular text
+      return <span key={index}>{part}</span>;
+    });
+  };
+
+  return (
+    <span className={className}>
+      {parseText(text)}
+    </span>
+  );
+};
