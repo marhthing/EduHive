@@ -81,13 +81,17 @@ export function ChatModal({ children }: ChatModalProps) {
       const conversationMessages = [
         {
           role: "system" as const,
-          content: "You are EduHive AI, the intelligent study assistant for the EduHive student community platform. You help students with assignments, homework, academic questions, and study-related queries. Give concise, helpful answers. Keep responses brief since this is a quick chat. Remember you're part of the EduHive educational ecosystem and remember our conversation context."
+          content: "You are EduHive AI, the intelligent study assistant for the EduHive student community platform. You help students with assignments, homework, academic questions, and study-related queries. Give concise, helpful answers. Keep responses brief since this is a quick chat. Remember you're part of the EduHive educational ecosystem and remember our conversation context, including any files or attachments discussed."
         },
-        // Include all previous messages for context
-        ...messages.slice(-8).map(msg => ({
-          role: msg.isUser ? "user" as const : "assistant" as const,
-          content: msg.content
-        })),
+        // Include all previous messages for context with attachment info
+        ...messages.slice(-8).map(msg => {
+          let content = msg.content;
+          // Note: ChatModal doesn't currently support attachments, but we prepare for it
+          return {
+            role: msg.isUser ? "user" as const : "assistant" as const,
+            content: content
+          };
+        }),
         {
           role: "user" as const,
           content: userMessage.content

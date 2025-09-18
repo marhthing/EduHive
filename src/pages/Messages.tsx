@@ -497,17 +497,30 @@ export default function Messages() {
       }
     }
 
-    // Prepare messages with full conversation context
+    // Prepare messages with full conversation context including attachment information
     const conversationMessages = [
       {
         role: "system" as const,
-        content: "You are EduHive AI, the intelligent study assistant for the EduHive student community platform. You specialize in helping students with assignments, homework, and academic questions. You're particularly good at solving math problems, explaining concepts clearly, providing step-by-step solutions, and helping with various subjects. Be helpful, educational, and remember you're part of the EduHive educational ecosystem. If you're solving math problems, show your work step by step. Remember the entire conversation context to provide consistent help."
+        content: "You are EduHive AI, the intelligent study assistant for the EduHive student community platform. You specialize in helping students with assignments, homework, and academic questions. You're particularly good at solving math problems, explaining concepts clearly, providing step-by-step solutions, and helping with various subjects. Be helpful, educational, and remember you're part of the EduHive educational ecosystem. If you're solving math problems, show your work step by step. Remember the entire conversation context to provide consistent help, including any previously uploaded images, documents, or audio files and their content."
       },
-      // Include ALL messages for full context, but manage token limits
-      ...messages.map(msg => ({
-        role: msg.isUser ? "user" as const : "assistant" as const,
-        content: msg.content
-      })),
+      // Include ALL messages for full context with attachment information
+      ...messages.map(msg => {
+        let content = msg.content;
+        // Add attachment context to message content for AI memory
+        if (msg.attachmentUrl && msg.attachmentType) {
+          if (msg.attachmentType === 'image') {
+            content += ` [Previously uploaded image: ${msg.attachmentName || 'image file'}]`;
+          } else if (msg.attachmentType === 'audio') {
+            content += ` [Previously uploaded audio: ${msg.attachmentName || 'audio file'}]`;
+          } else {
+            content += ` [Previously uploaded document: ${msg.attachmentName || 'document file'}]`;
+          }
+        }
+        return {
+          role: msg.isUser ? "user" as const : "assistant" as const,
+          content: content
+        };
+      }),
       {
         role: "user" as const,
         content: userMessage.content
@@ -527,10 +540,22 @@ export default function Messages() {
       
       // Keep system message, last 6 messages, and current user message
       const systemMsg = conversationMessages[0];
-      const recentMessages = messages.slice(-6).map(msg => ({
-        role: msg.isUser ? "user" as const : "assistant" as const,
-        content: msg.content
-      }));
+      const recentMessages = messages.slice(-6).map(msg => {
+        let content = msg.content;
+        if (msg.attachmentUrl && msg.attachmentType) {
+          if (msg.attachmentType === 'image') {
+            content += ` [Previously uploaded image: ${msg.attachmentName || 'image file'}]`;
+          } else if (msg.attachmentType === 'audio') {
+            content += ` [Previously uploaded audio: ${msg.attachmentName || 'audio file'}]`;
+          } else {
+            content += ` [Previously uploaded document: ${msg.attachmentName || 'document file'}]`;
+          }
+        }
+        return {
+          role: msg.isUser ? "user" as const : "assistant" as const,
+          content: content
+        };
+      });
       const currentMsg = conversationMessages[conversationMessages.length - 1];
       
       messagesToSend = [
