@@ -67,16 +67,26 @@ export default function Messages() {
   // Separate effect to handle initial chat creation - only run once when component mounts
   useEffect(() => {
     if (user && chatSessions.length > 0 && !currentSessionId) {
-      // Load the most recent chat session instead of creating a new one
-      const mostRecentSession = chatSessions[0];
-      if (mostRecentSession) {
-        loadChatMessages(mostRecentSession.id);
+      // Try to load the last opened chat from localStorage
+      const lastOpenedChatId = localStorage.getItem(`lastOpenedChat_${user.id}`);
+      const lastOpenedSession = lastOpenedChatId ? 
+        chatSessions.find(session => session.id === lastOpenedChatId) : null;
+      
+      if (lastOpenedSession) {
+        // Load the previously opened chat session
+        loadChatMessages(lastOpenedSession.id);
+      } else {
+        // Fall back to the most recent chat session
+        const mostRecentSession = chatSessions[0];
+        if (mostRecentSession) {
+          loadChatMessages(mostRecentSession.id);
+        }
       }
     } else if (user && chatSessions.length === 0 && !currentSessionId) {
       // Only start new chat if user has no chat sessions at all
       startNewChat();
     }
-  }, [user, chatSessions.length]); // Remove currentSessionId and messages.length from dependencies
+  }, [user, chatSessions.length]);
 
   const loadChatSessions = async () => {
     if (!user) return;
@@ -122,6 +132,11 @@ export default function Messages() {
       setMessages(loadedMessages);
       setCurrentSessionId(sessionId);
       setIsSheetOpen(false); // Auto-close the sheet when a chat is loaded
+      
+      // Store the last opened chat in localStorage
+      if (user) {
+        localStorage.setItem(`lastOpenedChat_${user.id}`, sessionId);
+      }
     } catch (error) {
       console.error('Error loading chat messages:', error);
       showToast("Failed to load chat history", "error");
@@ -180,6 +195,12 @@ export default function Messages() {
         });
 
       await loadChatSessions();
+      
+      // Store the new chat as the last opened chat
+      if (user) {
+        localStorage.setItem(`lastOpenedChat_${user.id}`, data.id);
+      }
+      
       return data.id;
     } catch (error) {
       console.error('Error creating new chat:', error);
@@ -201,6 +222,14 @@ export default function Messages() {
       if (error) throw error;
 
       await loadChatSessions();
+      
+      // Clear from localStorage if this was the last opened chat
+      if (user) {
+        const lastOpenedChatId = localStorage.getItem(`lastOpenedChat_${user.id}`);
+        if (lastOpenedChatId === sessionId) {
+          localStorage.removeItem(`lastOpenedChat_${user.id}`);
+        }
+      }
       
       if (currentSessionId === sessionId) {
         await startNewChat();
