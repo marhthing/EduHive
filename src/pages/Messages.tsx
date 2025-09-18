@@ -117,29 +117,39 @@ export default function Messages() {
   const startNewChat = async () => {
     if (!user) return;
 
+    // Start with a temporary session - don't create in database yet
+    setCurrentSessionId(null);
+    setMessages([
+      {
+        id: "welcome",
+        content: "Hello! I'm EduHive AI - your intelligent study assistant. I can help you with assignments, solve math problems, explain concepts, and analyze documents, images, or audio files. What would you like to work on today?",
+        isUser: false,
+        timestamp: new Date()
+      }
+    ]);
+  };
+
+  const createChatSession = async (firstUserMessage: string): Promise<string | null> => {
+    if (!user) return null;
+
     try {
+      // Create title from first 50 characters of user's message
+      const title = firstUserMessage.length > 50 
+        ? firstUserMessage.substring(0, 47) + "..."
+        : firstUserMessage;
+
       const { data, error } = await supabase
         .from('chat_sessions')
         .insert({
           user_id: user.id,
-          title: 'New Chat'
+          title: title
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      setCurrentSessionId(data.id);
-      setMessages([
-        {
-          id: "welcome",
-          content: "Hello! I'm EduHive AI - your intelligent study assistant. I can help you with assignments, solve math problems, explain concepts, and analyze documents, images, or audio files. What would you like to work on today?",
-          isUser: false,
-          timestamp: new Date()
-        }
-      ]);
-
-      // Save welcome message to database
+      // Save welcome message to the new session
       await supabase
         .from('chat_messages')
         .insert({
@@ -147,11 +157,13 @@ export default function Messages() {
           content: "Hello! I'm EduHive AI - your intelligent study assistant. I can help you with assignments, solve math problems, explain concepts, and analyze documents, images, or audio files. What would you like to work on today?",
           is_user: false,
         });
-      
+
       await loadChatSessions();
+      return data.id;
     } catch (error) {
       console.error('Error creating new chat:', error);
       showToast("Failed to create new chat", "error");
+      return null;
     }
   };
 
@@ -427,7 +439,7 @@ For now, please let me know:
   };
 
   const sendMessage = async () => {
-    if ((!inputMessage.trim() && !selectedFile) || isLoading || !currentSessionId) return;
+    if ((!inputMessage.trim() && !selectedFile) || isLoading) return;
 
     let attachmentData: { url: string; type: string; name: string } | null = null;
     
@@ -437,9 +449,19 @@ For now, please let me know:
       if (!attachmentData) return; // Failed to upload
     }
 
+    const userMessageContent = inputMessage.trim() || (attachmentData ? `Uploaded ${attachmentData.name}` : '');
+    
+    // Create session if this is the first user message
+    let sessionId = currentSessionId;
+    if (!sessionId) {
+      sessionId = await createChatSession(userMessageContent);
+      if (!sessionId) return; // Failed to create session
+      setCurrentSessionId(sessionId);
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputMessage.trim() || (attachmentData ? `Uploaded ${attachmentData.name}` : ''),
+      content: userMessageContent,
       isUser: true,
       timestamp: new Date(),
       attachmentUrl: attachmentData?.url,
@@ -448,14 +470,7 @@ For now, please let me know:
     };
 
     setMessages(prev => [...prev, userMessage]);
-    await saveMessage(userMessage, currentSessionId);
-    
-    // Update chat title if it's the first real message
-    if (messages.length <= 1) {
-      const title = userMessage.content.slice(0, 50) + (userMessage.content.length > 50 ? '...' : '');
-      await updateChatTitle(currentSessionId, title);
-      await loadChatSessions();
-    }
+    await saveMessage(userMessage, sessionId);
 
     setInputMessage("");
     setSelectedFile(null);
@@ -472,7 +487,7 @@ For now, please let me know:
       };
 
       setMessages(prev => [...prev, aiMessage]);
-      await saveMessage(aiMessage, currentSessionId);
+      await saveMessage(aiMessage, sessionId);
     } catch (error) {
       console.error("Error calling Groq API:", error);
       let errorMessage = "I'm currently experiencing technical difficulties. Please try again in a few moments.";
@@ -495,7 +510,7 @@ For now, please let me know:
       };
 
       setMessages(prev => [...prev, errorResponse]);
-      await saveMessage(errorResponse, currentSessionId);
+      await saveMessage(errorResponse, sessionId);
       showToast("Message failed to send", "error");
     } finally {
       setIsLoading(false);
