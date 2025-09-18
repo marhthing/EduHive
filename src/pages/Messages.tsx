@@ -4,7 +4,7 @@ import { Send, Bot, User, Loader2, Paperclip, Mic, MicOff, Plus, History, Trash2
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +39,7 @@ export default function Messages() {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   
   const { user } = useAuth();
   const { showToast } = useTwitterToast();
@@ -314,7 +315,7 @@ export default function Messages() {
     }
   };
 
-  const processWithGroq = async (userMessage: Message): Promise<string> => {
+  const processWithGroq = async (userMessage: Message, onStream: (chunk: string) => void): Promise<string> => {
     const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
     
     if (!groqApiKey) {
@@ -355,10 +356,21 @@ export default function Messages() {
             ],
             model: "llama-3.2-90b-vision-preview",
             temperature: 0.7,
-            max_tokens: 1500
+            max_tokens: 1500,
+            stream: true
           });
 
-          return completion.choices[0]?.message?.content || "I couldn't analyze the image. Please try again.";
+          let fullResponse = '';
+          for await (const chunk of completion) {
+            const content = chunk.choices[0]?.delta?.content || '';
+            if (content) {
+              fullResponse += content;
+              onStream(content);
+              await new Promise(resolve => setTimeout(resolve, 50)); // Simulate typing speed
+            }
+          }
+
+          return fullResponse || "I couldn't analyze the image. Please try again.";
         } catch (error) {
           console.error('Vision analysis error:', error);
           throw new Error('Failed to analyze image');
@@ -394,27 +406,46 @@ export default function Messages() {
             ],
             model: "mixtral-8x7b-32768",
             temperature: 0.7,
-            max_tokens: 1500
+            max_tokens: 1500,
+            stream: true
           });
 
-          return completion.choices[0]?.message?.content || "I couldn't process the audio. Please try again.";
+          let fullResponse = '';
+          for await (const chunk of completion) {
+            const content = chunk.choices[0]?.delta?.content || '';
+            if (content) {
+              fullResponse += content;
+              onStream(content);
+              await new Promise(resolve => setTimeout(resolve, 50)); // Simulate typing speed
+            }
+          }
+
+          return fullResponse || "I couldn't process the audio. Please try again.";
         } catch (error) {
           console.error('Audio processing error:', error);
           throw new Error('Failed to process audio');
         }
       } else {
-        // Document analysis - for now, we'll ask user to describe content
-        // In a real implementation, you'd extract text from PDFs/docs
-        return `I can see you've uploaded a document (${userMessage.attachmentName}). Currently, I can best help if you describe the content or specific questions from the document. You can also upload images of document pages for me to analyze visually.
+        // Document analysis - simulate streaming for consistent UX
+        const docResponse = `I can see you've uploaded a document (${userMessage.attachmentName}). Currently, I can best help if you describe the content or specific questions from the document. You can also upload images of document pages for me to analyze visually.
 
 For now, please let me know:
 - What type of assignment or problem is in the document?
 - Any specific questions you need help with?
 - You can also take screenshots of specific pages and upload them as images for detailed analysis.`;
+        
+        // Simulate streaming
+        for (let i = 0; i < docResponse.length; i += 3) {
+          const chunk = docResponse.slice(i, i + 3);
+          onStream(chunk);
+          await new Promise(resolve => setTimeout(resolve, 30));
+        }
+        
+        return docResponse;
       }
     }
 
-    // Regular text processing
+    // Regular text processing with streaming
     const completion = await groq.chat.completions.create({
       messages: [
         {
@@ -432,10 +463,21 @@ For now, please let me know:
       ],
       model: "mixtral-8x7b-32768",
       temperature: 0.7,
-      max_tokens: 1500
+      max_tokens: 1500,
+      stream: true
     });
 
-    return completion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response. Please try again.";
+    let fullResponse = '';
+    for await (const chunk of completion) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      if (content) {
+        fullResponse += content;
+        onStream(content);
+        await new Promise(resolve => setTimeout(resolve, 50)); // Simulate typing speed
+      }
+    }
+
+    return fullResponse || "I apologize, but I couldn't generate a response. Please try again.";
   };
 
   const sendMessage = async () => {
@@ -476,18 +518,35 @@ For now, please let me know:
     setSelectedFile(null);
     setIsLoading(true);
 
+    // Show typing indicator
+    setIsTyping(true);
+    
+    // Add empty AI message that will be filled by streaming
+    const aiMessageId = (Date.now() + 1).toString();
+    const aiMessage: Message = {
+      id: aiMessageId,
+      content: "",
+      isUser: false,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, aiMessage]);
+
     try {
-      const aiResponse = await processWithGroq(userMessage);
+      let fullResponse = '';
+      
+      const aiResponse = await processWithGroq(userMessage, (chunk: string) => {
+        fullResponse += chunk;
+        // Update the AI message with streaming content
+        setMessages(prev => prev.map(msg => 
+          msg.id === aiMessageId 
+            ? { ...msg, content: fullResponse }
+            : msg
+        ));
+      });
 
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: aiResponse,
-        isUser: false,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-      await saveMessage(aiMessage, sessionId);
+      // Save final message to database
+      const finalAiMessage = { ...aiMessage, content: aiResponse };
+      await saveMessage(finalAiMessage, sessionId);
     } catch (error) {
       console.error("Error calling Groq API:", error);
       let errorMessage = "I'm currently experiencing technical difficulties. Please try again in a few moments.";
@@ -502,18 +561,19 @@ For now, please let me know:
         }
       }
 
-      const errorResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        content: errorMessage,
-        isUser: false,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, errorResponse]);
-      await saveMessage(errorResponse, sessionId);
+      // Update the existing AI message with error
+      setMessages(prev => prev.map(msg => 
+        msg.id === aiMessageId 
+          ? { ...msg, content: errorMessage }
+          : msg
+      ));
+      
+      const errorMessage_obj = { ...aiMessage, content: errorMessage };
+      await saveMessage(errorMessage_obj, sessionId);
       showToast("Message failed to send", "error");
     } finally {
       setIsLoading(false);
+      setIsTyping(false);
     }
   };
 
@@ -667,8 +727,9 @@ For now, please let me know:
                 >
                   {!message.isUser && (
                     <Avatar className="h-8 w-8 mt-1">
+                      <AvatarImage src="/logo.svg" alt="EduHive AI" />
                       <AvatarFallback className="bg-primary text-primary-foreground">
-                        <Bot className="h-4 w-4" />
+                        <img src="/logo.svg" alt="EduHive" className="h-4 w-4" />
                       </AvatarFallback>
                     </Avatar>
                   )}
@@ -694,25 +755,40 @@ For now, please let me know:
 
                   {message.isUser && (
                     <Avatar className="h-8 w-8 mt-1">
+                      <AvatarImage src={user?.avatar_url} alt={user?.display_name || user?.username} />
                       <AvatarFallback className="bg-secondary">
-                        <User className="h-4 w-4" />
+                        {user?.display_name?.[0]?.toUpperCase() || user?.username?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   )}
                 </div>
               ))}
               
-              {isLoading && (
+              {(isLoading || isTyping) && (
                 <div className="flex gap-3 justify-start">
                   <Avatar className="h-8 w-8 mt-1">
+                    <AvatarImage src="/logo.svg" alt="EduHive AI" />
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      <Bot className="h-4 w-4" />
+                      <img src="/logo.svg" alt="EduHive" className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
                   <div className="bg-muted rounded-lg p-3 max-w-[80%]">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm text-muted-foreground">EduHive AI is analyzing...</span>
+                      {isLoading && !isTyping ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-sm text-muted-foreground">EduHive AI is analyzing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                          </div>
+                          <span className="text-sm text-muted-foreground">EduHive AI is typing...</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

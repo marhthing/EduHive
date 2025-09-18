@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import Groq from "groq-sdk";
+import { useAuth } from "@/hooks/useAuth"; // Assuming useAuth hook is in this path
 
 interface Message {
   id: string;
@@ -20,18 +21,19 @@ interface ChatModalProps {
 }
 
 export function ChatModal({ children }: ChatModalProps) {
-  const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: "1",
-      content: "Hi! I'm EduHive AI - your intelligent study companion. I can help you with assignments, solve math problems, explain concepts, and answer academic questions related to your studies on EduHive!",
+      id: "welcome",
+      content: "Hello! I'm EduHive AI - your quick study assistant. How can I help you today?",
       isUser: false,
       timestamp: new Date()
     }
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // Changed from 'open' to 'isOpen' to avoid conflict with Dialog's open prop
   const { showToast } = useTwitterToast();
+  const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -58,7 +60,7 @@ export function ChatModal({ children }: ChatModalProps) {
 
     try {
       const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
-      
+
       if (!groqApiKey) {
         throw new Error("AI_SERVICE_UNAVAILABLE");
       }
@@ -67,6 +69,11 @@ export function ChatModal({ children }: ChatModalProps) {
         apiKey: groqApiKey,
         dangerouslyAllowBrowser: true
       });
+
+      // Simulate typing indicator
+      let aiResponse = "";
+      const typingMessageId = (Date.now() + 1).toString();
+      setMessages(prev => [...prev, { id: typingMessageId, content: "...", isUser: false, timestamp: new Date() }]);
 
       const completion = await groq.chat.completions.create({
         messages: [
@@ -85,35 +92,47 @@ export function ChatModal({ children }: ChatModalProps) {
         ],
         model: "mixtral-8x7b-32768",
         temperature: 0.7,
-        max_tokens: 300 // Shorter responses for quick chat
+        max_tokens: 300,
+        stream: true // Enable streaming
       });
 
-      const aiResponse = completion.choices[0]?.message?.content || "Sorry, I couldn't process that. Please try again.";
+      // Handle streaming response
+      for await (const chunk of completion) {
+        const content = chunk.choices[0]?.delta?.content;
+        if (content !== undefined) {
+          aiResponse += content;
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === typingMessageId ? { ...msg, content: aiResponse } : msg
+            )
+          );
+        }
+      }
 
+      // Remove the typing indicator once streaming is done
+      setMessages(prev => prev.filter(msg => msg.id !== typingMessageId));
+
+      // Add the final AI message
       const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: (Date.now() + 2).toString(),
         content: aiResponse,
         isUser: false,
         timestamp: new Date()
       };
-
       setMessages(prev => [...prev, aiMessage]);
+
     } catch (error) {
       console.error("Error calling Groq API:", error);
       let errorMessage = "Sorry, EduHive AI is having trouble right now. Try the full Messages page for better support!";
-      
+
       if (error instanceof Error && error.message === "AI_SERVICE_UNAVAILABLE") {
         errorMessage = "The AI assistant is currently unavailable. Please contact support if this issue persists.";
       }
 
-      const errorResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        content: errorMessage,
-        isUser: false,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, errorResponse]);
+      // Replace the typing indicator with an error message
+      setMessages(prev => prev.map(msg =>
+        msg.content === "..." ? { ...msg, content: errorMessage } : msg
+      ));
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +146,7 @@ export function ChatModal({ children }: ChatModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -139,7 +158,7 @@ export function ChatModal({ children }: ChatModalProps) {
           </DialogTitle>
           <p className="text-sm text-muted-foreground mt-1">Quick chat for study help</p>
         </DialogHeader>
-        
+
         <div className="flex-1 flex flex-col min-h-0">
           <ScrollArea className="flex-1 px-6 py-2">
             <div className="space-y-3">
@@ -150,12 +169,13 @@ export function ChatModal({ children }: ChatModalProps) {
                 >
                   {!message.isUser && (
                     <Avatar className="h-6 w-6 mt-1">
+                      <AvatarImage src="/logo.svg" alt="EduHive Logo" />
                       <AvatarFallback className="bg-primary text-primary-foreground">
                         <Bot className="h-3 w-3" />
                       </AvatarFallback>
                     </Avatar>
                   )}
-                  
+
                   <div
                     className={`max-w-[85%] rounded-lg p-2 text-sm ${
                       message.isUser
@@ -168,6 +188,7 @@ export function ChatModal({ children }: ChatModalProps) {
 
                   {message.isUser && (
                     <Avatar className="h-6 w-6 mt-1">
+                      <AvatarImage src={user?.avatarUrl || ""} alt="User Avatar" />
                       <AvatarFallback className="bg-secondary">
                         <User className="h-3 w-3" />
                       </AvatarFallback>
@@ -175,10 +196,11 @@ export function ChatModal({ children }: ChatModalProps) {
                   )}
                 </div>
               ))}
-              
+
               {isLoading && (
                 <div className="flex gap-2 justify-start">
                   <Avatar className="h-6 w-6 mt-1">
+                    <AvatarImage src="/logo.svg" alt="EduHive Logo" />
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       <Bot className="h-3 w-3" />
                     </AvatarFallback>
@@ -186,12 +208,12 @@ export function ChatModal({ children }: ChatModalProps) {
                   <div className="bg-muted rounded-lg p-2 max-w-[85%]">
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-3 w-3 animate-spin" />
-                      <span className="text-xs text-muted-foreground">Thinking...</span>
+                      <span className="text-xs text-muted-foreground">EduHive AI is typing...</span>
                     </div>
                   </div>
                 </div>
               )}
-              
+
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
@@ -206,7 +228,7 @@ export function ChatModal({ children }: ChatModalProps) {
                 disabled={isLoading}
                 className="flex-1"
               />
-              <Button 
+              <Button
                 onClick={sendMessage}
                 disabled={!inputMessage.trim() || isLoading}
                 size="sm"
