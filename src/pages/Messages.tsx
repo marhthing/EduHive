@@ -813,7 +813,7 @@ export default function Messages() {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] md:h-[calc(100vh-6rem)] flex flex-col">
+    <div className="h-[calc(100dvh-144px)] md:h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur-sm p-6">
         <div className="flex items-center justify-between">
