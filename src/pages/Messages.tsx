@@ -138,6 +138,15 @@ export default function Messages() {
           timestamp: new Date()
         }
       ]);
+
+      // Save welcome message to database
+      await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: data.id,
+          content: "Hello! I'm EduHive AI - your intelligent study assistant. I can help you with assignments, solve math problems, explain concepts, and analyze documents, images, or audio files. What would you like to work on today?",
+          is_user: false,
+        });
       
       await loadChatSessions();
     } catch (error) {
