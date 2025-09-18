@@ -20,6 +20,7 @@ const EditPost = lazy(() => import("./pages/EditPost"));
 const PostDetail = lazy(() => import("./pages/PostDetail"));
 const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Messages = lazy(() => import("@/pages/Messages"));
 const Notifications = lazy(() => import("@/pages/Notifications"));
 const AccountReactivation = lazy(() => import("@/pages/AccountReactivation"));
 const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
@@ -37,6 +38,7 @@ const PreloadComponents = () => {
       import("./pages/Search"); 
       import("./pages/Bookmarks");
       import("./pages/Profile");
+      import("./pages/Messages");
       import("./pages/Notifications");
       import("./pages/Settings");
       import("./pages/CreatePost");
@@ -73,6 +75,7 @@ const App = () => (
                 <Route path="/home" element={<ProtectedRoute><Layout><Home /></Layout></ProtectedRoute>} />
                 <Route path="/search" element={<ProtectedRoute><Layout><Search /></Layout></ProtectedRoute>} />
                 <Route path="/bookmarks" element={<ProtectedRoute><Layout><Bookmarks /></Layout></ProtectedRoute>} />
+                <Route path="/messages" element={<ProtectedRoute><Layout><Messages /></Layout></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
                 <Route path="/profile/:username" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
                 <Route path="/post" element={<ProtectedRoute><Layout><CreatePost /></Layout></ProtectedRoute>} />
