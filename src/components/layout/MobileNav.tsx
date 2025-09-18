@@ -1,4 +1,4 @@
-import { Home, Search, Bookmark, User, Plus, Bell } from "lucide-react";
+import { Home, Search, Bookmark, User, Plus, Bell, MessageCircle } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,8 +17,8 @@ const getNavigationItems = (user: any, notificationCount: number, newPostsCount:
   return [
     { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : undefined },
     { title: "Search", url: "/search", icon: Search },
+    { title: "Messages", url: "/messages", icon: MessageCircle },
     { title: "Notifications", url: "/notifications", icon: Bell, badge: notificationCount > 0 ? notificationCount : undefined },
-    { title: "Create", url: "/post", icon: Plus },
     { title: "Profile", url: getProfileUrl(), icon: User },
   ];
 };
@@ -139,6 +139,7 @@ export function MobileNav() {
               // Preload component on hover
               if (item.url === "/home") import("@/pages/Home");
               else if (item.url === "/search") import("@/pages/Search");
+              else if (item.url === "/messages") import("@/pages/Messages");
               else if (item.url === "/bookmarks") import("@/pages/Bookmarks");
               else if (item.url === "/profile") import("@/pages/Profile");
               else if (item.url === "/notifications") import("@/pages/Notifications");
