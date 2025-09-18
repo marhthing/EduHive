@@ -40,6 +40,7 @@ export default function Messages() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   
   const { user } = useAuth();
   const { showToast } = useTwitterToast();
@@ -63,21 +64,19 @@ export default function Messages() {
     }
   }, [user]);
 
-  // Separate effect to handle initial chat creation
+  // Separate effect to handle initial chat creation - only run once when component mounts
   useEffect(() => {
-    if (user && chatSessions.length > 0 && !currentSessionId && messages.length === 0) {
+    if (user && chatSessions.length > 0 && !currentSessionId) {
       // Load the most recent chat session instead of creating a new one
       const mostRecentSession = chatSessions[0];
       if (mostRecentSession) {
         loadChatMessages(mostRecentSession.id);
-      } else {
-        startNewChat();
       }
-    } else if (user && chatSessions.length === 0 && !currentSessionId && messages.length === 0) {
+    } else if (user && chatSessions.length === 0 && !currentSessionId) {
       // Only start new chat if user has no chat sessions at all
       startNewChat();
     }
-  }, [user, chatSessions, currentSessionId, messages.length]);
+  }, [user, chatSessions.length]); // Remove currentSessionId and messages.length from dependencies
 
   const loadChatSessions = async () => {
     if (!user) return;
@@ -122,6 +121,7 @@ export default function Messages() {
 
       setMessages(loadedMessages);
       setCurrentSessionId(sessionId);
+      setIsSheetOpen(false); // Auto-close the sheet when a chat is loaded
     } catch (error) {
       console.error('Error loading chat messages:', error);
       showToast("Failed to load chat history", "error");
@@ -770,7 +770,7 @@ export default function Messages() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Sheet>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm">
                   <History className="h-4 w-4 mr-2" />
