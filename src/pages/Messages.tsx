@@ -650,9 +650,6 @@ For now, please let me know:
               <img src="/logo.svg" alt="EduHive Logo" className="h-8 w-8" />
               EduHive AI Assistant
             </h1>
-            <p className="text-muted-foreground mt-1">
-              Upload documents, images, or record voice notes for comprehensive help
-            </p>
           </div>
           <div className="flex items-center gap-2">
             <Sheet>
