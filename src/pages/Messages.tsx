@@ -755,9 +755,20 @@ For now, please let me know:
                 size="sm"
                 onClick={isRecording ? stopRecording : startRecording}
                 disabled={isLoading}
-                className={isRecording ? 'bg-red-100 border-red-200' : ''}
+                className={isRecording ? 'bg-red-100 border-red-200 animate-pulse' : ''}
               >
-                {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                {isRecording ? (
+                  <div className="flex items-center gap-1">
+                    <MicOff className="h-4 w-4" />
+                    <div className="flex items-center gap-1">
+                      <div className="w-1 h-1 bg-red-500 rounded-full animate-bounce"></div>
+                      <div className="w-1 h-1 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-1 h-1 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  </div>
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
               </Button>
             </div>
             <Input
