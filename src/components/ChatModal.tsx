@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
 import Groq from "groq-sdk";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,13 +36,7 @@ export function ChatModal({ children }: ChatModalProps) {
   const [currentUserProfile, setCurrentUserProfile] = useState<{profile_pic: string | null, name: string | null, username: string} | null>(null);
   const { showToast } = useTwitterToast();
   const { user } = useAuth();
-  const isMobile = useIsMobile();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Don't render floating chat on mobile - users should use the Messages page instead
-  if (isMobile) {
-    return <>{children}</>;
-  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

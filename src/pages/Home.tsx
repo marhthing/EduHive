@@ -10,6 +10,7 @@ import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { PostItem } from "@/components/PostItem";
 import { ChatModal } from "@/components/ChatModal";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Profile {
   username: string;
@@ -87,6 +88,7 @@ export default function Home() {
   const { showToast } = useTwitterToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Load initial data (cache first, then fresh data)
   useEffect(() => {
@@ -767,15 +769,17 @@ export default function Home() {
           </>
         )}
 
-        {/* Quick AI Chat Floating Button */}
-        <ChatModal>
-          <Button
-            className="fixed bottom-20 md:bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary hover:bg-primary/90"
-            size="icon"
-          >
-            <MessageCircle className="h-6 w-6" />
-          </Button>
-        </ChatModal>
+        {/* Quick AI Chat Floating Button - Desktop Only */}
+        {!isMobile && (
+          <ChatModal>
+            <Button
+              className="fixed bottom-20 md:bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary hover:bg-primary/90"
+              size="icon"
+            >
+              <MessageCircle className="h-6 w-6" />
+            </Button>
+          </ChatModal>
+        )}
       </div>
     </div>
   );
