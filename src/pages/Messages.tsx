@@ -663,6 +663,10 @@ export default function Messages() {
     // Set loading state immediately to disable send button
     setIsLoading(true);
 
+    // Declare variables outside try block so they're accessible in catch block
+    let aiMessageId: string | null = null;
+    let aiMessage: Message | null = null;
+
     try {
       let attachmentData: { url: string; type: string; name: string } | null = null;
       
@@ -708,8 +712,8 @@ export default function Messages() {
       setIsTyping(true);
       
       // Add empty AI message that will be filled by streaming
-      const aiMessageId = (Date.now() + 1).toString();
-      const aiMessage: Message = {
+      aiMessageId = (Date.now() + 1).toString();
+      aiMessage = {
         id: aiMessageId,
         content: "",
         isUser: false,
@@ -748,14 +752,28 @@ export default function Messages() {
       }
 
       // Update the existing AI message with error
-      setMessages(prev => prev.map(msg => 
-        msg.id === aiMessageId 
-          ? { ...msg, content: errorMessage }
-          : msg
-      ));
-      
-      const errorMessage_obj = { ...aiMessage, content: errorMessage };
-      await saveMessage(errorMessage_obj, sessionId);
+      if (aiMessageId) {
+        setMessages(prev => prev.map(msg => 
+          msg.id === aiMessageId 
+            ? { ...msg, content: errorMessage }
+            : msg
+        ));
+        
+        if (aiMessage) {
+          const errorMessage_obj = { ...aiMessage, content: errorMessage };
+          await saveMessage(errorMessage_obj, sessionId);
+        }
+      } else {
+        // If no AI message was created yet, add error message as new AI message
+        const errorAiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: errorMessage,
+          isUser: false,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorAiMessage]);
+        await saveMessage(errorAiMessage, sessionId);
+      }
       showToast("Message failed to send", "error");
     } finally {
       setIsLoading(false);
