@@ -918,6 +918,7 @@ export default function Messages() {
                         {(user?.user_metadata?.name || user?.user_metadata?.username || user?.email)?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
+                    </Avatar>
                   )}
                 </div>
               ))}
