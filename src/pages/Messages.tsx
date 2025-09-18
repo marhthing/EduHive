@@ -895,7 +895,7 @@ export default function Messages() {
       
       {/* Messages Area */}
       <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full px-2 md:px-6 py-4 pb-[200px] md:pb-[180px]" ref={scrollAreaRef}>
+        <ScrollArea className="h-full px-0 md:px-6 py-4 pb-[200px] md:pb-[180px]" ref={scrollAreaRef}>
           {isLoadingHistory ? (
             <div className="flex items-center justify-center h-32">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -906,7 +906,7 @@ export default function Messages() {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex gap-3 ${message.isUser ? 'justify-end' : 'justify-start'}`}
+                  className={`flex gap-3 px-2 md:px-0 ${message.isUser ? 'justify-end' : 'justify-start'}`}
                 >
                   {!message.isUser && (
                     <Avatar className="h-8 w-8 mt-1">
@@ -948,7 +948,7 @@ export default function Messages() {
               ))}
               
               {(isLoading || isTyping) && (
-                <div className="flex gap-3 justify-start">
+                <div className="flex gap-3 justify-start px-2 md:px-0">
                   <Avatar className="h-8 w-8 mt-1">
                     <AvatarImage src="/logo.svg" alt="EduHive AI" />
                     <AvatarFallback className="bg-primary text-primary-foreground">
