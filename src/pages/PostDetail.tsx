@@ -363,22 +363,26 @@ export default function PostDetail() {
 
     setSubmitting(true);
     try {
-      // Check for AI bot mentions (not allowed in replies based on your requirement)
-      const { error } = await supabase
+      // Create the reply and get its ID
+      const { data: replyData, error: replyError } = await supabase
         .from('comments')
         .insert({
           body: replyText.trim(),
           post_id: postId,
           user_id: user.id,
           parent_comment_id: parentCommentId,
-        });
+        })
+        .select('id')
+        .single();
 
-      if (error) throw error;
+      if (replyError) throw replyError;
 
-      // Create mention notifications for replies
-      if (replyMentions.length > 0) {
+      console.log('Reply created successfully:', replyData);
+
+      // Create mention notifications for replies using the new reply's ID
+      if (replyMentions.length > 0 && replyData?.id) {
         console.log('Reply mentions:', replyMentions);
-        await createMentionNotifications(replyMentions, user.id, postId, parentCommentId);
+        await createMentionNotifications(replyMentions, user.id, postId, replyData.id);
       }
 
       setReplyText("");
