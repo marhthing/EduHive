@@ -24,6 +24,7 @@ import { MentionInput } from "@/components/MentionInput";
 import { MentionText } from "@/components/MentionText";
 import { processAIBotMention, parseAIBotMention, type AIBotRequest } from "@/lib/aiBot";
 import { AI_BOT_PROFILE } from "@/lib/aiBotProfile";
+import { createMentionNotifications } from "@/lib/mentionNotifications";
 
 interface Profile {
   username: string;
@@ -62,24 +63,7 @@ interface Comment {
   is_liked: boolean;
 }
 
-// Function to create mention notifications
-const createMentionNotifications = async (mentions: any[], fromUserId: string, postId: string, commentId?: string) => {
-  if (!mentions || mentions.length === 0) return;
 
-  const notifications = mentions.map(mention => ({
-    type: 'mention',
-    recipient_id: mention.id, // Assuming mention object has an 'id' which is the user_id
-    sender_id: fromUserId,
-    post_id: postId,
-    comment_id: commentId,
-    created_at: new Date().toISOString(),
-  }));
-
-  const { error } = await supabase.from('notifications').insert(notifications);
-  if (error) {
-    console.error('Error creating mention notifications:', error);
-  }
-};
 
 export default function PostDetail() {
   const { postId } = useParams();
