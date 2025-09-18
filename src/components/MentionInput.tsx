@@ -39,7 +39,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Fetch followers for tagging (people who follow me or I follow)
+  // Fetch mutual followers for tagging (users who follow me AND I follow them)
   const fetchFollowersForMentions = useCallback(async (searchTerm: string = '') => {
     if (!user) return [];
     
@@ -60,18 +60,18 @@ export const MentionInput: React.FC<MentionInputProps> = ({
 
       if (followersError) throw followersError;
       
-      // Combine all user IDs (people I follow + people who follow me)
+      // Find mutual connections (users who follow me AND I follow them)
       const followingIds = iFollow?.map(f => f.following_id) || [];
       const followerIds = myFollowers?.map(f => f.follower_id) || [];
-      const allUserIds = [...new Set([...followingIds, ...followerIds])];
+      const mutualIds = followingIds.filter(id => followerIds.includes(id));
       
-      if (allUserIds.length === 0) return [];
+      if (mutualIds.length === 0) return [];
 
-      // Get profiles for all connected users
+      // Get profiles for mutual connections
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('user_id, username, name, profile_pic')
-        .in('user_id', allUserIds)
+        .in('user_id', mutualIds)
         .ilike('username', `%${searchTerm}%`)
         .limit(8);
 
@@ -85,7 +85,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
         profile_pic: profile.profile_pic
       })) || [];
     } catch (error) {
-      console.error('Error fetching followers for mentions:', error);
+      console.error('Error fetching mutual followers for mentions:', error);
       return [];
     }
   }, [user]);
@@ -118,9 +118,9 @@ export const MentionInput: React.FC<MentionInputProps> = ({
           });
         }
         
-        // Add followers and following users
-        const connectedUsers = await fetchFollowersForMentions(textAfterAt);
-        searchSuggestions.push(...connectedUsers);
+        // Add mutual followers (users who follow each other)
+        const mutualUsers = await fetchFollowersForMentions(textAfterAt);
+        searchSuggestions.push(...mutualUsers);
         
         setSuggestions(searchSuggestions);
         setShowSuggestions(searchSuggestions.length > 0);
@@ -153,7 +153,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
     }
     
     onChange(newValue, foundMentions);
-  }, [allowAIBot, fetchMutualFollowers, mentionUsers, onChange]);
+  }, [allowAIBot, fetchFollowersForMentions, mentionUsers, onChange]);
 
   // Handle suggestion selection
   const selectSuggestion = useCallback((suggestion: MentionUser) => {
