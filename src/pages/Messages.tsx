@@ -13,6 +13,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Groq from "groq-sdk";
 
+interface CurrentUserProfile {
+  username: string;
+  name: string | null;
+  profile_pic: string | null;
+}
+
 interface Message {
   id: string;
   content: string;
@@ -41,6 +47,7 @@ export default function Messages() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [currentUserProfile, setCurrentUserProfile] = useState<CurrentUserProfile | null>(null);
   
   const { user } = useAuth();
   const { showToast } = useTwitterToast();
@@ -61,8 +68,26 @@ export default function Messages() {
   useEffect(() => {
     if (user) {
       loadChatSessions();
+      fetchCurrentUserProfile();
     }
   }, [user]);
+
+  const fetchCurrentUserProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username, name, profile_pic')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      setCurrentUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching current user profile:', error);
+    }
+  };
 
   // Separate effect to handle initial chat creation - only run once when component mounts
   useEffect(() => {
@@ -913,9 +938,9 @@ export default function Messages() {
 
                   {message.isUser && (
                     <Avatar className="h-8 w-8 mt-1">
-                      <AvatarImage src={user?.user_metadata?.profile_pic || user?.user_metadata?.avatar_url} alt={user?.user_metadata?.name || user?.user_metadata?.username || user?.email} />
+                      <AvatarImage src={currentUserProfile?.profile_pic || user?.user_metadata?.avatar_url || user?.user_metadata?.profile_pic} alt={currentUserProfile?.name || currentUserProfile?.username || user?.user_metadata?.name || user?.user_metadata?.username || user?.email} />
                       <AvatarFallback className="bg-secondary">
-                        {(user?.user_metadata?.name || user?.user_metadata?.username || user?.email)?.[0]?.toUpperCase() || 'U'}
+                        {(currentUserProfile?.name || currentUserProfile?.username || user?.user_metadata?.name || user?.user_metadata?.username || user?.email)?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   )}
