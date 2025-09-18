@@ -198,7 +198,6 @@ export function ChatModal({ children }: ChatModalProps) {
                 onKeyPress={handleKeyPress}
                 disabled={isLoading}
                 className="flex-1"
-                size="sm"
               />
               <Button 
                 onClick={sendMessage}

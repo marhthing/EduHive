@@ -5,10 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload } from "lucide-react";
+import { Upload, MessageCircle } from "lucide-react";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { PostItem } from "@/components/PostItem";
+import { ChatModal } from "@/components/ChatModal";
 
 interface Profile {
   username: string;
@@ -742,6 +743,16 @@ export default function Home() {
             )}
           </>
         )}
+
+        {/* Quick AI Chat Floating Button */}
+        <ChatModal>
+          <Button
+            className="fixed bottom-20 md:bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary hover:bg-primary/90"
+            size="icon"
+          >
+            <MessageCircle className="h-6 w-6" />
+          </Button>
+        </ChatModal>
       </div>
     </div>
   );
