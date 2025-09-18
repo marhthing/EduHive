@@ -39,22 +39,18 @@ export const MentionInput: React.FC<MentionInputProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Fetch mutual followers for tagging
-  const fetchMutualFollowers = useCallback(async (searchTerm: string = '') => {
+  // Fetch followers for tagging (people who follow me or I follow)
+  const fetchFollowersForMentions = useCallback(async (searchTerm: string = '') => {
     if (!user) return [];
     
     try {
-      // First, get users that I follow
+      // Get users that I follow
       const { data: iFollow, error: followError } = await supabase
         .from('follows')
         .select('following_id')
         .eq('follower_id', user.id);
 
       if (followError) throw followError;
-      
-      if (!iFollow || iFollow.length === 0) return [];
-      
-      const followingIds = iFollow.map(f => f.following_id);
 
       // Get users who follow me
       const { data: myFollowers, error: followersError } = await supabase
@@ -64,26 +60,32 @@ export const MentionInput: React.FC<MentionInputProps> = ({
 
       if (followersError) throw followersError;
       
+      // Combine all user IDs (people I follow + people who follow me)
+      const followingIds = iFollow?.map(f => f.following_id) || [];
       const followerIds = myFollowers?.map(f => f.follower_id) || [];
+      const allUserIds = [...new Set([...followingIds, ...followerIds])];
       
-      // Find intersection: users in both followingIds and followerIds
-      const mutualIds = followingIds.filter(id => followerIds.includes(id));
-      
-      if (mutualIds.length === 0) return [];
+      if (allUserIds.length === 0) return [];
 
-      // Get profiles for mutual connections
-      const { data: mutualProfiles, error: profileError } = await supabase
+      // Get profiles for all connected users
+      const { data: profiles, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, name, profile_pic')
-        .in('id', mutualIds)
+        .select('user_id, username, name, profile_pic')
+        .in('user_id', allUserIds)
         .ilike('username', `%${searchTerm}%`)
-        .limit(5);
+        .limit(8);
 
       if (profileError) throw profileError;
 
-      return mutualProfiles;
+      // Map to the expected format
+      return profiles?.map(profile => ({
+        id: profile.user_id,
+        username: profile.username,
+        name: profile.name,
+        profile_pic: profile.profile_pic
+      })) || [];
     } catch (error) {
-      console.error('Error fetching mutual followers:', error);
+      console.error('Error fetching followers for mentions:', error);
       return [];
     }
   }, [user]);
@@ -116,9 +118,9 @@ export const MentionInput: React.FC<MentionInputProps> = ({
           });
         }
         
-        // Add mutual followers
-        const mutualUsers = await fetchMutualFollowers(textAfterAt);
-        searchSuggestions.push(...mutualUsers);
+        // Add followers and following users
+        const connectedUsers = await fetchFollowersForMentions(textAfterAt);
+        searchSuggestions.push(...connectedUsers);
         
         setSuggestions(searchSuggestions);
         setShowSuggestions(searchSuggestions.length > 0);
