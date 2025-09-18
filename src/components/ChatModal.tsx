@@ -77,24 +77,28 @@ export function ChatModal({ children }: ChatModalProps) {
       const typingMessageId = (Date.now() + 1).toString();
       setMessages(prev => [...prev, { id: typingMessageId, content: "...", isUser: false, timestamp: new Date() }]);
 
+      // Include full conversation context for the modal chat too
+      const conversationMessages = [
+        {
+          role: "system" as const,
+          content: "You are EduHive AI, the intelligent study assistant for the EduHive student community platform. You help students with assignments, homework, academic questions, and study-related queries. Give concise, helpful answers. Keep responses brief since this is a quick chat. Remember you're part of the EduHive educational ecosystem and remember our conversation context."
+        },
+        // Include all previous messages for context
+        ...messages.slice(-8).map(msg => ({
+          role: msg.isUser ? "user" as const : "assistant" as const,
+          content: msg.content
+        })),
+        {
+          role: "user" as const,
+          content: userMessage.content
+        }
+      ];
+
       const completion = await groq.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content: "You are EduHive AI, the intelligent study assistant for the EduHive student community platform. You help students with assignments, homework, academic questions, and study-related queries. Give concise, helpful answers. Keep responses brief since this is a quick chat. Remember you're part of the EduHive educational ecosystem."
-          },
-          ...messages.slice(-5).map(msg => ({
-            role: msg.isUser ? "user" as const : "assistant" as const,
-            content: msg.content
-          })),
-          {
-            role: "user",
-            content: userMessage.content
-          }
-        ],
+        messages: conversationMessages,
         model: "llama-3.3-70b-versatile",
         temperature: 0.7,
-        max_tokens: 300,
+        max_tokens: 400,
         stream: true // Enable streaming
       });
 

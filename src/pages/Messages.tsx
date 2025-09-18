@@ -497,22 +497,56 @@ export default function Messages() {
       }
     }
 
+    // Prepare messages with full conversation context
+    const conversationMessages = [
+      {
+        role: "system" as const,
+        content: "You are EduHive AI, the intelligent study assistant for the EduHive student community platform. You specialize in helping students with assignments, homework, and academic questions. You're particularly good at solving math problems, explaining concepts clearly, providing step-by-step solutions, and helping with various subjects. Be helpful, educational, and remember you're part of the EduHive educational ecosystem. If you're solving math problems, show your work step by step. Remember the entire conversation context to provide consistent help."
+      },
+      // Include ALL messages for full context, but manage token limits
+      ...messages.map(msg => ({
+        role: msg.isUser ? "user" as const : "assistant" as const,
+        content: msg.content
+      })),
+      {
+        role: "user" as const,
+        content: userMessage.content
+      }
+    ];
+
+    // Calculate rough token count (approximation: 1 token ≈ 4 characters)
+    const totalTokens = conversationMessages.reduce((acc, msg) => acc + msg.content.length, 0) / 4;
+    
+    // If approaching token limit, optimize conversation
+    let messagesToSend = conversationMessages;
+    if (totalTokens > 6000) {
+      // Show optimization message
+      onStream("*Optimizing EduHive AI...* ");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      onStream("✅ *Optimized!*\n\n");
+      
+      // Keep system message, last 6 messages, and current user message
+      const systemMsg = conversationMessages[0];
+      const recentMessages = messages.slice(-6).map(msg => ({
+        role: msg.isUser ? "user" as const : "assistant" as const,
+        content: msg.content
+      }));
+      const currentMsg = conversationMessages[conversationMessages.length - 1];
+      
+      messagesToSend = [
+        systemMsg,
+        {
+          role: "assistant" as const,
+          content: "I remember our previous conversation context and will continue to help you based on what we've discussed."
+        },
+        ...recentMessages,
+        currentMsg
+      ];
+    }
+
     // Regular text processing with streaming
     const completion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: "You are EduHive AI, the intelligent study assistant for the EduHive student community platform. You specialize in helping students with assignments, homework, and academic questions. You're particularly good at solving math problems, explaining concepts clearly, providing step-by-step solutions, and helping with various subjects. Be helpful, educational, and remember you're part of the EduHive educational ecosystem. If you're solving math problems, show your work step by step."
-        },
-        ...messages.slice(-10).map(msg => ({
-          role: msg.isUser ? "user" as const : "assistant" as const,
-          content: msg.content
-        })),
-        {
-          role: "user",
-          content: userMessage.content
-        }
-      ],
+      messages: messagesToSend,
       model: "llama-3.3-70b-versatile",
       temperature: 0.7,
       max_tokens: 1500,
