@@ -47,6 +47,7 @@ export default function Messages() {
   const [isTyping, setIsTyping] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<CurrentUserProfile | null>(null);
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false); // Added state for audio processing
 
   const { user } = useAuth();
   const { showToast } = useTwitterToast();
@@ -340,6 +341,7 @@ export default function Messages() {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
         setSelectedFile(audioFile);
+        setIsRecording(false); // Set isRecording to false immediately after stopping
 
         // Stop all tracks to release microphone
         stream.getTracks().forEach(track => track.stop());
@@ -350,13 +352,14 @@ export default function Messages() {
     } catch (error) {
       console.error('Error starting recording:', error);
       showToast("Failed to start recording. Please check microphone permissions.", "error");
+      setIsRecording(false); // Ensure recording state is reset on error
     }
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
-      setIsRecording(false);
+      // isRecording is set to false in mediaRecorder.onstop
     }
   };
 
@@ -657,6 +660,7 @@ export default function Messages() {
 
     // Set loading state immediately to disable send button
     setIsLoading(true);
+    setIsProcessingAudio(isRecording); // Indicate that audio is being processed if recording
 
     // Declare variables outside try block so they're accessible in catch block
     let aiMessageId: string | null = null;
@@ -670,18 +674,28 @@ export default function Messages() {
         attachmentData = await uploadFileToSupabase(selectedFile);
         if (!attachmentData) {
           setIsLoading(false);
+          setIsProcessingAudio(false);
           return; // Failed to upload
         }
       }
 
       const userMessageContent = inputMessage.trim() || (attachmentData ? `Uploaded ${attachmentData.name}` : '');
 
-      // Create session if this is the first user message
+      // If recording, stop it and set the selectedFile
+      if (isRecording) {
+        stopRecording(); // This will set selectedFile and reset isRecording in its onstop handler
+        // Wait for selectedFile to be set by onstop handler
+        while (!selectedFile) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      }
+
       let sessionId = currentSessionId;
-      if (!sessionId) {
+      if (!sessionId && userMessageContent) { // Only create session if there's actual content
         sessionId = await createChatSession(userMessageContent);
         if (!sessionId) {
           setIsLoading(false);
+          setIsProcessingAudio(false);
           return; // Failed to create session
         }
         setCurrentSessionId(sessionId);
@@ -698,10 +712,12 @@ export default function Messages() {
       };
 
       setMessages(prev => [...prev, userMessage]);
-      await saveMessage(userMessage, sessionId);
+      if (sessionId) { // Only save message if a session exists
+        await saveMessage(userMessage, sessionId);
+      }
 
       setInputMessage("");
-      setSelectedFile(null);
+      setSelectedFile(null); // Clear selected file after sending
 
       // Show typing indicator
       setIsTyping(true);
@@ -730,7 +746,9 @@ export default function Messages() {
 
       // Save final message to database
       const finalAiMessage = { ...aiMessage, content: aiResponse };
-      await saveMessage(finalAiMessage, sessionId);
+      if (sessionId) { // Only save message if a session exists
+        await saveMessage(finalAiMessage, sessionId);
+      }
 
     } catch (error) {
       console.error("Error calling Groq API:", error);
@@ -754,9 +772,9 @@ export default function Messages() {
             : msg
         ));
 
-        if (aiMessage) {
+        if (aiMessage && currentSessionId) { // Ensure currentSessionId exists before saving
           const errorMessage_obj = { ...aiMessage, content: errorMessage };
-          await saveMessage(errorMessage_obj, sessionId);
+          await saveMessage(errorMessage_obj, currentSessionId);
         }
       } else {
         // If no AI message was created yet, add error message as new AI message
@@ -767,12 +785,17 @@ export default function Messages() {
           timestamp: new Date()
         };
         setMessages(prev => [...prev, errorAiMessage]);
-        await saveMessage(errorAiMessage, sessionId);
+        if (currentSessionId) { // Ensure currentSessionId exists before saving
+          await saveMessage(errorAiMessage, currentSessionId);
+        }
       }
       showToast("Message failed to send", "error");
     } finally {
       setIsLoading(false);
       setIsTyping(false);
+      setIsProcessingAudio(false); // Reset audio processing state
+      setIsRecording(false); // Ensure recording is off
+      setSelectedFile(null); // Clear selected file on completion or error
     }
   };
 
@@ -978,9 +1001,9 @@ export default function Messages() {
                       ) : (
                         <>
                           <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            <div className="w-1 h-1 bg-primary rounded-full animate-bounce"></div>
+                            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                           </div>
                           <span className="text-sm text-muted-foreground">EduHive AI is typing...</span>
                         </>
@@ -1013,7 +1036,12 @@ export default function Messages() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => setSelectedFile(null)}
+                onClick={() => {
+                  setSelectedFile(null);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = ""; // Clear the file input value
+                  }
+                }}
               >
                 ×
               </Button>
@@ -1022,65 +1050,96 @@ export default function Messages() {
         )}
 
         {/* Input Area */}
-        <div className="p-4 md:p-6">
-          <div className="flex gap-2">
-            <div className="flex gap-1">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept="image/*,application/pdf,text/*,.doc,.docx,audio/*"
-                className="hidden"
+        <div className="p-4 md:p-4">
+          {isRecording ? (
+            /* Voice Recording UI - Expanded like ChatGPT */
+            <div className="space-y-3">
+              <div className="flex items-center justify-center p-6 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center animate-pulse">
+                      <Mic className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="absolute -inset-2 bg-red-400/20 rounded-full animate-ping"></div>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-red-600 dark:text-red-400 font-medium">Recording...</p>
+                    <p className="text-sm text-red-500 dark:text-red-500">Click send when done</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a message with your voice note (optional)..."
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={isLoading || isProcessingAudio}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={sendMessage}
+                  disabled={isLoading || isProcessingAudio}
+                  size="sm"
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  {isLoading || isProcessingAudio ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            /* Normal Input UI */
+            <div className="flex gap-2">
+              <div className="flex gap-1">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*,application/pdf,text/*,.doc,.docx,audio/*"
+                  className="hidden"
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={startRecording}
+                  disabled={isLoading}
+                >
+                  <Mic className="h-4 w-4" />
+                </Button>
+              </div>
+              <Input
+                placeholder="Ask me anything about your studies, or upload files for analysis..."
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                disabled={isLoading}
+                className="flex-1"
               />
               <Button 
-                variant="outline" 
+                onClick={sendMessage}
+                disabled={(!inputMessage.trim() && !selectedFile) || isLoading}
                 size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
               >
-                <Paperclip className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={isRecording ? stopRecording : startRecording}
-                disabled={isLoading}
-                className={isRecording ? 'bg-red-100 border-red-200 animate-pulse' : ''}
-              >
-                {isRecording ? (
-                  <div className="flex items-center gap-1">
-                    <MicOff className="h-4 w-4" />
-                    <div className="flex items-center gap-1">
-                      <div className="w-1 h-1 bg-red-500 rounded-full animate-bounce"></div>
-                      <div className="w-1 h-1 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-1 h-1 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    </div>
-                  </div>
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Mic className="h-4 w-4" />
+                  <Send className="h-4 w-4" />
                 )}
               </Button>
             </div>
-            <Input
-              placeholder="Ask me anything about your studies, or upload files for analysis..."
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={isLoading}
-              className="flex-1"
-            />
-            <Button 
-              onClick={sendMessage}
-              disabled={(!inputMessage.trim() && !selectedFile) || isLoading}
-              size="sm"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          )}
         </div>
       </div>
     </div>
