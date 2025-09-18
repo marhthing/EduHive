@@ -90,7 +90,7 @@ export function ChatModal({ children }: ChatModalProps) {
             content: userMessage.content
           }
         ],
-        model: "mixtral-8x7b-32768",
+        model: "llama-3.3-70b-versatile",
         temperature: 0.7,
         max_tokens: 300,
         stream: true // Enable streaming
