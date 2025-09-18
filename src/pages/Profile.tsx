@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { formatTimeShort } from "@/lib/timeFormat";
 import { FollowersModal } from "@/components/FollowersModal";
 import { FollowingModal } from "@/components/FollowingModal";
+import { AI_BOT_PROFILE, AI_BOT_USER_ID } from "@/lib/aiBotProfile";
 
 // Mapping between database numeric codes and display labels (same as Settings page)
 const ACADEMIC_YEAR_MAPPING = {
@@ -92,6 +93,15 @@ export default function Profile() {
       let error;
 
       if (username) {
+        // Special handling for AI bot profile
+        if (username === 'eduhive') {
+          setProfile(AI_BOT_PROFILE as any);
+          setFollowersCount(0);
+          setFollowingCount(0);
+          setIsFollowing(false);
+          return;
+        }
+
         // Fetch profile by username
         const result = await supabase
           .from("profiles")

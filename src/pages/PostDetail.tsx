@@ -311,38 +311,15 @@ export default function PostDetail() {
       // Refresh comments to show user's comment
       await fetchComments();
 
-      // If AI bot was mentioned, add its response after a delay
+      // If AI bot was mentioned, show its response as a toast notification
       if (aiResponse) {
-        console.log('Adding AI bot response...');
-        setTimeout(async () => {
-          try {
-            const { error: botError } = await supabase
-              .from('comments')
-              .insert({
-                body: aiResponse,
-                post_id: postId,
-                user_id: AI_BOT_USER_ID,
-              });
-
-            if (botError) {
-              console.error('Error inserting bot comment:', botError);
-              // Fallback to toast if database insert fails
-              toast({
-                title: "🤖 EduHive Assistant",
-                description: aiResponse.substring(0, 100) + (aiResponse.length > 100 ? '...' : ''),
-              });
-            } else {
-              console.log('Bot comment saved successfully');
-              // Refresh comments to show bot response
-              fetchComments();
-            }
-          } catch (error) {
-            console.error('Error with bot response:', error);
-            toast({
-              title: "🤖 EduHive Assistant",
-              description: aiResponse.substring(0, 100) + (aiResponse.length > 100 ? '...' : ''),
-            });
-          }
+        console.log('Showing AI bot response...');
+        setTimeout(() => {
+          toast({
+            title: "🤖 EduHive Assistant",
+            description: aiResponse,
+            duration: 10000, // Show for 10 seconds so users can read it
+          });
         }, 1500);
       }
 
