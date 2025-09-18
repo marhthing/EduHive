@@ -24,7 +24,7 @@ export function ChatModal({ children }: ChatModalProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "Hi! I'm your AI study assistant. Ask me anything about your assignments or studies!",
+      content: "Hi! I'm EduHive AI - your intelligent study companion. I can help you with assignments, solve math problems, explain concepts, and answer academic questions related to your studies on EduHive!",
       isUser: false,
       timestamp: new Date()
     }
@@ -72,7 +72,7 @@ export function ChatModal({ children }: ChatModalProps) {
         messages: [
           {
             role: "system",
-            content: "You are a helpful AI study assistant. Give concise, helpful answers to academic questions. Keep responses brief since this is a quick chat."
+            content: "You are EduHive AI, the intelligent study assistant for the EduHive student community platform. You help students with assignments, homework, academic questions, and study-related queries. Give concise, helpful answers. Keep responses brief since this is a quick chat. Remember you're part of the EduHive educational ecosystem."
           },
           ...messages.slice(-5).map(msg => ({
             role: msg.isUser ? "user" as const : "assistant" as const,
@@ -102,7 +102,7 @@ export function ChatModal({ children }: ChatModalProps) {
       console.error("Error calling Groq API:", error);
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: "Sorry, I'm having trouble right now. Try the full Messages page for better support!",
+        content: "Sorry, EduHive AI is having trouble right now. Try the full Messages page for better support!",
         isUser: false,
         timestamp: new Date()
       };
@@ -126,11 +126,12 @@ export function ChatModal({ children }: ChatModalProps) {
         {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md h-[500px] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-4 flex-shrink-0">
+        <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b">
           <DialogTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-primary" />
-            Quick AI Chat
+            <img src="/logo.svg" alt="EduHive Logo" className="h-6 w-6" />
+            EduHive AI Assistant
           </DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">Quick chat for study help</p>
         </DialogHeader>
         
         <div className="flex-1 flex flex-col min-h-0">

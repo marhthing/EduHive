@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,7 +19,7 @@ export default function Messages() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "Hello! I'm your AI study assistant. I can help you with assignments, solve math problems, explain concepts, and answer academic questions. What would you like to work on today?",
+      content: "Hello! I'm EduHive AI - your intelligent study assistant for the EduHive student community. I can help you with assignments, solve math problems, explain concepts, and answer academic questions. What would you like to work on today?",
       isUser: false,
       timestamp: new Date()
     }
@@ -55,7 +54,6 @@ export default function Messages() {
     setIsLoading(true);
 
     try {
-      // Check if Groq API key exists
       const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
       
       if (!groqApiKey) {
@@ -71,7 +69,7 @@ export default function Messages() {
         messages: [
           {
             role: "system",
-            content: "You are an AI study assistant specializing in helping students with assignments, homework, and academic questions. You're particularly good at solving math problems, explaining concepts clearly, providing step-by-step solutions, and helping with various subjects. Be concise, helpful, and educational in your responses. If you're solving math problems, show your work step by step."
+            content: "You are EduHive AI, the intelligent study assistant for the EduHive student community platform. You specialize in helping students with assignments, homework, and academic questions. You're particularly good at solving math problems, explaining concepts clearly, providing step-by-step solutions, and helping with various subjects. Be helpful, educational, and remember you're part of the EduHive educational ecosystem. If you're solving math problems, show your work step by step."
           },
           ...messages.slice(-10).map(msg => ({
             role: msg.isUser ? "user" as const : "assistant" as const,
@@ -131,110 +129,111 @@ export default function Messages() {
   };
 
   return (
-    <div className="container mx-auto max-w-4xl p-4 h-[calc(100vh-2rem)]">
-      <Card className="h-full flex flex-col">
-        <CardHeader className="flex-shrink-0">
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="h-6 w-6 text-primary" />
-            AI Study Assistant
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Get help with assignments, solve math problems, and ask academic questions
-          </p>
-        </CardHeader>
-        
-        <CardContent className="flex-1 flex flex-col p-0">
-          <ScrollArea className="flex-1 px-6 py-4" ref={scrollAreaRef}>
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-3 ${message.isUser ? 'justify-end' : 'justify-start'}`}
-                >
-                  {!message.isUser && (
-                    <Avatar className="h-8 w-8 mt-1">
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        <Bot className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                  
-                  <div
-                    className={`max-w-[80%] rounded-lg p-3 ${
-                      message.isUser
-                        ? 'bg-primary text-primary-foreground ml-auto'
-                        : 'bg-muted'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                    <span className={`text-xs mt-1 block ${
-                      message.isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                    }`}>
-                      {message.timestamp.toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </span>
-                  </div>
-
-                  {message.isUser && (
-                    <Avatar className="h-8 w-8 mt-1">
-                      <AvatarFallback className="bg-secondary">
-                        <User className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
-              ))}
-              
-              {isLoading && (
-                <div className="flex gap-3 justify-start">
+    <div className="h-[calc(100vh-4rem)] md:h-[calc(100vh-6rem)] flex flex-col">
+      {/* Header */}
+      <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur-sm p-6">
+        <h1 className="text-2xl font-bold flex items-center gap-3">
+          <img src="/logo.svg" alt="EduHive Logo" className="h-8 w-8" />
+          EduHive AI Assistant
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Get help with assignments, solve math problems, and ask academic questions
+        </p>
+      </div>
+      
+      {/* Messages Area */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <ScrollArea className="flex-1 px-6 py-4" ref={scrollAreaRef}>
+          <div className="space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex gap-3 ${message.isUser ? 'justify-end' : 'justify-start'}`}
+              >
+                {!message.isUser && (
                   <Avatar className="h-8 w-8 mt-1">
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       <Bot className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
-                  <div className="bg-muted rounded-lg p-3 max-w-[80%]">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm text-muted-foreground">AI is thinking...</span>
-                    </div>
+                )}
+                
+                <div
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.isUser
+                      ? 'bg-primary text-primary-foreground ml-auto'
+                      : 'bg-muted'
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                  <span className={`text-xs mt-1 block ${
+                    message.isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                  }`}>
+                    {message.timestamp.toLocaleTimeString([], { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </span>
+                </div>
+
+                {message.isUser && (
+                  <Avatar className="h-8 w-8 mt-1">
+                    <AvatarFallback className="bg-secondary">
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+              </div>
+            ))}
+            
+            {isLoading && (
+              <div className="flex gap-3 justify-start">
+                <Avatar className="h-8 w-8 mt-1">
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    <Bot className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="bg-muted rounded-lg p-3 max-w-[80%]">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm text-muted-foreground">EduHive AI is thinking...</span>
                   </div>
                 </div>
-              )}
-              
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-
-          <div className="flex-shrink-0 p-6 pt-4 border-t">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Ask me anything about your studies..."
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                disabled={isLoading}
-                className="flex-1"
-              />
-              <Button 
-                onClick={sendMessage}
-                disabled={!inputMessage.trim() || isLoading}
-                size="sm"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Press Enter to send, Shift+Enter for new line
-            </p>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} />
           </div>
-        </CardContent>
-      </Card>
+        </ScrollArea>
+
+        {/* Input Area */}
+        <div className="flex-shrink-0 p-6 pt-4 border-t">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Ask me anything about your studies..."
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={isLoading}
+              className="flex-1"
+            />
+            <Button 
+              onClick={sendMessage}
+              disabled={!inputMessage.trim() || isLoading}
+              size="sm"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Press Enter to send, Shift+Enter for new line
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
