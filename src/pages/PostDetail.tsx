@@ -296,6 +296,7 @@ export default function PostDetail() {
 
       // Create mention notifications
       if (commentMentions.length > 0 && commentData?.id) {
+        console.log('Comment mentions:', commentMentions);
         await createMentionNotifications(commentMentions, user.id, postId, commentData.id);
       }
 
@@ -376,6 +377,7 @@ export default function PostDetail() {
 
       // Create mention notifications for replies
       if (replyMentions.length > 0) {
+        console.log('Reply mentions:', replyMentions);
         await createMentionNotifications(replyMentions, user.id, postId, parentCommentId);
       }
 
