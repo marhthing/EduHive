@@ -20,6 +20,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatTimeShort } from "@/lib/timeFormat";
 import { useToast } from "@/hooks/use-toast";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { MentionInput } from "@/components/MentionInput";
+import { processAIBotMention, parseAIBotMention, type AIBotRequest } from "@/lib/aiBot";
 
 interface Profile {
   username: string;
@@ -65,7 +67,9 @@ export default function PostDetail() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState("");
+  const [commentMentions, setCommentMentions] = useState<any[]>([]);
   const [replyText, setReplyText] = useState("");
+  const [replyMentions, setReplyMentions] = useState<any[]>([]);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [carouselOpen, setCarouselOpen] = useState(false);
@@ -226,6 +230,18 @@ export default function PostDetail() {
       const replies: Comment[] = [];
 
       commentsWithProfiles.forEach(comment => {
+        // Handle AI bot comments with special profile
+        if (comment.user_id === 'ai-bot') {
+          comment.profile = {
+            user_id: 'ai-bot',
+            username: 'eduhive',
+            profile_pic: null,
+            school: null,
+            name: 'EduHive Assistant',
+            department: 'AI Bot'
+          };
+        }
+        
         if (comment.parent_comment_id) {
           replies.push(comment);
         } else {
@@ -254,6 +270,15 @@ export default function PostDetail() {
 
     setSubmitting(true);
     try {
+      // Check for AI bot mentions by parsing text directly
+      let aiResponse = null;
+      const botRequest = parseAIBotMention(commentText);
+      
+      if (botRequest && post) {
+        botRequest.postContent = post.body;
+        aiResponse = await processAIBotMention(botRequest);
+      }
+
       const { error } = await supabase
         .from('comments')
         .insert({
@@ -265,6 +290,27 @@ export default function PostDetail() {
       if (error) throw error;
 
       setCommentText("");
+      setCommentMentions([]);
+      
+      // If AI bot was mentioned, add its response
+      if (aiResponse) {
+        // Create a bot comment with a delay for better UX
+        setTimeout(async () => {
+          // For now, skip the database insertion to avoid constraint issues
+          // TODO: Create a proper bot user in the database or use server-side endpoint
+          console.log('AI Bot Response:', aiResponse);
+          
+          // Show the bot response in a toast for now
+          toast({
+            title: "🤖 EduHive Assistant",
+            description: aiResponse.substring(0, 100) + (aiResponse.length > 100 ? '...' : ''),
+          });
+          
+          // Refresh comments anyway
+          fetchComments();
+        }, 1000);
+      }
+
       toast({
         title: "Success",
         description: "Comment added successfully",
@@ -287,6 +333,7 @@ export default function PostDetail() {
 
     setSubmitting(true);
     try {
+      // Check for AI bot mentions (not allowed in replies based on your requirement)
       const { error } = await supabase
         .from('comments')
         .insert({
@@ -299,6 +346,7 @@ export default function PostDetail() {
       if (error) throw error;
 
       setReplyText("");
+      setReplyMentions([]);
       setReplyingTo(null);
       toast({
         title: "Success",
@@ -1032,12 +1080,16 @@ export default function PostDetail() {
             </Avatar>
 
             <div className="flex-1">
-              <Textarea
-                placeholder="Write a comment..."
+              <MentionInput
                 value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
+                onChange={(value, mentions) => {
+                  setCommentText(value);
+                  setCommentMentions(mentions);
+                }}
+                placeholder="Write a comment..."
                 className="min-h-[24px] max-h-[96px] resize-none border-none text-xs placeholder:text-muted-foreground focus-visible:ring-0 p-0 mb-0.5 leading-4"
                 disabled={submitting}
+                allowAIBot={true}
               />
 
               <div className="flex justify-end">
@@ -1163,12 +1215,16 @@ export default function PostDetail() {
                         </Avatar>
 
                         <div className="flex-1">
-                          <Textarea
-                            placeholder={`Reply to ${comment.profile?.username || 'Anonymous'}...`}
+                          <MentionInput
                             value={replyText}
-                            onChange={(e) => setReplyText(e.target.value)}
+                            onChange={(value, mentions) => {
+                              setReplyText(value);
+                              setReplyMentions(mentions);
+                            }}
+                            placeholder={`Reply to ${comment.profile?.username || 'Anonymous'}...`}
                             className="min-h-[60px] resize-none border-none text-sm placeholder:text-muted-foreground focus-visible:ring-0 p-0 mb-2"
                             disabled={submitting}
+                            allowAIBot={false}
                           />
 
                           <div className="flex gap-2 justify-end">

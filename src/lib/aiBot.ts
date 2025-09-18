@@ -1,10 +1,3 @@
-import Groq from "groq-sdk";
-
-const groq = new Groq({
-  apiKey: import.meta.env.VITE_GROQ_API_KEY,
-  dangerouslyAllowBrowser: true
-});
-
 export interface AIBotRequest {
   type: 'explain' | 'question';
   postContent?: string;
@@ -14,42 +7,26 @@ export interface AIBotRequest {
 
 export const processAIBotMention = async (request: AIBotRequest): Promise<string> => {
   try {
-    let prompt = "";
+    // For now, return a placeholder response since client-side AI processing is insecure
+    // TODO: Move to server-side endpoint for production
     
     if (request.type === 'explain' && request.postContent) {
-      prompt = `You are EduHive Assistant, a helpful educational AI bot. A student has asked you to explain this post content. Please provide a clear, educational explanation in a friendly tone suitable for students:
+      return `🤖 Hi! I'm EduHive Assistant. I'd be happy to explain this post content for you. The post discusses: "${request.postContent.substring(0, 100)}${request.postContent.length > 100 ? '...' : ''}"
 
-Post content: "${request.postContent}"
+This appears to be educational content that could help students understand the topic better. For a detailed AI-powered explanation, please contact the administrators to enable the full AI features.
 
-Please explain this in simple terms, focusing on the educational aspects. Keep your response concise but informative (2-3 paragraphs maximum).`;
+How else can I help you with your studies? 📚`;
     } else if (request.type === 'question' && request.userQuestion) {
-      prompt = `You are EduHive Assistant, a helpful educational AI bot. A student has asked you a question in a comment thread. Please provide a helpful, educational response:
+      return `🤖 Thanks for your question: "${request.userQuestion}"
 
-Question: "${request.userQuestion}"
-${request.context ? `Context: "${request.context}"` : ''}
+I'm EduHive Assistant, and I'd love to help answer that! However, for security reasons, my full AI capabilities are currently being moved to a secure server environment. 
 
-Please provide a clear, informative answer suitable for students. Keep your response concise but helpful (2-3 paragraphs maximum).`;
+For now, I can help you connect with other students or point you to educational resources. The full AI-powered responses will be available soon! 
+
+Keep learning! 📚✨`;
     } else {
-      return "Hi! I'm EduHive Assistant 🤖. You can ask me to explain post content by mentioning '@eduhive explain the content' or ask me questions like '@eduhive what is...'. How can I help you today?";
+      return "Hi! I'm EduHive Assistant 🤖. You can ask me to explain post content by mentioning '@eduhive explain the content' or ask me questions like '@eduhive what is...'. My full AI capabilities are coming soon! How can I help you today? 📚";
     }
-
-    const completion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: "You are EduHive Assistant, a helpful educational AI bot for a student community platform. Keep responses educational, friendly, and concise. Use emojis sparingly and appropriately."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      model: "llama-3.1-8b-instant",
-      temperature: 0.7,
-      max_tokens: 500,
-    });
-
-    return completion.choices[0]?.message?.content || "I apologize, but I couldn't process your request. Please try again!";
   } catch (error) {
     console.error('Error processing AI bot request:', error);
     return "I'm having trouble processing your request right now. Please try again later! 🤖";

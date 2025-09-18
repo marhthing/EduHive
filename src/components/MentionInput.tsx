@@ -44,19 +44,44 @@ export const MentionInput: React.FC<MentionInputProps> = ({
     if (!user) return [];
     
     try {
-      // Get users that both follow me and I follow them
-      const { data: mutualFollows, error } = await supabase
+      // First, get users that I follow
+      const { data: iFollow, error: followError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+
+      if (followError) throw followError;
+      
+      if (!iFollow || iFollow.length === 0) return [];
+      
+      const followingIds = iFollow.map(f => f.following_id);
+
+      // Get users who follow me
+      const { data: myFollowers, error: followersError } = await supabase
+        .from('follows')
+        .select('follower_id')
+        .eq('following_id', user.id);
+
+      if (followersError) throw followersError;
+      
+      const followerIds = myFollowers?.map(f => f.follower_id) || [];
+      
+      // Find intersection: users in both followingIds and followerIds
+      const mutualIds = followingIds.filter(id => followerIds.includes(id));
+      
+      if (mutualIds.length === 0) return [];
+
+      // Get profiles for mutual connections
+      const { data: mutualProfiles, error: profileError } = await supabase
         .from('profiles')
         .select('id, username, name, profile_pic')
-        .in('id', 
-          // Subquery to get users who follow me AND who I follow (mutual follows)
-          supabase.rpc('get_mutual_followers', { user_id: user.id })
-        )
+        .in('id', mutualIds)
         .ilike('username', `%${searchTerm}%`)
         .limit(5);
 
-      if (error) throw error;
-      return mutualFollows || [];
+      if (profileError) throw profileError;
+
+      return mutualProfiles;
     } catch (error) {
       console.error('Error fetching mutual followers:', error);
       return [];

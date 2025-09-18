@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
+import { MentionInput } from "@/components/MentionInput";
 
 export default function CreatePost() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export default function CreatePost() {
     school_tag: "",
     course_tag: "",
   });
+  const [mentions, setMentions] = useState<any[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
 
@@ -228,13 +230,16 @@ export default function CreatePost() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="body">What's on your mind?</Label>
-              <Textarea
-                id="body"
-                placeholder="Share your notes, assignments, or ask questions..."
+              <MentionInput
                 value={formData.body}
-                onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+                onChange={(value, mentionUsers) => {
+                  setFormData({ ...formData, body: value });
+                  setMentions(mentionUsers);
+                }}
+                placeholder="Share your notes, assignments, or ask questions..."
                 className="min-h-32 resize-none"
                 disabled={loading}
+                allowAIBot={false}
               />
             </div>
 
