@@ -612,7 +612,7 @@ For now, please let me know:
     if (message.attachmentType === 'audio') {
       return (
         <div className="mt-2">
-          <audio controls className="max-w-xs">
+          <audio controls className="w-48 h-8 text-xs">
             <source src={message.attachmentUrl} type="audio/webm" />
             Your browser does not support the audio element.
           </audio>
@@ -621,13 +621,13 @@ For now, please let me know:
     }
 
     return (
-      <div className="mt-2 flex items-center gap-2 p-2 bg-muted/50 rounded text-sm">
-        <FileText className="h-4 w-4" />
+      <div className="mt-2 flex items-center gap-2 p-1.5 bg-muted/50 rounded text-xs max-w-xs">
+        <FileText className="h-3 w-3 flex-shrink-0" />
         <a 
           href={message.attachmentUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-blue-600 hover:underline"
+          className="text-blue-600 hover:underline truncate"
         >
           {message.attachmentName}
         </a>
