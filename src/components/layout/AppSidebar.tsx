@@ -1,4 +1,4 @@
-import { Home, Search, Bookmark, User, Plus, Settings, Sun, Moon, LogOut, Bell } from "lucide-react";
+import { Home, Search, Bookmark, User, Plus, Settings, Sun, Moon, LogOut, Bell, MessageCircle } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
@@ -190,6 +190,7 @@ export function AppSidebar() {
   const getNavigationItems = () => [
     { title: "Home", url: "/home", icon: Home, badge: newPostsCount > 0 ? newPostsCount : undefined },
     { title: "Search", url: "/search", icon: Search },
+    { title: "Messages", url: "/messages", icon: MessageCircle },
     { title: "Notifications", url: "/notifications", icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : undefined },
     { title: "Bookmarks", url: "/bookmarks", icon: Bookmark },
     { title: "Profile", url: profileUrl, icon: User },
@@ -219,6 +220,7 @@ export function AppSidebar() {
                         if (item.url === "/home") import("@/pages/Home");
                         else if (item.url === "/search") import("@/pages/Search");
                         else if (item.url === "/bookmarks") import("@/pages/Bookmarks");
+                        else if (item.url === "/messages") import("@/pages/Messages");
                         else if (item.url === "/profile") import("@/pages/Profile");
                         else if (item.url === "/notifications") import("@/pages/Notifications");
                         else if (item.url === "/settings") import("@/pages/Settings");
