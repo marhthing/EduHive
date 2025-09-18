@@ -83,6 +83,7 @@ export default function Home() {
   const [isPosting, setIsPosting] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<string[]>([]);
+  const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
   const { showToast } = useTwitterToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -91,6 +92,28 @@ export default function Home() {
   useEffect(() => {
     loadInitialPosts();
   }, []);
+
+  // Fetch current user's profile for updated avatar
+  useEffect(() => {
+    const fetchCurrentUserProfile = async () => {
+      if (!user) return;
+
+      try {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('username, name, profile_pic, school, department')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) throw error;
+        setCurrentUserProfile(profileData);
+      } catch (error) {
+        console.error('Error fetching current user profile:', error);
+      }
+    };
+
+    fetchCurrentUserProfile();
+  }, [user]);
 
   const loadInitialPosts = async () => {
     // Try to load from cache first
@@ -626,9 +649,9 @@ export default function Home() {
         <div className="mx-2 md:mx-4 mb-3 md:mb-4 p-3 md:p-4 border border-border rounded-lg bg-background/80 backdrop-blur-sm">
           <div className="flex gap-2 md:gap-3">
             <Avatar className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0">
-              <AvatarImage src={user.user_metadata?.avatar_url} />
+              <AvatarImage src={currentUserProfile?.profile_pic || user.user_metadata?.avatar_url || user.user_metadata?.profile_pic} />
               <AvatarFallback className="text-xs md:text-sm">
-                {user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
+                {(currentUserProfile?.name || currentUserProfile?.username || user.user_metadata?.name || user.user_metadata?.full_name || user.user_metadata?.username || user.email)?.[0]?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
 

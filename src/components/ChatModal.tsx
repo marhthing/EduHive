@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import Groq from "groq-sdk";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   id: string;
@@ -32,6 +33,7 @@ export function ChatModal({ children }: ChatModalProps) {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false); // Changed from 'open' to 'isOpen' to avoid conflict with Dialog's open prop
+  const [currentUserProfile, setCurrentUserProfile] = useState<{profile_pic: string | null, name: string | null, username: string} | null>(null);
   const { showToast } = useTwitterToast();
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -43,6 +45,28 @@ export function ChatModal({ children }: ChatModalProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Fetch current user's profile for updated avatar
+  useEffect(() => {
+    const fetchCurrentUserProfile = async () => {
+      if (!user) return;
+
+      try {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('username, name, profile_pic')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) throw error;
+        setCurrentUserProfile(profileData);
+      } catch (error) {
+        console.error('Error fetching current user profile:', error);
+      }
+    };
+
+    fetchCurrentUserProfile();
+  }, [user]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -198,9 +222,9 @@ export function ChatModal({ children }: ChatModalProps) {
 
                   {message.isUser && (
                     <Avatar className="h-6 w-6 mt-1">
-                      <AvatarImage src={user?.avatarUrl || ""} alt="User Avatar" />
+                      <AvatarImage src={currentUserProfile?.profile_pic || user?.user_metadata?.avatar_url || user?.user_metadata?.profile_pic} alt={currentUserProfile?.name || currentUserProfile?.username || user?.user_metadata?.name || user?.user_metadata?.username || user?.email} />
                       <AvatarFallback className="bg-secondary">
-                        <User className="h-3 w-3" />
+                        {(currentUserProfile?.name || currentUserProfile?.username || user?.user_metadata?.name || user?.user_metadata?.username || user?.email)?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   )}
