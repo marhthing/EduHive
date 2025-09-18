@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface MentionTextProps {
   text: string;
@@ -7,6 +7,8 @@ interface MentionTextProps {
 }
 
 export const MentionText: React.FC<MentionTextProps> = ({ text, className = '' }) => {
+  const navigate = useNavigate();
+
   // Function to parse text and make @mentions clickable
   const parseText = (text: string) => {
     // Split by @mentions but keep the mentions in the result
@@ -24,8 +26,13 @@ export const MentionText: React.FC<MentionTextProps> = ({ text, className = '' }
           return (
             <span
               key={index}
-              className="text-blue-600 font-medium hover:underline cursor-pointer bg-blue-50 px-1 rounded"
+              className="text-blue-600 font-medium hover:underline cursor-pointer bg-blue-50 dark:bg-blue-900/30 px-1 rounded transition-colors"
               title="EduHive AI Assistant"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // AI bot doesn't have a profile page, so just show tooltip
+              }}
             >
               @{username}
             </span>
@@ -34,13 +41,17 @@ export const MentionText: React.FC<MentionTextProps> = ({ text, className = '' }
         
         // Regular user mention - make it clickable to their profile
         return (
-          <Link
+          <span
             key={index}
-            to={`/profile/${username}`}
-            className="text-blue-600 font-medium hover:underline hover:text-blue-800 transition-colors"
+            className="text-blue-600 font-medium hover:underline hover:text-blue-800 transition-colors cursor-pointer"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate(`/profile/${username}`);
+            }}
           >
             @{username}
-          </Link>
+          </span>
         );
       }
       
