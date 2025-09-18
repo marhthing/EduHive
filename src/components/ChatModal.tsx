@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import Groq from "groq-sdk";
-import { useAuth } from "@/hooks/useAuth"; // Assuming useAuth hook is in this path
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Message {
   id: string;
