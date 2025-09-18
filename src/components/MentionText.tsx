@@ -28,11 +28,6 @@ export const MentionText: React.FC<MentionTextProps> = ({ text, className = '' }
               key={index}
               className="text-blue-600 font-medium hover:underline cursor-pointer bg-blue-50 dark:bg-blue-900/30 px-1 rounded transition-colors"
               title="EduHive AI Assistant"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // AI bot doesn't have a profile page, so just show tooltip
-              }}
             >
               @{username}
             </span>
@@ -45,7 +40,6 @@ export const MentionText: React.FC<MentionTextProps> = ({ text, className = '' }
             key={index}
             className="text-blue-600 font-medium hover:underline hover:text-blue-800 transition-colors cursor-pointer"
             onClick={(e) => {
-              e.preventDefault();
               e.stopPropagation();
               navigate(`/profile/${username}`);
             }}
