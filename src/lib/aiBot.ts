@@ -34,9 +34,15 @@ Keep learning! 📚✨`;
 };
 
 export const parseAIBotMention = (text: string): AIBotRequest | null => {
-  const mentionMatch = text.match(/@eduhive\s+(.+)/i);
-  if (!mentionMatch) return null;
+  console.log('Parsing text for AI mention:', text);
   
+  const mentionMatch = text.match(/@eduhive\s*(.*)$/i);
+  if (!mentionMatch) {
+    console.log('No @eduhive mention found');
+    return null;
+  }
+  
+  console.log('Found @eduhive mention:', mentionMatch);
   const command = mentionMatch[1].toLowerCase().trim();
   
   // Check for explain command

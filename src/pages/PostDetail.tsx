@@ -23,6 +23,7 @@ import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { MentionInput } from "@/components/MentionInput";
 import { MentionText } from "@/components/MentionText";
 import { processAIBotMention, parseAIBotMention, type AIBotRequest } from "@/lib/aiBot";
+import { AI_BOT_PROFILE } from "@/lib/aiBotProfile";
 
 interface Profile {
   username: string;
@@ -232,15 +233,8 @@ export default function PostDetail() {
 
       commentsWithProfiles.forEach(comment => {
         // Handle AI bot comments with special profile
-        if (comment.user_id === 'ai-bot-uuid') {
-          comment.profile = {
-            user_id: 'ai-bot-uuid',
-            username: 'eduhive',
-            profile_pic: '/logo.svg',
-            school: 'EduHive Platform',
-            name: 'EduHive Assistant',
-            department: 'AI Assistant'
-          };
+        if (comment.user_id === 'ai-bot') {
+          comment.profile = AI_BOT_PROFILE;
         }
         
         if (comment.parent_comment_id) {
@@ -276,10 +270,13 @@ export default function PostDetail() {
       const botRequest = parseAIBotMention(commentText);
       
       if (botRequest && post) {
+        console.log('AI bot mentioned, processing...', botRequest);
         botRequest.postContent = post.body;
         aiResponse = await processAIBotMention(botRequest);
+        console.log('AI response:', aiResponse);
       }
 
+      // First, save the user's comment
       const { error } = await supabase
         .from('comments')
         .insert({
@@ -293,37 +290,49 @@ export default function PostDetail() {
       setCommentText("");
       setCommentMentions([]);
       
-      // If AI bot was mentioned, add its response
+      toast({
+        title: "Success",
+        description: "Comment added successfully",
+      });
+      
+      // Refresh comments to show user's comment
+      await fetchComments();
+      
+      // If AI bot was mentioned, add its response after a delay
       if (aiResponse) {
-        // Create a bot comment with a delay for better UX
+        console.log('Adding AI bot response...');
         setTimeout(async () => {
           try {
-            await supabase
+            const { error: botError } = await supabase
               .from('comments')
               .insert({
                 body: aiResponse,
                 post_id: postId,
-                user_id: 'ai-bot-uuid', // Use the proper bot UUID
+                user_id: 'ai-bot',
               });
             
-            // Refresh comments to show bot response
-            fetchComments();
+            if (botError) {
+              console.error('Error inserting bot comment:', botError);
+              // Fallback to toast if database insert fails
+              toast({
+                title: "🤖 EduHive Assistant",
+                description: aiResponse.substring(0, 100) + (aiResponse.length > 100 ? '...' : ''),
+              });
+            } else {
+              console.log('Bot comment saved successfully');
+              // Refresh comments to show bot response
+              fetchComments();
+            }
           } catch (error) {
-            console.error('Error inserting bot comment:', error);
-            // Fallback to toast if database insert fails
+            console.error('Error with bot response:', error);
             toast({
               title: "🤖 EduHive Assistant",
               description: aiResponse.substring(0, 100) + (aiResponse.length > 100 ? '...' : ''),
             });
           }
-        }, 1000);
+        }, 1500);
       }
-
-      toast({
-        title: "Success",
-        description: "Comment added successfully",
-      });
-      fetchComments();
+      
     } catch (error) {
       console.error('Error submitting comment:', error);
       toast({
