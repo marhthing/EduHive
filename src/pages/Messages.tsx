@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,7 @@ export default function Messages() {
       const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
       
       if (!groqApiKey) {
-        throw new Error("Groq API key not configured. Please add VITE_GROQ_API_KEY to your environment variables.");
+        throw new Error("AI_SERVICE_UNAVAILABLE");
       }
 
       const groq = new Groq({
@@ -97,13 +98,15 @@ export default function Messages() {
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error calling Groq API:", error);
-      let errorMessage = "I'm sorry, but I'm having trouble connecting to my AI services right now. Please try again later.";
+      let errorMessage = "I'm currently experiencing technical difficulties. Please try again in a few moments.";
       
       if (error instanceof Error) {
-        if (error.message.includes("API key")) {
-          errorMessage = "AI services are not configured. Please contact support to set up the AI assistant.";
-        } else if (error.message.includes("rate limit")) {
+        if (error.message === "AI_SERVICE_UNAVAILABLE") {
+          errorMessage = "The AI assistant is currently unavailable. Please check back later or contact support if this issue persists.";
+        } else if (error.message.includes("rate limit") || error.message.includes("429")) {
           errorMessage = "I'm receiving too many requests right now. Please wait a moment and try again.";
+        } else if (error.message.includes("network") || error.message.includes("fetch")) {
+          errorMessage = "I'm having trouble connecting to the server. Please check your internet connection and try again.";
         }
       }
 
@@ -115,7 +118,7 @@ export default function Messages() {
       };
 
       setMessages(prev => [...prev, errorResponse]);
-      showToast("Failed to send message", "error");
+      showToast("Message failed to send", "error");
     } finally {
       setIsLoading(false);
     }

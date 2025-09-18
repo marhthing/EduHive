@@ -60,7 +60,7 @@ export function ChatModal({ children }: ChatModalProps) {
       const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
       
       if (!groqApiKey) {
-        throw new Error("Groq API key not configured");
+        throw new Error("AI_SERVICE_UNAVAILABLE");
       }
 
       const groq = new Groq({
@@ -100,9 +100,15 @@ export function ChatModal({ children }: ChatModalProps) {
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error calling Groq API:", error);
+      let errorMessage = "Sorry, EduHive AI is having trouble right now. Try the full Messages page for better support!";
+      
+      if (error instanceof Error && error.message === "AI_SERVICE_UNAVAILABLE") {
+        errorMessage = "The AI assistant is currently unavailable. Please try the full Messages page or contact support.";
+      }
+
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: "Sorry, EduHive AI is having trouble right now. Try the full Messages page for better support!",
+        content: errorMessage,
         isUser: false,
         timestamp: new Date()
       };
