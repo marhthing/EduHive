@@ -128,6 +128,11 @@ export default function Messages() {
         timestamp: new Date()
       }
     ]);
+    
+    // Ensure scroll to bottom after message is set
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
   };
 
   const createChatSession = async (firstUserMessage: string): Promise<string | null> => {
