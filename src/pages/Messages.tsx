@@ -483,55 +483,63 @@ For now, please let me know:
   const sendMessage = async () => {
     if ((!inputMessage.trim() && !selectedFile) || isLoading) return;
 
-    let attachmentData: { url: string; type: string; name: string } | null = null;
-    
-    // Upload file if selected
-    if (selectedFile) {
-      attachmentData = await uploadFileToSupabase(selectedFile);
-      if (!attachmentData) return; // Failed to upload
-    }
-
-    const userMessageContent = inputMessage.trim() || (attachmentData ? `Uploaded ${attachmentData.name}` : '');
-    
-    // Create session if this is the first user message
-    let sessionId = currentSessionId;
-    if (!sessionId) {
-      sessionId = await createChatSession(userMessageContent);
-      if (!sessionId) return; // Failed to create session
-      setCurrentSessionId(sessionId);
-    }
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: userMessageContent,
-      isUser: true,
-      timestamp: new Date(),
-      attachmentUrl: attachmentData?.url,
-      attachmentType: attachmentData?.type,
-      attachmentName: attachmentData?.name,
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    await saveMessage(userMessage, sessionId);
-
-    setInputMessage("");
-    setSelectedFile(null);
+    // Set loading state immediately to disable send button
     setIsLoading(true);
 
-    // Show typing indicator
-    setIsTyping(true);
-    
-    // Add empty AI message that will be filled by streaming
-    const aiMessageId = (Date.now() + 1).toString();
-    const aiMessage: Message = {
-      id: aiMessageId,
-      content: "",
-      isUser: false,
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, aiMessage]);
-
     try {
+      let attachmentData: { url: string; type: string; name: string } | null = null;
+      
+      // Upload file if selected
+      if (selectedFile) {
+        attachmentData = await uploadFileToSupabase(selectedFile);
+        if (!attachmentData) {
+          setIsLoading(false);
+          return; // Failed to upload
+        }
+      }
+
+      const userMessageContent = inputMessage.trim() || (attachmentData ? `Uploaded ${attachmentData.name}` : '');
+      
+      // Create session if this is the first user message
+      let sessionId = currentSessionId;
+      if (!sessionId) {
+        sessionId = await createChatSession(userMessageContent);
+        if (!sessionId) {
+          setIsLoading(false);
+          return; // Failed to create session
+        }
+        setCurrentSessionId(sessionId);
+      }
+
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        content: userMessageContent,
+        isUser: true,
+        timestamp: new Date(),
+        attachmentUrl: attachmentData?.url,
+        attachmentType: attachmentData?.type,
+        attachmentName: attachmentData?.name,
+      };
+
+      setMessages(prev => [...prev, userMessage]);
+      await saveMessage(userMessage, sessionId);
+
+      setInputMessage("");
+      setSelectedFile(null);
+
+      // Show typing indicator
+      setIsTyping(true);
+      
+      // Add empty AI message that will be filled by streaming
+      const aiMessageId = (Date.now() + 1).toString();
+      const aiMessage: Message = {
+        id: aiMessageId,
+        content: "",
+        isUser: false,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, aiMessage]);
+      
       let fullResponse = '';
       
       const aiResponse = await processWithGroq(userMessage, (chunk: string) => {
@@ -547,6 +555,7 @@ For now, please let me know:
       // Save final message to database
       const finalAiMessage = { ...aiMessage, content: aiResponse };
       await saveMessage(finalAiMessage, sessionId);
+      
     } catch (error) {
       console.error("Error calling Groq API:", error);
       let errorMessage = "I'm currently experiencing technical difficulties. Please try again in a few moments.";

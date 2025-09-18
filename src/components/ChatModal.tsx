@@ -47,6 +47,9 @@ export function ChatModal({ children }: ChatModalProps) {
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
+    // Set loading state immediately to disable send button
+    setIsLoading(true);
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputMessage.trim(),
@@ -56,7 +59,6 @@ export function ChatModal({ children }: ChatModalProps) {
 
     setMessages(prev => [...prev, userMessage]);
     setInputMessage("");
-    setIsLoading(true);
 
     try {
       const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
