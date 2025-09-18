@@ -186,9 +186,9 @@ export function ChatModal({ children }: ChatModalProps) {
         {children}
       </div>
       
-      {/* Chat Window - Bottom Left Floating */}
+      {/* Chat Window - Bottom Right Floating */}
       {isOpen && (
-        <div className="fixed bottom-4 left-4 w-80 h-96 bg-background border border-border rounded-lg shadow-xl z-50 flex flex-col">
+        <div className="fixed bottom-4 right-4 w-80 h-96 bg-background border border-border rounded-lg shadow-xl z-50 flex flex-col">
           {/* Header */}
           <div className="p-4 pb-3 flex-shrink-0 border-b flex items-center justify-between">
             <div className="flex items-center gap-2">
