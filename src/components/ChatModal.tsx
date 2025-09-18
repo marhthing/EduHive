@@ -103,7 +103,7 @@ export function ChatModal({ children }: ChatModalProps) {
       let errorMessage = "Sorry, EduHive AI is having trouble right now. Try the full Messages page for better support!";
       
       if (error instanceof Error && error.message === "AI_SERVICE_UNAVAILABLE") {
-        errorMessage = "The AI assistant is currently unavailable. Please try the full Messages page or contact support.";
+        errorMessage = "The AI assistant is currently unavailable. Please contact support if this issue persists.";
       }
 
       const errorResponse: Message = {
