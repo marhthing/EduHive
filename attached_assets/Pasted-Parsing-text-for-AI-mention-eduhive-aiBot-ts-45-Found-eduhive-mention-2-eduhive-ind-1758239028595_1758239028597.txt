@@ -1,0 +1,66 @@
+Parsing text for AI mention: @eduhive 
+aiBot.ts:45 Found @eduhive mention: (2) ['@eduhive ', '', index: 0, input: '@eduhive ', groups: undefined]
+PostDetail.tsx:276 AI bot mentioned, processing... {type: 'explain'}
+PostDetail.tsx:279 AI response: 🤖 Hi! I'm EduHive Assistant. I'd be happy to explain this post content for you. The post discusses: "The only way I could do that was if you had to do a little more work and I would be happy"
+
+This appears to be educational content that could help students understand the topic better. For a detailed AI-powered explanation, please contact the administrators to enable the full AI features.
+
+How else can I help you with your studies? 📚
+PostDetail.tsx:295 Comment created successfully: {id: '530a1216-1d7b-4a98-aad1-922a3320f420'}
+PostDetail.tsx:299 Comment mentions: [{…}]
+mentionNotifications.ts:18 🔍 createMentionNotifications called with: {mentions: Array(1), fromUserId: '1ebeaece-aef6-4251-abd0-e2b2b19988f1', postId: 'd052b7ee-5093-4329-9cfe-b3e3c2c77f6b', commentId: '530a1216-1d7b-4a98-aad1-922a3320f420', mentionsType: 'object', …}
+mentionNotifications.ts:43 ✅ Converted user objects to usernames: {originalMentions: Array(1), filteredMentions: Array(0), usernames: Array(0)}
+mentionNotifications.ts:53 ✅ Filtered out AI bot: {before: Array(0), after: Array(0)}
+mentionNotifications.ts:59 ❌ No valid usernames after filtering, returning early
+PostDetail.tsx:316 Adding AI bot response...
+PostDetail.tsx:317 
+        
+        
+        POST https://aekcdfuqdgtfadmivisf.supabase.co/rest/v1/comments 400 (Bad Request)
+(anonymous) @ fetch.ts:15
+(anonymous) @ fetch.ts:46
+fulfilled @ fetch.ts:2
+Promise.then
+step @ fetch.ts:2
+(anonymous) @ fetch.ts:2
+__awaiter6 @ fetch.ts:2
+(anonymous) @ fetch.ts:34
+then @ PostgrestBuilder.ts:115
+setTimeout
+handleSubmitComment @ PostDetail.tsx:317
+await in handleSubmitComment
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anonymous) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430
+PostDetail.tsx:328  Error inserting bot comment: {code: '22P02', details: null, hint: null, message: 'invalid input syntax for type uuid: "ai-bot"'}
+(anonymous) @ PostDetail.tsx:328
+setTimeout
+handleSubmitComment @ PostDetail.tsx:317
+await in handleSubmitComment
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anonymous) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430

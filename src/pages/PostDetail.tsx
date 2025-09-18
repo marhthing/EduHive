@@ -23,7 +23,7 @@ import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { MentionInput } from "@/components/MentionInput";
 import { MentionText } from "@/components/MentionText";
 import { processAIBotMention, parseAIBotMention, type AIBotRequest } from "@/lib/aiBot";
-import { AI_BOT_PROFILE } from "@/lib/aiBotProfile";
+import { AI_BOT_PROFILE, AI_BOT_USER_ID } from "@/lib/aiBotProfile";
 import { createMentionNotifications } from "@/lib/mentionNotifications";
 
 interface Profile {
@@ -236,7 +236,7 @@ export default function PostDetail() {
 
       commentsWithProfiles.forEach(comment => {
         // Handle AI bot comments with special profile
-        if (comment.user_id === 'ai-bot') {
+        if (comment.user_id === AI_BOT_USER_ID) {
           comment.profile = AI_BOT_PROFILE;
         }
 
@@ -321,7 +321,7 @@ export default function PostDetail() {
               .insert({
                 body: aiResponse,
                 post_id: postId,
-                user_id: 'ai-bot',
+                user_id: AI_BOT_USER_ID,
               });
 
             if (botError) {
