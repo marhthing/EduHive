@@ -913,7 +913,7 @@ export default function Messages() {
       
       {/* Messages Area */}
       <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full px-0 md:px-6 py-4 pb-24 md:pb-20" ref={scrollAreaRef}>
+        <ScrollArea className="h-full px-0 md:px-6 py-4 pb-4" ref={scrollAreaRef}>
           {isLoadingHistory ? (
             <div className="flex items-center justify-center h-32">
               <Loader2 className="h-6 w-6 animate-spin" />
