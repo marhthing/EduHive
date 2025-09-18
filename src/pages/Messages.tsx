@@ -60,12 +60,24 @@ export default function Messages() {
   useEffect(() => {
     if (user) {
       loadChatSessions();
-      // Only start new chat if no current session and no existing messages
-      if (!currentSessionId && messages.length === 0) {
-        startNewChat();
-      }
     }
   }, [user]);
+
+  // Separate effect to handle initial chat creation
+  useEffect(() => {
+    if (user && chatSessions.length > 0 && !currentSessionId && messages.length === 0) {
+      // Load the most recent chat session instead of creating a new one
+      const mostRecentSession = chatSessions[0];
+      if (mostRecentSession) {
+        loadChatMessages(mostRecentSession.id);
+      } else {
+        startNewChat();
+      }
+    } else if (user && chatSessions.length === 0 && !currentSessionId && messages.length === 0) {
+      // Only start new chat if user has no chat sessions at all
+      startNewChat();
+    }
+  }, [user, chatSessions, currentSessionId, messages.length]);
 
   const loadChatSessions = async () => {
     if (!user) return;
