@@ -895,7 +895,7 @@ export default function Messages() {
       
       {/* Messages Area */}
       <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full px-6 py-4 pb-[200px] md:pb-[180px]" ref={scrollAreaRef}>
+        <ScrollArea className="h-full px-2 md:px-6 py-4 pb-[200px] md:pb-[180px]" ref={scrollAreaRef}>
           {isLoadingHistory ? (
             <div className="flex items-center justify-center h-32">
               <Loader2 className="h-6 w-6 animate-spin" />
