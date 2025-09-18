@@ -1,12 +1,16 @@
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Loader2 } from "lucide-react";
+import { Send, Bot, User, Loader2, Paperclip, Mic, MicOff, Plus, History, Trash2, Image, FileText, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Groq from "groq-sdk";
 
 interface Message {
@@ -14,23 +18,35 @@ interface Message {
   content: string;
   isUser: boolean;
   timestamp: Date;
+  attachmentUrl?: string;
+  attachmentType?: string;
+  attachmentName?: string;
+}
+
+interface ChatSession {
+  id: string;
+  title: string;
+  updated_at: string;
+  created_at: string;
 }
 
 export default function Messages() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      content: "Hello! I'm EduHive AI - your intelligent study assistant for the EduHive student community. I can help you with assignments, solve math problems, explain concepts, and answer academic questions. What would you like to work on today?",
-      isUser: false,
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  
   const { user } = useAuth();
   const { showToast } = useTwitterToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,53 +56,404 @@ export default function Messages() {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    if (user) {
+      loadChatSessions();
+      startNewChat();
+    }
+  }, [user]);
+
+  const loadChatSessions = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      setChatSessions(data || []);
+    } catch (error) {
+      console.error('Error loading chat sessions:', error);
+    }
+  };
+
+  const loadChatMessages = async (sessionId: string) => {
+    if (!user) return;
+
+    setIsLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const loadedMessages: Message[] = (data || []).map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        isUser: msg.is_user,
+        timestamp: new Date(msg.created_at),
+        attachmentUrl: msg.attachment_url || undefined,
+        attachmentType: msg.attachment_type || undefined,
+        attachmentName: msg.attachment_name || undefined,
+      }));
+
+      setMessages(loadedMessages);
+      setCurrentSessionId(sessionId);
+    } catch (error) {
+      console.error('Error loading chat messages:', error);
+      showToast("Failed to load chat history", "error");
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const startNewChat = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .insert({
+          user_id: user.id,
+          title: 'New Chat'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCurrentSessionId(data.id);
+      setMessages([
+        {
+          id: "welcome",
+          content: "Hello! I'm EduHive AI - your intelligent study assistant. I can help you with assignments, solve math problems, explain concepts, and analyze documents, images, or audio files. What would you like to work on today?",
+          isUser: false,
+          timestamp: new Date()
+        }
+      ]);
+      
+      await loadChatSessions();
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+      showToast("Failed to create new chat", "error");
+    }
+  };
+
+  const deleteChat = async (sessionId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('chat_sessions')
+        .delete()
+        .eq('id', sessionId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      await loadChatSessions();
+      
+      if (currentSessionId === sessionId) {
+        await startNewChat();
+      }
+      
+      showToast("Chat deleted successfully", "success");
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      showToast("Failed to delete chat", "error");
+    }
+  };
+
+  const saveMessage = async (message: Message, sessionId: string) => {
+    if (!user || !sessionId) return;
+
+    try {
+      await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: sessionId,
+          content: message.content,
+          is_user: message.isUser,
+          attachment_url: message.attachmentUrl,
+          attachment_type: message.attachmentType,
+          attachment_name: message.attachmentName,
+        });
+    } catch (error) {
+      console.error('Error saving message:', error);
+    }
+  };
+
+  const updateChatTitle = async (sessionId: string, newTitle: string) => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from('chat_sessions')
+        .update({ title: newTitle })
+        .eq('id', sessionId)
+        .eq('user_id', user.id);
+    } catch (error) {
+      console.error('Error updating chat title:', error);
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check file size (50MB limit)
+      if (file.size > 50 * 1024 * 1024) {
+        showToast("File size must be less than 50MB", "error");
+        return;
+      }
+
+      // Check file type
+      const allowedTypes = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf', 'text/plain', 'text/markdown',
+        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/webm'
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        showToast("Unsupported file type. Please upload images, PDFs, documents, or audio files.", "error");
+        return;
+      }
+
+      setSelectedFile(file);
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
+        setSelectedFile(audioFile);
+        
+        // Stop all tracks to release microphone
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      showToast("Failed to start recording. Please check microphone permissions.", "error");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const uploadFileToSupabase = async (file: File): Promise<{ url: string; type: string; name: string } | null> => {
+    if (!user) return null;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('chat-attachments')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-attachments')
+        .getPublicUrl(fileName);
+
+      const type = file.type.startsWith('image/') ? 'image' : 
+                   file.type.startsWith('audio/') ? 'audio' : 'document';
+
+      return { url: publicUrl, type, name: file.name };
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      showToast("Failed to upload file", "error");
+      return null;
+    }
+  };
+
+  const processWithGroq = async (userMessage: Message): Promise<string> => {
+    const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
+    
+    if (!groqApiKey) {
+      throw new Error("AI_SERVICE_UNAVAILABLE");
+    }
+
+    const groq = new Groq({
+      apiKey: groqApiKey,
+      dangerouslyAllowBrowser: true
+    });
+
+    // Handle different attachment types
+    if (userMessage.attachmentUrl && userMessage.attachmentType) {
+      if (userMessage.attachmentType === 'image') {
+        // Vision analysis
+        try {
+          const response = await fetch(userMessage.attachmentUrl);
+          const arrayBuffer = await response.arrayBuffer();
+          const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+          
+          const completion = await groq.chat.completions.create({
+            messages: [
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: userMessage.content || "Please analyze this image and help me understand what it contains. If there are any problems, questions, or assignments visible, please solve or explain them step by step."
+                  },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: `data:image/jpeg;base64,${base64}`
+                    }
+                  }
+                ]
+              }
+            ],
+            model: "llama-3.2-90b-vision-preview",
+            temperature: 0.7,
+            max_tokens: 1500
+          });
+
+          return completion.choices[0]?.message?.content || "I couldn't analyze the image. Please try again.";
+        } catch (error) {
+          console.error('Vision analysis error:', error);
+          throw new Error('Failed to analyze image');
+        }
+      } else if (userMessage.attachmentType === 'audio') {
+        // Speech to text
+        try {
+          const response = await fetch(userMessage.attachmentUrl);
+          const audioBlob = await response.blob();
+          
+          const transcription = await groq.audio.transcriptions.create({
+            file: new File([audioBlob], "audio.webm", { type: "audio/webm" }),
+            model: "whisper-large-v3-turbo",
+            response_format: "text",
+            temperature: 0.0
+          });
+
+          // Now process the transcribed text with AI
+          const textToAnalyze = userMessage.content ? 
+            `${userMessage.content}\n\nTranscribed audio: "${transcription}"` : 
+            `Please help me with this audio content: "${transcription}"`;
+
+          const completion = await groq.chat.completions.create({
+            messages: [
+              {
+                role: "system",
+                content: "You are EduHive AI, specializing in helping students with assignments and academic questions. The user has provided audio content that has been transcribed. Help them with their academic needs."
+              },
+              {
+                role: "user",
+                content: textToAnalyze
+              }
+            ],
+            model: "mixtral-8x7b-32768",
+            temperature: 0.7,
+            max_tokens: 1500
+          });
+
+          return completion.choices[0]?.message?.content || "I couldn't process the audio. Please try again.";
+        } catch (error) {
+          console.error('Audio processing error:', error);
+          throw new Error('Failed to process audio');
+        }
+      } else {
+        // Document analysis - for now, we'll ask user to describe content
+        // In a real implementation, you'd extract text from PDFs/docs
+        return `I can see you've uploaded a document (${userMessage.attachmentName}). Currently, I can best help if you describe the content or specific questions from the document. You can also upload images of document pages for me to analyze visually.
+
+For now, please let me know:
+- What type of assignment or problem is in the document?
+- Any specific questions you need help with?
+- You can also take screenshots of specific pages and upload them as images for detailed analysis.`;
+      }
+    }
+
+    // Regular text processing
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are EduHive AI, the intelligent study assistant for the EduHive student community platform. You specialize in helping students with assignments, homework, and academic questions. You're particularly good at solving math problems, explaining concepts clearly, providing step-by-step solutions, and helping with various subjects. Be helpful, educational, and remember you're part of the EduHive educational ecosystem. If you're solving math problems, show your work step by step."
+        },
+        ...messages.slice(-10).map(msg => ({
+          role: msg.isUser ? "user" as const : "assistant" as const,
+          content: msg.content
+        })),
+        {
+          role: "user",
+          content: userMessage.content
+        }
+      ],
+      model: "mixtral-8x7b-32768",
+      temperature: 0.7,
+      max_tokens: 1500
+    });
+
+    return completion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response. Please try again.";
+  };
+
   const sendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
+    if ((!inputMessage.trim() && !selectedFile) || isLoading || !currentSessionId) return;
+
+    let attachmentData: { url: string; type: string; name: string } | null = null;
+    
+    // Upload file if selected
+    if (selectedFile) {
+      attachmentData = await uploadFileToSupabase(selectedFile);
+      if (!attachmentData) return; // Failed to upload
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputMessage.trim(),
+      content: inputMessage.trim() || (attachmentData ? `Uploaded ${attachmentData.name}` : ''),
       isUser: true,
-      timestamp: new Date()
+      timestamp: new Date(),
+      attachmentUrl: attachmentData?.url,
+      attachmentType: attachmentData?.type,
+      attachmentName: attachmentData?.name,
     };
 
     setMessages(prev => [...prev, userMessage]);
+    await saveMessage(userMessage, currentSessionId);
+    
+    // Update chat title if it's the first real message
+    if (messages.length <= 1) {
+      const title = userMessage.content.slice(0, 50) + (userMessage.content.length > 50 ? '...' : '');
+      await updateChatTitle(currentSessionId, title);
+      await loadChatSessions();
+    }
+
     setInputMessage("");
+    setSelectedFile(null);
     setIsLoading(true);
 
     try {
-      const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
-      
-      if (!groqApiKey) {
-        throw new Error("AI_SERVICE_UNAVAILABLE");
-      }
-
-      const groq = new Groq({
-        apiKey: groqApiKey,
-        dangerouslyAllowBrowser: true
-      });
-
-      const completion = await groq.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content: "You are EduHive AI, the intelligent study assistant for the EduHive student community platform. You specialize in helping students with assignments, homework, and academic questions. You're particularly good at solving math problems, explaining concepts clearly, providing step-by-step solutions, and helping with various subjects. Be helpful, educational, and remember you're part of the EduHive educational ecosystem. If you're solving math problems, show your work step by step."
-          },
-          ...messages.slice(-10).map(msg => ({
-            role: msg.isUser ? "user" as const : "assistant" as const,
-            content: msg.content
-          })),
-          {
-            role: "user",
-            content: userMessage.content
-          }
-        ],
-        model: "mixtral-8x7b-32768",
-        temperature: 0.7,
-        max_tokens: 1024
-      });
-
-      const aiResponse = completion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response. Please try again.";
+      const aiResponse = await processWithGroq(userMessage);
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -96,6 +463,7 @@ export default function Messages() {
       };
 
       setMessages(prev => [...prev, aiMessage]);
+      await saveMessage(aiMessage, currentSessionId);
     } catch (error) {
       console.error("Error calling Groq API:", error);
       let errorMessage = "I'm currently experiencing technical difficulties. Please try again in a few moments.";
@@ -118,6 +486,7 @@ export default function Messages() {
       };
 
       setMessages(prev => [...prev, errorResponse]);
+      await saveMessage(errorResponse, currentSessionId);
       showToast("Message failed to send", "error");
     } finally {
       setIsLoading(false);
@@ -131,89 +500,259 @@ export default function Messages() {
     }
   };
 
+  const renderAttachment = (message: Message) => {
+    if (!message.attachmentUrl) return null;
+
+    if (message.attachmentType === 'image') {
+      return (
+        <div className="mt-2">
+          <img 
+            src={message.attachmentUrl} 
+            alt={message.attachmentName}
+            className="max-w-xs rounded-lg cursor-pointer"
+            onClick={() => window.open(message.attachmentUrl, '_blank')}
+          />
+        </div>
+      );
+    }
+
+    if (message.attachmentType === 'audio') {
+      return (
+        <div className="mt-2">
+          <audio controls className="max-w-xs">
+            <source src={message.attachmentUrl} type="audio/webm" />
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-2 flex items-center gap-2 p-2 bg-muted/50 rounded text-sm">
+        <FileText className="h-4 w-4" />
+        <a 
+          href={message.attachmentUrl} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline"
+        >
+          {message.attachmentName}
+        </a>
+      </div>
+    );
+  };
+
   return (
     <div className="h-[calc(100vh-4rem)] md:h-[calc(100vh-6rem)] flex flex-col">
       {/* Header */}
       <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur-sm p-6">
-        <h1 className="text-2xl font-bold flex items-center gap-3">
-          <img src="/logo.svg" alt="EduHive Logo" className="h-8 w-8" />
-          EduHive AI Assistant
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Get help with assignments, solve math problems, and ask academic questions
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-3">
+              <img src="/logo.svg" alt="EduHive Logo" className="h-8 w-8" />
+              EduHive AI Assistant
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Upload documents, images, or record voice notes for comprehensive help
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <History className="h-4 w-4 mr-2" />
+                  Chat History
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Chat History</SheetTitle>
+                  <SheetDescription>
+                    Your previous conversations with EduHive AI
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6 space-y-2">
+                  <Button 
+                    onClick={startNewChat} 
+                    className="w-full justify-start"
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Chat
+                  </Button>
+                  <ScrollArea className="h-[400px]">
+                    {chatSessions.map((session) => (
+                      <div key={session.id} className="flex items-center gap-2 p-2">
+                        <Button
+                          variant={currentSessionId === session.id ? "default" : "ghost"}
+                          className="flex-1 justify-start text-left h-auto p-2"
+                          onClick={() => loadChatMessages(session.id)}
+                        >
+                          <div className="truncate">
+                            <div className="font-medium truncate">{session.title}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(session.updated_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this chat? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteChat(session.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    ))}
+                  </ScrollArea>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
       </div>
       
       {/* Messages Area */}
       <div className="flex-1 flex flex-col min-h-0">
         <ScrollArea className="flex-1 px-6 py-4" ref={scrollAreaRef}>
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${message.isUser ? 'justify-end' : 'justify-start'}`}
-              >
-                {!message.isUser && (
+          {isLoadingHistory ? (
+            <div className="flex items-center justify-center h-32">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Loading chat history...</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex gap-3 ${message.isUser ? 'justify-end' : 'justify-start'}`}
+                >
+                  {!message.isUser && (
+                    <Avatar className="h-8 w-8 mt-1">
+                      <AvatarFallback className="bg-primary text-primary-foreground">
+                        <Bot className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  
+                  <div
+                    className={`max-w-[80%] rounded-lg p-3 ${
+                      message.isUser
+                        ? 'bg-primary text-primary-foreground ml-auto'
+                        : 'bg-muted'
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                    {renderAttachment(message)}
+                    <span className={`text-xs mt-1 block ${
+                      message.isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    }`}>
+                      {message.timestamp.toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </span>
+                  </div>
+
+                  {message.isUser && (
+                    <Avatar className="h-8 w-8 mt-1">
+                      <AvatarFallback className="bg-secondary">
+                        <User className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+              ))}
+              
+              {isLoading && (
+                <div className="flex gap-3 justify-start">
                   <Avatar className="h-8 w-8 mt-1">
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       <Bot className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
-                )}
-                
-                <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
-                    message.isUser
-                      ? 'bg-primary text-primary-foreground ml-auto'
-                      : 'bg-muted'
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                  <span className={`text-xs mt-1 block ${
-                    message.isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                  }`}>
-                    {message.timestamp.toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </span>
-                </div>
-
-                {message.isUser && (
-                  <Avatar className="h-8 w-8 mt-1">
-                    <AvatarFallback className="bg-secondary">
-                      <User className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
-            ))}
-            
-            {isLoading && (
-              <div className="flex gap-3 justify-start">
-                <Avatar className="h-8 w-8 mt-1">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    <Bot className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="bg-muted rounded-lg p-3 max-w-[80%]">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm text-muted-foreground">EduHive AI is thinking...</span>
+                  <div className="bg-muted rounded-lg p-3 max-w-[80%]">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm text-muted-foreground">EduHive AI is analyzing...</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-          </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+          )}
         </ScrollArea>
+
+        {/* File Upload Preview */}
+        {selectedFile && (
+          <div className="px-6 py-2 border-t">
+            <div className="flex items-center gap-2 p-2 bg-muted rounded">
+              {selectedFile.type.startsWith('image/') ? (
+                <Image className="h-4 w-4" />
+              ) : selectedFile.type.startsWith('audio/') ? (
+                <Volume2 className="h-4 w-4" />
+              ) : (
+                <FileText className="h-4 w-4" />
+              )}
+              <span className="text-sm truncate flex-1">{selectedFile.name}</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setSelectedFile(null)}
+              >
+                ×
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Input Area */}
         <div className="flex-shrink-0 p-6 pt-4 border-t">
           <div className="flex gap-2">
+            <div className="flex gap-1">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept="image/*,application/pdf,text/*,.doc,.docx,audio/*"
+                className="hidden"
+              />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={isRecording ? stopRecording : startRecording}
+                disabled={isLoading}
+                className={isRecording ? 'bg-red-100 border-red-200' : ''}
+              >
+                {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+            </div>
             <Input
-              placeholder="Ask me anything about your studies..."
+              placeholder="Ask me anything about your studies, or upload files for analysis..."
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -222,7 +761,7 @@ export default function Messages() {
             />
             <Button 
               onClick={sendMessage}
-              disabled={!inputMessage.trim() || isLoading}
+              disabled={(!inputMessage.trim() && !selectedFile) || isLoading}
               size="sm"
             >
               {isLoading ? (
@@ -233,7 +772,7 @@ export default function Messages() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Press Enter to send, Shift+Enter for new line
+            Press Enter to send, Shift+Enter for new line. Upload images, documents, or record voice notes.
           </p>
         </div>
       </div>
