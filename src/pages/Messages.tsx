@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, Loader2, Paperclip, Mic, MicOff, Plus, History, Trash2, Image, FileText, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,7 +47,7 @@ export default function Messages() {
   const [isTyping, setIsTyping] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<CurrentUserProfile | null>(null);
-  
+
   const { user } = useAuth();
   const { showToast } = useTwitterToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -96,7 +95,7 @@ export default function Messages() {
       const lastOpenedChatId = localStorage.getItem(`lastOpenedChat_${user.id}`);
       const lastOpenedSession = lastOpenedChatId ? 
         chatSessions.find(session => session.id === lastOpenedChatId) : null;
-      
+
       if (lastOpenedSession) {
         // Load the previously opened chat session
         loadChatMessages(lastOpenedSession.id);
@@ -157,7 +156,7 @@ export default function Messages() {
       setMessages(loadedMessages);
       setCurrentSessionId(sessionId);
       setIsSheetOpen(false); // Auto-close the sheet when a chat is loaded
-      
+
       // Store the last opened chat in localStorage
       if (user) {
         localStorage.setItem(`lastOpenedChat_${user.id}`, sessionId);
@@ -183,7 +182,7 @@ export default function Messages() {
         timestamp: new Date()
       }
     ]);
-    
+
     // Ensure scroll to bottom after message is set
     setTimeout(() => {
       scrollToBottom();
@@ -220,12 +219,12 @@ export default function Messages() {
         });
 
       await loadChatSessions();
-      
+
       // Store the new chat as the last opened chat
       if (user) {
         localStorage.setItem(`lastOpenedChat_${user.id}`, data.id);
       }
-      
+
       return data.id;
     } catch (error) {
       console.error('Error creating new chat:', error);
@@ -247,7 +246,7 @@ export default function Messages() {
       if (error) throw error;
 
       await loadChatSessions();
-      
+
       // Clear from localStorage if this was the last opened chat
       if (user) {
         const lastOpenedChatId = localStorage.getItem(`lastOpenedChat_${user.id}`);
@@ -255,11 +254,11 @@ export default function Messages() {
           localStorage.removeItem(`lastOpenedChat_${user.id}`);
         }
       }
-      
+
       if (currentSessionId === sessionId) {
         await startNewChat();
       }
-      
+
       showToast("Chat deleted successfully", "success");
     } catch (error) {
       console.error('Error deleting chat:', error);
@@ -341,7 +340,7 @@ export default function Messages() {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
         setSelectedFile(audioFile);
-        
+
         // Stop all tracks to release microphone
         stream.getTracks().forEach(track => track.stop());
       };
@@ -367,7 +366,7 @@ export default function Messages() {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      
+
       const { error: uploadError } = await supabase.storage
         .from('chat-attachments')
         .upload(fileName, file);
@@ -391,7 +390,7 @@ export default function Messages() {
 
   const processWithGroq = async (userMessage: Message, onStream: (chunk: string) => void): Promise<string> => {
     const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
-    
+
     if (!groqApiKey) {
       throw new Error("AI_SERVICE_UNAVAILABLE");
     }
@@ -409,7 +408,7 @@ export default function Messages() {
           const response = await fetch(userMessage.attachmentUrl);
           const arrayBuffer = await response.arrayBuffer();
           const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-          
+
           const completion = await groq.chat.completions.create({
             messages: [
               {
@@ -454,7 +453,7 @@ export default function Messages() {
         try {
           const response = await fetch(userMessage.attachmentUrl);
           const audioBlob = await response.blob();
-          
+
           const transcription = await groq.audio.transcriptions.create({
             file: new File([audioBlob], "audio.webm", { type: "audio/webm" }),
             model: "whisper-large-v3-turbo",
@@ -504,7 +503,7 @@ export default function Messages() {
         try {
           const response = await fetch(userMessage.attachmentUrl);
           let documentText = '';
-          
+
           if (userMessage.attachmentName?.toLowerCase().endsWith('.pdf')) {
             // For PDFs, we can't extract text in browser, so provide helpful message
             documentText = "I can see you've uploaded a PDF document. While I cannot directly extract text from PDFs in this environment, I can help you in these ways:\n\n1. Copy and paste specific text from the PDF that you need help with\n2. Take screenshots of pages and upload them as images for visual analysis\n3. Tell me what type of document it is and ask specific questions\n\nWhat would you like help with from this document?";
@@ -554,7 +553,7 @@ export default function Messages() {
             onStream(chunk);
             await new Promise(resolve => setTimeout(resolve, 30));
           }
-          
+
           return documentText;
         } catch (error) {
           console.error('Document processing error:', error);
@@ -576,9 +575,7 @@ export default function Messages() {
         if (msg.attachmentUrl && msg.attachmentType) {
           if (msg.attachmentType === 'image') {
             content += ` [Previously uploaded image: ${msg.attachmentName || 'image file'}]`;
-          } else if (msg.attachmentType === 'audio') {
-            content += ` [Previously uploaded audio: ${msg.attachmentName || 'audio file'}]`;
-          } else {
+          } else if (msg.attachmentType === 'document') {
             content += ` [Previously uploaded document: ${msg.attachmentName || 'document file'}]`;
           }
         }
@@ -595,7 +592,7 @@ export default function Messages() {
 
     // Calculate rough token count (approximation: 1 token ≈ 4 characters)
     const totalTokens = conversationMessages.reduce((acc, msg) => acc + msg.content.length, 0) / 4;
-    
+
     // If approaching token limit, optimize conversation
     let messagesToSend = conversationMessages;
     if (totalTokens > 6000) {
@@ -603,7 +600,7 @@ export default function Messages() {
       onStream("*Optimizing EduHive AI...* ");
       await new Promise(resolve => setTimeout(resolve, 1000));
       onStream("✅ *Optimized!*\n\n");
-      
+
       // Keep system message, last 6 messages, and current user message
       const systemMsg = conversationMessages[0];
       const recentMessages = messages.slice(-6).map(msg => {
@@ -611,9 +608,7 @@ export default function Messages() {
         if (msg.attachmentUrl && msg.attachmentType) {
           if (msg.attachmentType === 'image') {
             content += ` [Previously uploaded image: ${msg.attachmentName || 'image file'}]`;
-          } else if (msg.attachmentType === 'audio') {
-            content += ` [Previously uploaded audio: ${msg.attachmentName || 'audio file'}]`;
-          } else {
+          } else if (msg.attachmentType === 'document') {
             content += ` [Previously uploaded document: ${msg.attachmentName || 'document file'}]`;
           }
         }
@@ -623,7 +618,7 @@ export default function Messages() {
         };
       });
       const currentMsg = conversationMessages[conversationMessages.length - 1];
-      
+
       messagesToSend = [
         systemMsg,
         {
@@ -669,7 +664,7 @@ export default function Messages() {
 
     try {
       let attachmentData: { url: string; type: string; name: string } | null = null;
-      
+
       // Upload file if selected
       if (selectedFile) {
         attachmentData = await uploadFileToSupabase(selectedFile);
@@ -680,7 +675,7 @@ export default function Messages() {
       }
 
       const userMessageContent = inputMessage.trim() || (attachmentData ? `Uploaded ${attachmentData.name}` : '');
-      
+
       // Create session if this is the first user message
       let sessionId = currentSessionId;
       if (!sessionId) {
@@ -710,7 +705,7 @@ export default function Messages() {
 
       // Show typing indicator
       setIsTyping(true);
-      
+
       // Add empty AI message that will be filled by streaming
       aiMessageId = (Date.now() + 1).toString();
       aiMessage = {
@@ -720,9 +715,9 @@ export default function Messages() {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, aiMessage]);
-      
+
       let fullResponse = '';
-      
+
       const aiResponse = await processWithGroq(userMessage, (chunk: string) => {
         fullResponse += chunk;
         // Update the AI message with streaming content
@@ -736,11 +731,11 @@ export default function Messages() {
       // Save final message to database
       const finalAiMessage = { ...aiMessage, content: aiResponse };
       await saveMessage(finalAiMessage, sessionId);
-      
+
     } catch (error) {
       console.error("Error calling Groq API:", error);
       let errorMessage = "I'm currently experiencing technical difficulties. Please try again in a few moments.";
-      
+
       if (error instanceof Error) {
         if (error.message === "AI_SERVICE_UNAVAILABLE") {
           errorMessage = "The AI assistant is currently unavailable. Please check back later or contact support if this issue persists.";
@@ -758,7 +753,7 @@ export default function Messages() {
             ? { ...msg, content: errorMessage }
             : msg
         ));
-        
+
         if (aiMessage) {
           const errorMessage_obj = { ...aiMessage, content: errorMessage };
           await saveMessage(errorMessage_obj, sessionId);
@@ -910,7 +905,7 @@ export default function Messages() {
           </div>
         </div>
       </div>
-      
+
       {/* Messages Area */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full px-0 md:px-6 py-4 pb-4" ref={scrollAreaRef}>
@@ -934,7 +929,7 @@ export default function Messages() {
                       </AvatarFallback>
                     </Avatar>
                   )}
-                  
+
                   <div
                     className={`max-w-[80%] rounded-lg p-3 ${
                       message.isUser
@@ -964,7 +959,7 @@ export default function Messages() {
                   )}
                 </div>
               ))}
-              
+
               {(isLoading || isTyping) && (
                 <div className="flex gap-3 justify-start px-2 md:px-0">
                   <Avatar className="h-8 w-8 mt-1">
@@ -994,7 +989,7 @@ export default function Messages() {
                   </div>
                 </div>
               )}
-              
+
               <div ref={messagesEndRef} />
             </div>
           )}
