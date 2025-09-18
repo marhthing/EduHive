@@ -893,9 +893,6 @@ For now, please let me know:
               )}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Press Enter to send, Shift+Enter for new line. Upload images, documents, or record voice notes.
-          </p>
         </div>
       </div>
     </div>
