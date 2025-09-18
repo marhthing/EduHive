@@ -651,7 +651,10 @@ export default function PostDetail() {
       <div className="border border-border rounded-lg p-4 mb-4">
         {/* Header with avatar and user info */}
         <div className="flex gap-3 mb-3">
-          <Avatar className="h-12 w-12 flex-shrink-0">
+          <Avatar 
+            className="h-12 w-12 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => post.profile?.username && navigate(`/profile/${post.profile.username}`)}
+          >
             <AvatarImage src={post.profile?.profile_pic || undefined} />
             <AvatarFallback>
               {post.profile?.username?.[0]?.toUpperCase() || 'U'}
@@ -662,9 +665,19 @@ export default function PostDetail() {
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="font-semibold text-foreground">{post.profile?.name || post.profile?.username || 'Anonymous'}</span>
+                  <span 
+                    className="font-semibold text-foreground cursor-pointer hover:underline"
+                    onClick={() => post.profile?.username && navigate(`/profile/${post.profile.username}`)}
+                  >
+                    {post.profile?.name || post.profile?.username || 'Anonymous'}
+                  </span>
                   <span className="text-muted-foreground">•</span>
-                  <span className="text-muted-foreground">@{post.profile?.username || 'anonymous'}</span>
+                  <span 
+                    className="text-muted-foreground cursor-pointer hover:underline"
+                    onClick={() => post.profile?.username && navigate(`/profile/${post.profile.username}`)}
+                  >
+                    @{post.profile?.username || 'anonymous'}
+                  </span>
                   <span className="text-muted-foreground">•</span>
                   <span className="text-muted-foreground">{formatTimeShort(post.created_at)}</span>
                 </div>
