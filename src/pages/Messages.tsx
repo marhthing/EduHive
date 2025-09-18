@@ -48,6 +48,7 @@ export default function Messages() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<CurrentUserProfile | null>(null);
   const [isProcessingAudio, setIsProcessingAudio] = useState(false); // Added state for audio processing
+  const [showTranscriptionPreview, setShowTranscriptionPreview] = useState(false); // Show transcription preview
 
   const { user } = useAuth();
   const { showToast } = useTwitterToast();
@@ -656,7 +657,7 @@ export default function Messages() {
   };
 
   const sendMessage = async () => {
-    if ((!inputMessage.trim() && !selectedFile) || isLoading) return;
+    if ((!inputMessage.trim() && !selectedFile && !isRecording) || isLoading) return;
 
     // Set loading state immediately to disable send button
     setIsLoading(true);
@@ -665,12 +666,66 @@ export default function Messages() {
     // Declare variables outside try block so they're accessible in catch block
     let aiMessageId: string | null = null;
     let aiMessage: Message | null = null;
+    let transcribedText = '';
 
     try {
       let attachmentData: { url: string; type: string; name: string } | null = null;
 
-      // Upload file if selected
-      if (selectedFile) {
+      // If recording, stop it and process the audio
+      if (isRecording) {
+        // Stop recording and get the audio file
+        await new Promise<void>((resolve) => {
+          if (mediaRecorderRef.current) {
+            mediaRecorderRef.current.onstop = () => {
+              const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+              const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
+              setSelectedFile(audioFile);
+              setIsRecording(false);
+              
+              // Stop all tracks to release microphone
+              const stream = mediaRecorderRef.current?.stream;
+              if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+              }
+              resolve();
+            };
+            mediaRecorderRef.current.stop();
+          } else {
+            resolve();
+          }
+        });
+
+        // Wait a bit for selectedFile to be set
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      // Process voice note if we have an audio file
+      if (selectedFile && selectedFile.type.startsWith('audio/')) {
+        try {
+          const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
+          if (groqApiKey) {
+            const groq = new Groq({
+              apiKey: groqApiKey,
+              dangerouslyAllowBrowser: true
+            });
+
+            const transcription = await groq.audio.transcriptions.create({
+              file: selectedFile,
+              model: "whisper-large-v3-turbo",
+              response_format: "text",
+              temperature: 0.0
+            });
+
+            transcribedText = transcription;
+          }
+        } catch (error) {
+          console.error('Error transcribing audio:', error);
+          transcribedText = 'Audio transcription failed';
+        }
+      }
+
+      // Upload file if selected (but don't include voice notes as attachments)
+      if (selectedFile && !selectedFile.type.startsWith('audio/')) {
         attachmentData = await uploadFileToSupabase(selectedFile);
         if (!attachmentData) {
           setIsLoading(false);
@@ -679,16 +734,8 @@ export default function Messages() {
         }
       }
 
-      const userMessageContent = inputMessage.trim() || (attachmentData ? `Uploaded ${attachmentData.name}` : '');
-
-      // If recording, stop it and set the selectedFile
-      if (isRecording) {
-        stopRecording(); // This will set selectedFile and reset isRecording in its onstop handler
-        // Wait for selectedFile to be set by onstop handler
-        while (!selectedFile) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-      }
+      // Use transcribed text as message content for voice notes, otherwise use input
+      const userMessageContent = transcribedText || inputMessage.trim() || (attachmentData ? `Uploaded ${attachmentData.name}` : '');
 
       let sessionId = currentSessionId;
       if (!sessionId && userMessageContent) { // Only create session if there's actual content
@@ -796,6 +843,7 @@ export default function Messages() {
       setIsProcessingAudio(false); // Reset audio processing state
       setIsRecording(false); // Ensure recording is off
       setSelectedFile(null); // Clear selected file on completion or error
+      setShowTranscriptionPreview(false); // Reset transcription preview
     }
   };
 
@@ -1062,30 +1110,72 @@ export default function Messages() {
                     onClick={() => {
                       stopRecording();
                       setSelectedFile(null);
+                      setShowTranscriptionPreview(false);
                     }}
                     className="text-gray-500 hover:text-gray-700"
                   >
                     ×
                   </Button>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">See text</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      if (!showTranscriptionPreview && selectedFile?.type.startsWith('audio/')) {
+                        try {
+                          const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
+                          if (groqApiKey) {
+                            const groq = new Groq({
+                              apiKey: groqApiKey,
+                              dangerouslyAllowBrowser: true
+                            });
+
+                            const transcription = await groq.audio.transcriptions.create({
+                              file: selectedFile,
+                              model: "whisper-large-v3-turbo",
+                              response_format: "text",
+                              temperature: 0.0
+                            });
+
+                            setInputMessage(transcription);
+                            setShowTranscriptionPreview(true);
+                          }
+                        } catch (error) {
+                          console.error('Error transcribing audio:', error);
+                          setInputMessage('Audio transcription failed');
+                          setShowTranscriptionPreview(true);
+                        }
+                      } else {
+                        setShowTranscriptionPreview(!showTranscriptionPreview);
+                      }
+                    }}
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  >
+                    <span className="text-sm">See text</span>
+                  </Button>
                 </div>
                 
-                {/* Waveform Visualization */}
+                {/* Waveform Visualization or Transcription Preview */}
                 <div className="flex-1 mx-4 flex items-center justify-center">
-                  <div className="flex items-end gap-1 h-8">
-                    {Array.from({ length: 40 }, (_, i) => (
-                      <div
-                        key={i}
-                        className="bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse"
-                        style={{
-                          width: '2px',
-                          height: `${Math.random() * 24 + 8}px`,
-                          animationDelay: `${i * 0.05}s`,
-                          animationDuration: `${0.5 + Math.random() * 0.5}s`
-                        }}
-                      />
-                    ))}
-                  </div>
+                  {showTranscriptionPreview ? (
+                    <div className="text-sm text-gray-700 dark:text-gray-300 text-center max-w-md truncate">
+                      {inputMessage || "Transcribing..."}
+                    </div>
+                  ) : (
+                    <div className="flex items-end gap-1 h-8">
+                      {Array.from({ length: 40 }, (_, i) => (
+                        <div
+                          key={i}
+                          className="bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse"
+                          style={{
+                            width: '2px',
+                            height: `${Math.random() * 24 + 8}px`,
+                            animationDelay: `${i * 0.05}s`,
+                            animationDuration: `${0.5 + Math.random() * 0.5}s`
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <Button 
