@@ -15,7 +15,19 @@ export const createMentionNotifications = async (
   commentId?: string
 ): Promise<void> => {
   try {
-    if (!mentions || mentions.length === 0) return;
+    console.log('🔍 createMentionNotifications called with:', {
+      mentions,
+      fromUserId,
+      postId,
+      commentId,
+      mentionsType: typeof mentions[0],
+      mentionsLength: mentions?.length
+    });
+
+    if (!mentions || mentions.length === 0) {
+      console.log('❌ No mentions provided, returning early');
+      return;
+    }
     
     // Handle both user objects and username strings
     let mentionedUsernames: string[];
@@ -23,21 +35,43 @@ export const createMentionNotifications = async (
     if (typeof mentions[0] === 'string') {
       // Already an array of usernames
       mentionedUsernames = mentions as string[];
+      console.log('✅ Mentions are already strings:', mentionedUsernames);
     } else {
       // Array of user objects - extract usernames and filter out AI bot
       const userMentions = (mentions as MentionUser[]).filter(mention => mention.id !== 'ai-bot');
       mentionedUsernames = userMentions.map(mention => mention.username);
+      console.log('✅ Converted user objects to usernames:', {
+        originalMentions: mentions,
+        filteredMentions: userMentions,
+        usernames: mentionedUsernames
+      });
     }
     
     // Filter out AI bot username if it exists
+    const originalUsernames = [...mentionedUsernames];
     mentionedUsernames = mentionedUsernames.filter(username => username !== 'eduhive');
+    console.log('✅ Filtered out AI bot:', {
+      before: originalUsernames,
+      after: mentionedUsernames
+    });
     
-    if (mentionedUsernames.length === 0) return;
+    if (mentionedUsernames.length === 0) {
+      console.log('❌ No valid usernames after filtering, returning early');
+      return;
+    }
     
-    console.log('Creating mention notifications for usernames:', mentionedUsernames);
+    console.log('🚀 About to call Supabase RPC with:', {
+      function: 'create_mention_notifications',
+      parameters: {
+        p_mentioned_usernames: mentionedUsernames,
+        p_from_user_id: fromUserId,
+        p_post_id: postId || null,
+        p_comment_id: commentId || null
+      }
+    });
     
     // Call the database function to create mention notifications
-    const { error } = await supabase.rpc('create_mention_notifications', {
+    const { data, error } = await supabase.rpc('create_mention_notifications', {
       p_mentioned_usernames: mentionedUsernames,
       p_from_user_id: fromUserId,
       p_post_id: postId || null,
@@ -45,11 +79,20 @@ export const createMentionNotifications = async (
     });
     
     if (error) {
-      console.error('Error creating mention notifications:', error);
+      console.error('❌ Supabase RPC error:', {
+        error,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        message: error.message
+      });
     } else {
-      console.log('Mention notifications created successfully');
+      console.log('✅ Mention notifications created successfully!', {
+        data,
+        usernames: mentionedUsernames
+      });
     }
   } catch (error) {
-    console.error('Error in createMentionNotifications:', error);
+    console.error('❌ Exception in createMentionNotifications:', error);
   }
 };
