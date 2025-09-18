@@ -984,7 +984,7 @@ export default function Messages() {
       </div>
 
       {/* Fixed Input Footer - Above Mobile Nav */}
-      <div className="fixed bottom-[72px] md:bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t">
+      <div className="fixed bottom-[72px] md:bottom-0 left-0 md:left-64 right-0 z-40 bg-background/95 backdrop-blur-sm border-t">
         {/* File Upload Preview */}
         {selectedFile && (
           <div className="px-6 py-2 border-b">
