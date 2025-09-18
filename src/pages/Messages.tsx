@@ -60,7 +60,10 @@ export default function Messages() {
   useEffect(() => {
     if (user) {
       loadChatSessions();
-      startNewChat();
+      // Only start new chat if no current session and no existing messages
+      if (!currentSessionId && messages.length === 0) {
+        startNewChat();
+      }
     }
   }, [user]);
 
@@ -431,22 +434,66 @@ export default function Messages() {
           throw new Error('Failed to process audio');
         }
       } else {
-        // Document analysis - simulate streaming for consistent UX
-        const docResponse = `I can see you've uploaded a document (${userMessage.attachmentName}). Currently, I can best help if you describe the content or specific questions from the document. You can also upload images of document pages for me to analyze visually.
+        // Document analysis - attempt to read text content
+        try {
+          const response = await fetch(userMessage.attachmentUrl);
+          let documentText = '';
+          
+          if (userMessage.attachmentName?.toLowerCase().endsWith('.pdf')) {
+            // For PDFs, we can't extract text in browser, so provide helpful message
+            documentText = "I can see you've uploaded a PDF document. While I cannot directly extract text from PDFs in this environment, I can help you in these ways:\n\n1. Copy and paste specific text from the PDF that you need help with\n2. Take screenshots of pages and upload them as images for visual analysis\n3. Tell me what type of document it is and ask specific questions\n\nWhat would you like help with from this document?";
+          } else if (userMessage.attachmentName?.toLowerCase().endsWith('.txt') || 
+                     userMessage.attachmentName?.toLowerCase().endsWith('.md')) {
+            // For text files, we can read the content
+            documentText = await response.text();
+            const prompt = userMessage.content ? 
+              `${userMessage.content}\n\nDocument content: "${documentText}"` : 
+              `Please help me analyze this document content: "${documentText}"`;
 
-For now, please let me know:
-- What type of assignment or problem is in the document?
-- Any specific questions you need help with?
-- You can also take screenshots of specific pages and upload them as images for detailed analysis.`;
-        
-        // Simulate streaming
-        for (let i = 0; i < docResponse.length; i += 3) {
-          const chunk = docResponse.slice(i, i + 3);
-          onStream(chunk);
-          await new Promise(resolve => setTimeout(resolve, 30));
+            const completion = await groq.chat.completions.create({
+              messages: [
+                {
+                  role: "system",
+                  content: "You are EduHive AI, specializing in helping students with assignments and academic questions. The user has provided a document. Help them with their academic needs based on the document content."
+                },
+                {
+                  role: "user",
+                  content: prompt
+                }
+              ],
+              model: "llama-3.3-70b-versatile",
+              temperature: 0.7,
+              max_tokens: 1500,
+              stream: true
+            });
+
+            let fullResponse = '';
+            for await (const chunk of completion) {
+              const content = chunk.choices[0]?.delta?.content || '';
+              if (content) {
+                fullResponse += content;
+                onStream(content);
+                await new Promise(resolve => setTimeout(resolve, 50));
+              }
+            }
+
+            return fullResponse || "I couldn't process the document content. Please try again.";
+          } else {
+            documentText = "I can see you've uploaded a document, but I can only directly read plain text (.txt) and markdown (.md) files. For other document types like Word documents or PDFs, please:\n\n1. Copy and paste the relevant text content\n2. Convert to a text file\n3. Take screenshots for visual analysis\n\nHow can I help you with this document?";
+          }
+
+          // Simulate streaming for non-AI responses
+          for (let i = 0; i < documentText.length; i += 3) {
+            const chunk = documentText.slice(i, i + 3);
+            onStream(chunk);
+            await new Promise(resolve => setTimeout(resolve, 30));
+          }
+          
+          return documentText;
+        } catch (error) {
+          console.error('Document processing error:', error);
+          throw new Error('Failed to process document');
         }
-        
-        return docResponse;
       }
     }
 
