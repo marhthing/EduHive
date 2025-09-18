@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, Loader2, MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
@@ -180,21 +180,33 @@ export function ChatModal({ children }: ChatModalProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
+    <>
+      {/* Trigger for opening chat */}
+      <div onClick={() => setIsOpen(true)}>
         {children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md h-[500px] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b">
-          <DialogTitle className="flex items-center gap-2">
-            <img src="/logo.svg" alt="EduHive Logo" className="h-6 w-6" />
-            EduHive AI Assistant
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground mt-1">Quick chat for study help</p>
-        </DialogHeader>
+      </div>
+      
+      {/* Chat Window - Bottom Left Floating */}
+      {isOpen && (
+        <div className="fixed bottom-4 left-4 w-80 h-96 bg-background border border-border rounded-lg shadow-xl z-50 flex flex-col">
+          {/* Header */}
+          <div className="p-4 pb-3 flex-shrink-0 border-b flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <img src="/logo.svg" alt="EduHive Logo" className="h-5 w-5" />
+              <h3 className="font-semibold text-sm">EduHive AI</h3>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setIsOpen(false)}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
 
-        <div className="flex-1 flex flex-col min-h-0">
-          <ScrollArea className="flex-1 px-6 py-2">
+          {/* Messages */}
+          <ScrollArea className="flex-1 px-4 py-2">
             <div className="space-y-3">
               {messages.map((message) => (
                 <div
@@ -202,16 +214,16 @@ export function ChatModal({ children }: ChatModalProps) {
                   className={`flex gap-2 ${message.isUser ? 'justify-end' : 'justify-start'}`}
                 >
                   {!message.isUser && (
-                    <Avatar className="h-6 w-6 mt-1">
+                    <Avatar className="h-5 w-5 mt-1">
                       <AvatarImage src="/logo.svg" alt="EduHive Logo" />
                       <AvatarFallback className="bg-primary text-primary-foreground">
-                        <Bot className="h-3 w-3" />
+                        <Bot className="h-2.5 w-2.5" />
                       </AvatarFallback>
                     </Avatar>
                   )}
 
                   <div
-                    className={`max-w-[85%] rounded-lg p-2 text-sm ${
+                    className={`max-w-[85%] rounded-lg p-2 text-xs ${
                       message.isUser
                         ? 'bg-primary text-primary-foreground ml-auto'
                         : 'bg-muted'
@@ -221,7 +233,7 @@ export function ChatModal({ children }: ChatModalProps) {
                   </div>
 
                   {message.isUser && (
-                    <Avatar className="h-6 w-6 mt-1">
+                    <Avatar className="h-5 w-5 mt-1">
                       <AvatarImage src={currentUserProfile?.profile_pic || user?.user_metadata?.avatar_url || user?.user_metadata?.profile_pic} alt={currentUserProfile?.name || currentUserProfile?.username || user?.user_metadata?.name || user?.user_metadata?.username || user?.email} />
                       <AvatarFallback className="bg-secondary">
                         {(currentUserProfile?.name || currentUserProfile?.username || user?.user_metadata?.name || user?.user_metadata?.username || user?.email)?.[0]?.toUpperCase() || 'U'}
@@ -233,16 +245,16 @@ export function ChatModal({ children }: ChatModalProps) {
 
               {isLoading && (
                 <div className="flex gap-2 justify-start">
-                  <Avatar className="h-6 w-6 mt-1">
+                  <Avatar className="h-5 w-5 mt-1">
                     <AvatarImage src="/logo.svg" alt="EduHive Logo" />
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      <Bot className="h-3 w-3" />
+                      <Bot className="h-2.5 w-2.5" />
                     </AvatarFallback>
                   </Avatar>
                   <div className="bg-muted rounded-lg p-2 max-w-[85%]">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      <span className="text-xs text-muted-foreground">EduHive AI is typing...</span>
+                      <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                      <span className="text-xs text-muted-foreground">AI is typing...</span>
                     </div>
                   </div>
                 </div>
@@ -252,7 +264,8 @@ export function ChatModal({ children }: ChatModalProps) {
             </div>
           </ScrollArea>
 
-          <div className="flex-shrink-0 p-6 pt-3 border-t">
+          {/* Input */}
+          <div className="flex-shrink-0 p-3 border-t">
             <div className="flex gap-2">
               <Input
                 placeholder="Ask a quick question..."
@@ -260,12 +273,13 @@ export function ChatModal({ children }: ChatModalProps) {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 disabled={isLoading}
-                className="flex-1"
+                className="flex-1 text-xs h-8"
               />
               <Button
                 onClick={sendMessage}
                 disabled={!inputMessage.trim() || isLoading}
                 size="sm"
+                className="h-8 w-8 p-0"
               >
                 {isLoading ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -274,12 +288,12 @@ export function ChatModal({ children }: ChatModalProps) {
                 )}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-1">
               For longer conversations, visit Messages page
             </p>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </>
   );
 }
