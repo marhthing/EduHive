@@ -104,7 +104,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
       const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
       
       // Check if we're still in a mention (no space after @)
-      if (!textAfterAt.includes(' ') && !textAfterAt.includes('\n')) {
+      if (!textAfterAt.includes(' ') && !textAfterAt.includes('\n') && textAfterAt.match(/^[a-zA-Z0-9_.-]*$/)) {
         setCurrentMention(textAfterAt);
         const searchSuggestions: MentionUser[] = [];
         
@@ -133,7 +133,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
     }
     
     // Extract current mentions from text
-    const mentionRegex = /@(\w+)/g;
+    const mentionRegex = /@([a-zA-Z0-9_.-]+)/g;
     const foundMentions: MentionUser[] = [];
     let match;
     
