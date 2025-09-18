@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { MentionInput } from "@/components/MentionInput";
 import { MentionText } from "@/components/MentionText";
+import { createMentionNotifications } from "@/lib/mentionNotifications";
 
 export default function CreatePost() {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ export default function CreatePost() {
 
     const validFiles: File[] = [];
     const newPreviews: string[] = [];
-    
+
     // MIME types validation
     const allowedTypes = [
       // Images
@@ -61,7 +62,7 @@ export default function CreatePost() {
       // Other common formats
       'application/json', 'text/csv', 'application/xml', 'text/xml'
     ];
-    
+
     // Extension-based fallback validation for when MIME type is unreliable
     const allowedExtensions = [
       // Images
@@ -79,13 +80,13 @@ export default function CreatePost() {
       // Other common formats
       '.json', '.csv', '.xml'
     ];
-    
+
     const isFileTypeAllowed = (file: File): boolean => {
       // First check MIME type
       if (file.type && allowedTypes.includes(file.type)) {
         return true;
       }
-      
+
       // Fallback to extension check (case-insensitive)
       const extension = '.' + file.name.split('.').pop()?.toLowerCase();
       return allowedExtensions.includes(extension);
@@ -178,7 +179,7 @@ export default function CreatePost() {
 
       let attachment_url = null;
       let attachment_type = null;
-      
+
 
       // Upload files if any
       if (files.length > 0) {
@@ -194,18 +195,29 @@ export default function CreatePost() {
         }
       }
 
-      const { error: insertError } = await supabase
-        .from('posts')
-        .insert({
-          user_id: user.id,
-          body: formData.body.trim(),
-          school_tag: formData.school_tag.trim() || null,
-          course_tag: formData.course_tag.trim() || null,
-          attachment_url: attachment_url,
-          attachment_type,
-        });
+      const postPayload = {
+        user_id: user.id,
+        body: formData.body.trim(),
+        school_tag: formData.school_tag.trim() || null,
+        course_tag: formData.course_tag.trim() || null,
+        attachment_url: attachment_url,
+        attachment_type,
+      };
 
-      if (insertError) throw insertError;
+      const { data: postData, error: postError } = await supabase
+        .from('posts')
+        .insert(postPayload)
+        .select('id')
+        .single();
+
+      if (postError) throw postError;
+
+      console.log('Post created successfully:', postData);
+
+      // Create mention notifications
+      if (mentions.length > 0 && postData?.id) {
+        await createMentionNotifications(mentions, user.id, postData.id);
+      }
 
       showToast("Post created!", "success");
 

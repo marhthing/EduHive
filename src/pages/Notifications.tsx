@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, UserPlus, Bell, BellOff, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, UserPlus, Bell, BellOff, ChevronLeft, ChevronRight, AtSign } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { formatTimeShort } from "@/lib/timeFormat";
 
 interface Notification {
   id: string;
-  type: 'like' | 'comment' | 'follow' | 'reply';
+  type: 'like' | 'comment' | 'follow' | 'reply' | 'mention';
   message: string;
   read: boolean;
   created_at: string;
@@ -180,8 +180,8 @@ export default function Notifications() {
       navigate(`/profile/${notification.from_user.username}`);
     } else if (notification.post_id) {
       navigate(`/post/${notification.post_id}`);
-    } else if (notification.comment_id && (notification.type === 'like' || notification.type === 'reply')) {
-      // For comment likes, we need to fetch the post_id from the comment
+    } else if (notification.comment_id && (notification.type === 'like' || notification.type === 'reply' || notification.type === 'mention')) {
+      // For comment likes/mentions, we need to fetch the post_id from the comment
       fetchPostIdForComment(notification.comment_id);
     }
   };
@@ -231,6 +231,8 @@ export default function Notifications() {
         return <MessageCircle className="h-5 w-5 text-blue-500" />;
       case 'follow':
         return <UserPlus className="h-5 w-5 text-green-500" />;
+      case 'mention':
+        return <AtSign className="h-5 w-5 text-purple-500" />;
       default:
         return <Bell className="h-5 w-5 text-muted-foreground" />;
     }

@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   from_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('like', 'comment', 'follow', 'reply')),
+  type TEXT NOT NULL CHECK (type IN ('like', 'comment', 'follow', 'reply', 'mention')),
   post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
   comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
   message TEXT NOT NULL,
@@ -64,6 +64,59 @@ BEGIN
   -- Insert the notification
   INSERT INTO notifications (user_id, from_user_id, type, message, post_id, comment_id)
   VALUES (p_user_id, p_from_user_id, p_type, p_message, p_post_id, p_comment_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to create mention notifications
+CREATE OR REPLACE FUNCTION create_mention_notifications(
+  p_mentioned_usernames TEXT[],
+  p_from_user_id UUID,
+  p_post_id UUID DEFAULT NULL,
+  p_comment_id UUID DEFAULT NULL
+)
+RETURNS void AS $$
+DECLARE
+  mentioned_user_id UUID;
+  from_username TEXT;
+  username TEXT;
+  notification_message TEXT;
+BEGIN
+  -- Get the username of the person doing the mentioning
+  SELECT username INTO from_username FROM profiles WHERE user_id = p_from_user_id;
+  
+  -- Loop through each mentioned username
+  FOREACH username IN ARRAY p_mentioned_usernames
+  LOOP
+    -- Skip AI bot mentions
+    IF username = 'eduhive' THEN
+      CONTINUE;
+    END IF;
+    
+    -- Find the user ID for this username
+    SELECT user_id INTO mentioned_user_id 
+    FROM profiles 
+    WHERE username = username;
+    
+    -- If user exists, create notification
+    IF mentioned_user_id IS NOT NULL THEN
+      -- Create appropriate message based on context
+      IF p_comment_id IS NOT NULL THEN
+        notification_message := from_username || ' mentioned you in a comment';
+      ELSE
+        notification_message := from_username || ' mentioned you in a post';
+      END IF;
+      
+      -- Create the notification
+      PERFORM create_notification(
+        mentioned_user_id,
+        p_from_user_id,
+        'mention',
+        notification_message,
+        p_post_id,
+        p_comment_id
+      );
+    END IF;
+  END LOOP;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

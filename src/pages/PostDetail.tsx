@@ -62,6 +62,25 @@ interface Comment {
   is_liked: boolean;
 }
 
+// Function to create mention notifications
+const createMentionNotifications = async (mentions: any[], fromUserId: string, postId: string, commentId?: string) => {
+  if (!mentions || mentions.length === 0) return;
+
+  const notifications = mentions.map(mention => ({
+    type: 'mention',
+    recipient_id: mention.id, // Assuming mention object has an 'id' which is the user_id
+    sender_id: fromUserId,
+    post_id: postId,
+    comment_id: commentId,
+    created_at: new Date().toISOString(),
+  }));
+
+  const { error } = await supabase.from('notifications').insert(notifications);
+  if (error) {
+    console.error('Error creating mention notifications:', error);
+  }
+};
+
 export default function PostDetail() {
   const { postId } = useParams();
   const navigate = useNavigate();
@@ -236,7 +255,7 @@ export default function PostDetail() {
         if (comment.user_id === 'ai-bot') {
           comment.profile = AI_BOT_PROFILE;
         }
-        
+
         if (comment.parent_comment_id) {
           replies.push(comment);
         } else {
@@ -268,7 +287,7 @@ export default function PostDetail() {
       // Check for AI bot mentions by parsing text directly
       let aiResponse = null;
       const botRequest = parseAIBotMention(commentText);
-      
+
       if (botRequest && post) {
         console.log('AI bot mentioned, processing...', botRequest);
         botRequest.postContent = post.body;
@@ -277,27 +296,36 @@ export default function PostDetail() {
       }
 
       // First, save the user's comment
-      const { error } = await supabase
+      const { data: commentData, error: commentError } = await supabase
         .from('comments')
         .insert({
           body: commentText.trim(),
           post_id: postId,
           user_id: user.id,
-        });
+        })
+        .select('id')
+        .single();
 
-      if (error) throw error;
+      if (commentError) throw commentError;
+
+      console.log('Comment created successfully:', commentData);
+
+      // Create mention notifications
+      if (commentMentions.length > 0 && commentData?.id) {
+        await createMentionNotifications(commentMentions, user.id, postId, commentData.id);
+      }
 
       setCommentText("");
       setCommentMentions([]);
-      
+
       toast({
         title: "Success",
         description: "Comment added successfully",
       });
-      
+
       // Refresh comments to show user's comment
       await fetchComments();
-      
+
       // If AI bot was mentioned, add its response after a delay
       if (aiResponse) {
         console.log('Adding AI bot response...');
@@ -310,7 +338,7 @@ export default function PostDetail() {
                 post_id: postId,
                 user_id: 'ai-bot',
               });
-            
+
             if (botError) {
               console.error('Error inserting bot comment:', botError);
               // Fallback to toast if database insert fails
@@ -332,7 +360,7 @@ export default function PostDetail() {
           }
         }, 1500);
       }
-      
+
     } catch (error) {
       console.error('Error submitting comment:', error);
       toast({
@@ -361,6 +389,11 @@ export default function PostDetail() {
         });
 
       if (error) throw error;
+
+      // Create mention notifications for replies
+      if (replyMentions.length > 0) {
+        await createMentionNotifications(replyMentions, user.id, postId, parentCommentId);
+      }
 
       setReplyText("");
       setReplyMentions([]);
