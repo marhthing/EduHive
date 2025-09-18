@@ -894,8 +894,8 @@ export default function Messages() {
       </div>
       
       {/* Messages Area */}
-      <div className="flex-1 flex flex-col min-h-0">
-        <ScrollArea className="flex-1 px-6 py-4" ref={scrollAreaRef}>
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full px-6 py-4 pb-[200px] md:pb-[180px]" ref={scrollAreaRef}>
           {isLoadingHistory ? (
             <div className="flex items-center justify-center h-32">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -981,10 +981,13 @@ export default function Messages() {
             </div>
           )}
         </ScrollArea>
+      </div>
 
+      {/* Fixed Input Footer - Above Mobile Nav */}
+      <div className="fixed bottom-[72px] md:bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t">
         {/* File Upload Preview */}
         {selectedFile && (
-          <div className="px-6 py-2 border-t">
+          <div className="px-6 py-2 border-b">
             <div className="flex items-center gap-2 p-2 bg-muted rounded">
               {selectedFile.type.startsWith('image/') ? (
                 <Image className="h-4 w-4" />
@@ -1006,7 +1009,7 @@ export default function Messages() {
         )}
 
         {/* Input Area */}
-        <div className="flex-shrink-0 p-6 pt-4 border-t">
+        <div className="p-4 md:p-6">
           <div className="flex gap-2">
             <div className="flex gap-1">
               <input
