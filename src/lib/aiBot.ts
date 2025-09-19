@@ -60,7 +60,7 @@ Always start your response with "🤖 Hi! I'm EduHive Assistant." and end with a
             userPrompt += `\n- Document ${index + 1}: ${attachment.name || 'File'} (${attachment.type})`;
           }
         });
-        userPromit += `\n\nPlease analyze both the text content and reference the attachments in your explanation.`;
+        userPrompt += `\n\nPlease analyze both the text content and reference the attachments in your explanation.`;
       }
 
       // Handle image analysis if there are image attachments
