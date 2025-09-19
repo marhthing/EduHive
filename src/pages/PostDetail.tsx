@@ -300,6 +300,7 @@ export default function PostDetail() {
       const originalCommentText = commentText; // Store before clearing
       setCommentText("");
       setCommentMentions([]);
+      
       if (commentMentions.some(mention => mention.username === 'eduhive')) {
         console.log('Creating AI bot response comment...');
         try {
@@ -340,10 +341,11 @@ export default function PostDetail() {
             } else {
               console.log('AI bot comment created successfully');
             }
-          } catch (error) {
-            console.error('Error creating AI bot comment:', error);
           }
+        } catch (error) {
+          console.error('Error creating AI bot comment:', error);
         }
+      }
 
       // Refresh comments to show user's comment and AI response
       await fetchComments();
