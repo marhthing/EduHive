@@ -37,21 +37,13 @@ Once the API key is configured, I'll be able to provide detailed explanations an
     let userPrompt = "";
 
     if (request.type === 'explain' && request.postContent) {
-      systemPrompt = `You are EduHive Assistant. Give direct, concise responses like Groq's Twitter bot. Be helpful but brief. Analyze content and images specifically. Start with "🤖" but keep responses focused and to the point.`;
+      systemPrompt = `You are EduHive Assistant. Be direct and concise like Groq. No verbose explanations. Don't mention "image" or describe what type of content it is - just analyze the content directly. Start with "🤖" and get straight to the point.`;
 
-      userPrompt = `Explain this post: "${request.postContent}"`;
+      userPrompt = `Explain: "${request.postContent}"`;
 
-      // If there are attachments, mention them
+      // If there are attachments, just analyze them without mentioning they're images
       if (request.attachments && request.attachments.length > 0) {
-        const imageCount = request.attachments.filter(att => att.type?.startsWith('image/')).length;
-        const docCount = request.attachments.length - imageCount;
-        
-        if (imageCount > 0) {
-          userPrompt += `\n\nAnalyze the ${imageCount} image(s) and explain what you see in relation to the text.`;
-        }
-        if (docCount > 0) {
-          userPrompt += `\n\nAlso reference the ${docCount} document(s) provided.`;
-        }
+        userPrompt += `\n\nAnalyze the content and explain what's shown.`;
       }
 
       // Handle image analysis if there are image attachments
@@ -65,7 +57,7 @@ Once the API key is configured, I'll be able to provide detailed explanations an
           const messageContent = [
             {
               type: "text",
-              text: `${userPrompt}\n\nAnalyze ALL ${imageAttachments.length} images and provide a direct, concise explanation. Be specific about what you see in each image.`
+              text: `${userPrompt}\n\nBe direct and concise. Explain the key concepts shown.`
             }
           ];
 
