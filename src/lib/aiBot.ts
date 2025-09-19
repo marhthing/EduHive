@@ -37,13 +37,13 @@ Once the API key is configured, I'll be able to provide detailed explanations an
     let userPrompt = "";
 
     if (request.type === 'explain' && request.postContent) {
-      systemPrompt = `You are EduHive Assistant. Be direct and concise like Groq. No verbose explanations. Don't mention "image" or describe what type of content it is - just analyze the content directly. Start with "🤖" and get straight to the point.`;
+      systemPrompt = `You are EduHive Assistant. Be extremely concise - maximum 3-4 sentences total. Get straight to the key point without verbose explanations. Don't mention "image" or describe file types. Start with "🤖" and summarize the core concept only.`;
 
-      userPrompt = `Explain: "${request.postContent}"`;
+      userPrompt = `Explain briefly: "${request.postContent}"`;
 
       // If there are attachments, just analyze them without mentioning they're images
       if (request.attachments && request.attachments.length > 0) {
-        userPrompt += `\n\nAnalyze the content and explain what's shown.`;
+        userPrompt += `\n\nSummarize the main concept shown in 2-3 sentences max.`;
       }
 
       // Handle image analysis if there are image attachments
@@ -57,7 +57,7 @@ Once the API key is configured, I'll be able to provide detailed explanations an
           const messageContent = [
             {
               type: "text",
-              text: `${userPrompt}\n\nBe direct and concise. Explain the key concepts shown.`
+              text: `${userPrompt}\n\nBe extremely brief - 2-3 sentences max. Focus only on the main concept.`
             }
           ];
 
@@ -80,7 +80,7 @@ Once the API key is configured, I'll be able to provide detailed explanations an
               }
             ],
             temperature: 0.7,
-            max_completion_tokens: 500
+            max_completion_tokens: 150
           });
 
           return visionResponse.choices[0]?.message?.content || "I had trouble analyzing the content. Please try again!";
@@ -125,7 +125,7 @@ Please provide a helpful, educational response.`;
         }
       ],
       temperature: 0.7,
-      max_completion_tokens: 800
+      max_completion_tokens: 200
     });
 
     const aiResponse = response.choices[0]?.message?.content;
