@@ -243,13 +243,13 @@ export const MentionInput: React.FC<MentionInputProps> = ({
       {showSuggestions && suggestions.length > 0 && (
         <Card
           ref={suggestionsRef}
-          className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto border shadow-lg bg-white"
+          className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto border shadow-lg bg-popover"
         >
           {suggestions.map((suggestion, index) => (
             <div
               key={suggestion.id}
-              className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 ${
-                index === selectedIndex ? 'bg-blue-50 border-l-2 border-l-blue-500' : ''
+              className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-accent ${
+                index === selectedIndex ? 'bg-accent border-l-2 border-l-primary' : ''
               }`}
               onClick={() => selectSuggestion(suggestion)}
             >
@@ -261,7 +261,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
               </Avatar>
               <div className="flex-1">
                 <div className="font-medium">@{suggestion.username}</div>
-                <div className="text-sm text-gray-500">{suggestion.name}</div>
+                <div className="text-sm text-muted-foreground">{suggestion.name}</div>
               </div>
             </div>
           ))}
