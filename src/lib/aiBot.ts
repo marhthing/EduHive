@@ -247,9 +247,16 @@ Keep learning! 📚✨`;
 };
 
 export const parseAIBotMention = (text: string): AIBotRequest | null => {
-  console.log('Parsing text for AI mention:', text);
+  console.log('Parsing text for AI mention:', JSON.stringify(text));
   
-  const mentionMatch = text.match(/@eduhive\s*(.*)$/i);
+  // Clean the text and make matching more robust
+  const cleanedText = text.trim();
+  console.log('Cleaned text:', JSON.stringify(cleanedText));
+  
+  // More robust regex that handles different spacing and line breaks
+  const mentionMatch = cleanedText.match(/@eduhive[\s\n\r]*(.*)$/im);
+  console.log('Mention regex result:', mentionMatch);
+  
   if (!mentionMatch) {
     console.log('No @eduhive mention found');
     return null;
