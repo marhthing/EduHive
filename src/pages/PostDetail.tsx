@@ -82,9 +82,32 @@ export default function PostDetail() {
   const [deletePostModalOpen, setDeletePostModalOpen] = useState(false);
   const [deleteCommentModalOpen, setDeleteCommentModalOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
   const { showToast } = useTwitterToast();
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Fetch current user's profile for updated avatar
+  useEffect(() => {
+    const fetchCurrentUserProfile = async () => {
+      if (!user) return;
+
+      try {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('username, name, profile_pic, school, department')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) throw error;
+        setCurrentUserProfile(profileData);
+      } catch (error) {
+        console.error('Error fetching current user profile:', error);
+      }
+    };
+
+    fetchCurrentUserProfile();
+  }, [user]);
 
   useEffect(() => {
     if (postId) {
@@ -300,13 +323,13 @@ export default function PostDetail() {
       const originalCommentText = commentText; // Store before clearing
       setCommentText("");
       setCommentMentions([]);
-      
+
       if (commentMentions.some(mention => mention.username === 'eduhive')) {
         console.log('Creating AI bot response comment...');
         try {
           // Parse the original comment to understand what the user asked
           const botRequest = parseAIBotMention(originalCommentText);
-          
+
           if (botRequest && post) {
             // Parse post attachments if they exist
             let attachments = [];
@@ -1133,9 +1156,9 @@ export default function PostDetail() {
         <div className="border border-border rounded-lg p-1.5 mb-3">
           <div className="flex gap-1.5">
             <Avatar className="h-6 w-6 flex-shrink-0 mt-0.5">
-              <AvatarImage src={user.user_metadata?.avatar_url} />
+              <AvatarImage src={currentUserProfile?.profile_pic || user.user_metadata?.avatar_url} />
               <AvatarFallback className="text-xs">
-                {user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
+                {currentUserProfile?.username?.[0]?.toUpperCase() || user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
 
@@ -1271,9 +1294,9 @@ export default function PostDetail() {
                     <div className="mt-3 pl-4 border-l-2 border-border">
                       <div className="flex gap-3">
                         <Avatar className="h-8 w-8 flex-shrink-0">
-                          <AvatarImage src={user.user_metadata?.avatar_url} />
+                          <AvatarImage src={currentUserProfile?.profile_pic || user.user_metadata?.avatar_url} />
                           <AvatarFallback>
-                            {user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
+                            {currentUserProfile?.username?.[0]?.toUpperCase() || user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
 
@@ -1297,6 +1320,7 @@ export default function PostDetail() {
                               onClick={() => {
                                 setReplyingTo(null);
                                 setReplyText("");
+                                setReplyMentions([]);
                               }}
                             >
                               Cancel
@@ -1406,9 +1430,9 @@ export default function PostDetail() {
                               <div className="mt-3 pl-4 border-l-2 border-border">
                                 <div className="flex gap-3">
                                   <Avatar className="h-6 w-6 flex-shrink-0">
-                                    <AvatarImage src={user.user_metadata?.avatar_url} />
+                                    <AvatarImage src={currentUserProfile?.profile_pic || user.user_metadata?.avatar_url} />
                                     <AvatarFallback className="text-xs">
-                                      {user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
+                                      {currentUserProfile?.username?.[0]?.toUpperCase() || user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
                                     </AvatarFallback>
                                   </Avatar>
 
