@@ -186,29 +186,88 @@ export const MentionInput: React.FC<MentionInputProps> = ({
     }
   }, [value, cursorPosition, mentionUsers, onChange]);
 
-  // Handle keyboard navigation
+  // Handle keyboard navigation and mention deletion
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (!showSuggestions || suggestions.length === 0) return;
-    
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex(prev => (prev + 1) % suggestions.length);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex(prev => (prev - 1 + suggestions.length) % suggestions.length);
-        break;
-      case 'Enter':
-      case 'Tab':
-        e.preventDefault();
-        selectSuggestion(suggestions[selectedIndex]);
-        break;
-      case 'Escape':
-        setShowSuggestions(false);
-        break;
+    // Handle suggestion navigation
+    if (showSuggestions && suggestions.length > 0) {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setSelectedIndex(prev => (prev + 1) % suggestions.length);
+          return;
+        case 'ArrowUp':
+          e.preventDefault();
+          setSelectedIndex(prev => (prev - 1 + suggestions.length) % suggestions.length);
+          return;
+        case 'Enter':
+        case 'Tab':
+          e.preventDefault();
+          selectSuggestion(suggestions[selectedIndex]);
+          return;
+        case 'Escape':
+          setShowSuggestions(false);
+          return;
+      }
     }
-  }, [showSuggestions, suggestions, selectedIndex, selectSuggestion]);
+    
+    // Handle backspace for mention deletion
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      
+      const cursorPos = textarea.selectionStart;
+      const isBackspace = e.key === 'Backspace';
+      
+      // For backspace, check the character before cursor; for delete, check character at cursor
+      const checkPos = isBackspace ? cursorPos - 1 : cursorPos;
+      
+      // Find if we're at the end of a mention
+      const mentionRegex = /@([a-zA-Z0-9_.-]+)\s?/g;
+      let match;
+      let mentionToDelete: string | null = null;
+      let mentionStart = -1;
+      let mentionEnd = -1;
+      
+      while ((match = mentionRegex.exec(value)) !== null) {
+        const start = match.index;
+        const end = match.index + match[0].length;
+        
+        // Check if cursor is right at the end of this mention (for backspace)
+        // or right at the beginning (for delete)
+        if (isBackspace && checkPos === end - 1) {
+          mentionToDelete = match[1]; // The username without @
+          mentionStart = start;
+          mentionEnd = end;
+          break;
+        } else if (!isBackspace && checkPos === start) {
+          mentionToDelete = match[1];
+          mentionStart = start;
+          mentionEnd = end;
+          break;
+        }
+      }
+      
+      // If we found a mention to delete, remove it entirely
+      if (mentionToDelete !== null && mentionStart !== -1) {
+        e.preventDefault();
+        
+        const newValue = value.substring(0, mentionStart) + value.substring(mentionEnd);
+        
+        // Remove from mentions array
+        const updatedMentions = mentionUsers.filter(u => u.username !== mentionToDelete);
+        setMentionUsers(updatedMentions);
+        
+        // Update the value and cursor position
+        onChange(newValue, updatedMentions);
+        
+        // Set cursor position after the deletion
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(mentionStart, mentionStart);
+        }, 0);
+      }
+    }
+  }, [showSuggestions, suggestions, selectedIndex, selectSuggestion, value, mentionUsers, onChange]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
