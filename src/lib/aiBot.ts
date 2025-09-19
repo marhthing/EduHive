@@ -33,13 +33,13 @@ export const processAIBotMention = async (request: AIBotRequest): Promise<string
     let userPrompt = "";
 
     if (request.type === 'explain' && request.postContent) {
-      systemPrompt = `You are EduHive Assistant. Be extremely concise - maximum 3-4 sentences total. Explain the actual content and concepts clearly. Do NOT use any markdown formatting like asterisks, bold, italics, or special characters. Use plain text only. Don't mention "image" or describe file types. Start with "🤖" and explain what the content is about.`;
+      systemPrompt = `You are EduHive Assistant, an educational AI. Provide clear, detailed explanations that help students understand concepts. Use 4-6 sentences to thoroughly explain the topic. Do NOT use any markdown formatting like asterisks, bold, italics, or special characters. Use plain text only. Don't mention "image" or describe file types. Start with "🤖" and focus on explaining the actual concepts, formulas, principles, or ideas presented.`;
 
-      userPrompt = `Explain what this content is about: "${request.postContent}"`;
+      userPrompt = `Explain this educational content in detail: "${request.postContent}"`;
 
       // If there are attachments, just analyze them without mentioning they're images
       if (request.attachments && request.attachments.length > 0) {
-        userPrompt += `\n\nExplain the main concept in plain text, no formatting.`;
+        userPrompt += `\n\nProvide a thorough explanation of the concepts shown, including any formulas, principles, or key ideas.`;
       }
 
       // Handle image analysis if there are image attachments
@@ -53,7 +53,7 @@ export const processAIBotMention = async (request: AIBotRequest): Promise<string
           const messageContent = [
             {
               type: "text",
-              text: `${userPrompt}\n\nBe extremely brief - 2-3 sentences max. Explain the concept clearly in plain text with no markdown formatting or special characters.`
+              text: `${userPrompt}\n\nProvide a thorough educational explanation in 4-6 sentences. Focus on the actual concepts, formulas, and principles. Use plain text with no markdown formatting or special characters.`
             }
           ];
 
@@ -76,7 +76,7 @@ export const processAIBotMention = async (request: AIBotRequest): Promise<string
               }
             ],
             temperature: 0.7,
-            max_completion_tokens: 150
+            max_completion_tokens: 250
           });
 
           return visionResponse.choices[0]?.message?.content || "I had trouble analyzing the content. Please try again!";
@@ -121,7 +121,7 @@ Please provide a helpful, educational response.`;
         }
       ],
       temperature: 0.7,
-      max_completion_tokens: 200
+      max_completion_tokens: 300
     });
 
     const aiResponse = response.choices[0]?.message?.content;
