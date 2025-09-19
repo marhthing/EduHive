@@ -54,7 +54,7 @@ const saveToCache = (data: PostsCache) => {
     localStorage.setItem(CACHE_KEY, JSON.stringify(data));
     localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
   } catch (error) {
-    console.error('Error saving to cache:', error);
+    // console.error('Error saving to cache:', error);
   }
 };
 
@@ -68,7 +68,7 @@ const loadFromCache = (): PostsCache | null => {
     const cached = localStorage.getItem(CACHE_KEY);
     return cached ? JSON.parse(cached) : null;
   } catch (error) {
-    console.error('Error loading from cache:', error);
+    // console.error('Error loading from cache:', error);
     return null;
   }
 };
@@ -110,7 +110,7 @@ export default function Home() {
         if (error) throw error;
         setCurrentUserProfile(profileData);
       } catch (error) {
-        console.error('Error fetching current user profile:', error);
+        // console.error('Error fetching current user profile:', error);
       }
     };
 
@@ -189,7 +189,7 @@ export default function Home() {
         .in('user_id', userIds);
 
       if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
+        // console.error('Error fetching profiles:', profilesError);
       }
 
       // Create a map of user_id to profile
@@ -288,7 +288,7 @@ export default function Home() {
       }
 
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      // console.error('Error fetching posts:', error);
       showToast("Failed to load posts", "error");
     } finally {
       setLoading(false);
@@ -380,7 +380,7 @@ export default function Home() {
         ));
       }
     } catch (error) {
-      console.error('Error toggling like:', error);
+      // console.error('Error toggling like:', error);
       showToast("Failed to update like. Please try again.", "error");
     }
   };
@@ -394,12 +394,12 @@ export default function Home() {
     try {
       const post = posts.find(p => p.id === postId);
       if (!post) {
-        console.error('Post not found:', postId);
+        // console.error('Post not found:', postId);
         showToast("Post not found", "error");
         return;
       }
 
-      console.log('Toggling bookmark for post:', postId, 'User ID:', user.id, 'Current state:', post.is_bookmarked);
+      // console.log('Toggling bookmark for post:', postId, 'User ID:', user.id, 'Current state:', post.is_bookmarked);
 
       if (post.is_bookmarked) {
         const { error, data } = await supabase
@@ -408,7 +408,7 @@ export default function Home() {
           .eq('post_id', postId)
           .eq('user_id', user.id);
 
-        console.log('Delete bookmark result:', { error, data });
+        // console.log('Delete bookmark result:', { error, data });
         if (error) throw error;
 
         setPosts(posts.map(p => 
@@ -417,7 +417,7 @@ export default function Home() {
             : p
         ));
         
-        console.log('Bookmark removed successfully');
+        // console.log('Bookmark removed successfully');
       } else {
         // Check if bookmark already exists to prevent duplicate key error
         const { data: existingBookmark, error: checkError } = await supabase
@@ -434,7 +434,7 @@ export default function Home() {
             .from('bookmarks')
             .insert({ post_id: postId, user_id: user.id });
 
-          console.log('Insert bookmark result:', { error, data });
+          // console.log('Insert bookmark result:', { error, data });
           if (error) throw error;
         }
 
@@ -444,10 +444,10 @@ export default function Home() {
             : p
         ));
         
-        console.log('Bookmark added successfully');
+        // console.log('Bookmark added successfully');
       }
     } catch (error) {
-      console.error('Error toggling bookmark:', error);
+      // console.error('Error toggling bookmark:', error);
       showToast(`Failed to update bookmark: ${error.message || 'Unknown error'}`, "error");
     }
   };
@@ -466,7 +466,7 @@ export default function Home() {
         await navigator.clipboard.writeText(postUrl);
       }
     } catch (error) {
-      console.error('Error sharing:', error);
+      // console.error('Error sharing:', error);
     }
   };
 
@@ -598,7 +598,7 @@ export default function Home() {
       localStorage.removeItem(CACHE_TIMESTAMP_KEY);
       fetchPosts(0);
     } catch (error) {
-      console.error('Error creating post:', error);
+      // console.error('Error creating post:', error);
       showToast("Failed to create post. Please try again.", "error");
     } finally {
       setIsPosting(false);
@@ -623,7 +623,7 @@ export default function Home() {
       localStorage.removeItem(CACHE_KEY);
       localStorage.removeItem(CACHE_TIMESTAMP_KEY);
     } catch (error) {
-      console.error('Error deleting post:', error);
+      // console.error('Error deleting post:', error);
       showToast("Failed to delete post. Please try again.", "error");
     }
   };

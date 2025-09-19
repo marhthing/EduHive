@@ -108,7 +108,7 @@ export function PostItem({
           await new Promise(resolve => setTimeout(resolve, 500));
         }
       } catch (error) {
-        console.error(`Failed to download attachment ${i + 1}:`, error);
+        // console.error(`Failed to download attachment ${i + 1}:`, error);
       }
     }
   };
@@ -355,7 +355,7 @@ export function PostItem({
         });
       } catch (error) {
         // User cancelled or error occurred
-        console.log("Share cancelled");
+        // console.log("Share cancelled");
       }
     } else {
       // Fallback: copy to clipboard

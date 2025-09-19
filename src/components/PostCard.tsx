@@ -56,7 +56,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
         });
       } catch (error) {
         // User cancelled or error occurred
-        console.log("Share cancelled");
+        // console.log("Share cancelled");
       }
     } else {
       // Fallback: copy to clipboard
@@ -83,7 +83,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
           await new Promise(resolve => setTimeout(resolve, 500));
         }
       } catch (error) {
-        console.error(`Failed to download attachment ${i + 1}:`, error);
+        // console.error(`Failed to download attachment ${i + 1}:`, error);
       }
     }
   };
@@ -316,7 +316,7 @@ export function PostCard({ post, onLike, onBookmark, onComment, initialImageInde
         <div className="mb-3">
           <div className="flex items-center gap-2 flex-wrap mb-0" style={{ display: 'flex !important', alignItems: 'center !important' }}>
             <Avatar className="w-8 h-8" style={{ flexShrink: '0 !important' }}>
-              <AvatarImage src={post.profile?.profile_pic || ""} />
+              <AvatarImage src={post.profile?.profile_pic || undefined} />
               <AvatarFallback>
                 {post.profile?.username?.charAt(0).toUpperCase() || "U"}
               </AvatarFallback>

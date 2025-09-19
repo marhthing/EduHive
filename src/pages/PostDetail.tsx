@@ -102,7 +102,7 @@ export default function PostDetail() {
         if (error) throw error;
         setCurrentUserProfile(profileData);
       } catch (error) {
-        console.error('Error fetching current user profile:', error);
+        // console.error('Error fetching current user profile:', error);
       }
     };
 
@@ -175,7 +175,7 @@ export default function PostDetail() {
         is_bookmarked: userBookmarked,
       });
     } catch (error) {
-      console.error('Error fetching post:', error);
+      // console.error('Error fetching post:', error);
       toast({
         title: "Error",
         description: "Failed to load post",
@@ -277,7 +277,7 @@ export default function PostDetail() {
 
       setComments(topLevelComments);
     } catch (error) {
-      console.error('Error fetching comments:', error);
+      // console.error('Error fetching comments:', error);
       toast({
         title: "Error",
         description: "Failed to load comments",
@@ -306,11 +306,11 @@ export default function PostDetail() {
 
       if (commentError) throw commentError;
 
-      console.log('Comment created successfully:', commentData);
+      // console.log('Comment created successfully:', commentData);
 
       // Create mention notifications
       if (commentMentions.length > 0 && commentData?.id) {
-        console.log('Comment mentions:', commentMentions);
+        // console.log('Comment mentions:', commentMentions);
         await createMentionNotifications(commentMentions, user.id, postId, commentData.id);
       }
 
@@ -325,7 +325,7 @@ export default function PostDetail() {
       setCommentMentions([]);
 
       if (commentMentions.some(mention => mention.username === 'eduhive')) {
-        console.log('Creating AI bot response comment...');
+        // console.log('Creating AI bot response comment...');
         try {
           // Parse the original comment to understand what the user asked
           const botRequest = parseAIBotMention(originalCommentText);
@@ -360,13 +360,13 @@ export default function PostDetail() {
               });
 
             if (aiBotCommentError) {
-              console.error('Error creating AI bot comment:', aiBotCommentError);
+              // console.error('Error creating AI bot comment:', aiBotCommentError);
             } else {
-              console.log('AI bot comment created successfully');
+              // console.log('AI bot comment created successfully');
             }
           }
         } catch (error) {
-          console.error('Error creating AI bot comment:', error);
+          // console.error('Error creating AI bot comment:', error);
         }
       }
 
@@ -374,7 +374,7 @@ export default function PostDetail() {
       await fetchComments();
 
     } catch (error) {
-      console.error('Error submitting comment:', error);
+      // console.error('Error submitting comment:', error);
       toast({
         title: "Error",
         description: "Failed to add comment. Please try again.",
@@ -453,11 +453,11 @@ export default function PostDetail() {
 
       if (replyError) throw replyError;
 
-      console.log('Reply created successfully:', replyData);
+      // console.log('Reply created successfully:', replyData);
 
       // Create mention notifications for replies using the new reply's ID
       if (replyMentions.length > 0 && replyData?.id) {
-        console.log('Reply mentions:', replyMentions);
+        // console.log('Reply mentions:', replyMentions);
         await createMentionNotifications(replyMentions, user.id, postId, replyData.id);
       }
 
@@ -470,7 +470,7 @@ export default function PostDetail() {
       });
       fetchComments();
     } catch (error) {
-      console.error('Error submitting reply:', error);
+      // console.error('Error submitting reply:', error);
       toast({
         title: "Error",
         description: "Failed to add reply. Please try again.",
@@ -513,7 +513,7 @@ export default function PostDetail() {
         });
       }
     } catch (error) {
-      console.error('Error toggling like:', error);
+      // console.error('Error toggling like:', error);
       toast({
         title: "Error",
         description: "Failed to update like. Please try again.",
@@ -552,7 +552,7 @@ export default function PostDetail() {
         });
       }
     } catch (error) {
-      console.error('Error toggling bookmark:', error);
+      // console.error('Error toggling bookmark:', error);
       toast({
         title: "Error",
         description: "Failed to update bookmark. Please try again.",
@@ -581,7 +581,7 @@ export default function PostDetail() {
         });
       }
     } catch (error) {
-      console.error('Error sharing:', error);
+      // console.error('Error sharing:', error);
     }
   };
 
@@ -612,7 +612,7 @@ export default function PostDetail() {
 
       fetchComments();
     } catch (error) {
-      console.error('Error toggling comment like:', error);
+      // console.error('Error toggling comment like:', error);
       toast({
         title: "Error",
         description: "Failed to update like. Please try again.",
@@ -645,7 +645,7 @@ export default function PostDetail() {
 
       fetchComments();
     } catch (error) {
-      console.error('Error deleting comment:', error);
+      // console.error('Error deleting comment:', error);
       toast({
         title: "Error",
         description: "Failed to delete comment. Please try again.",
@@ -666,7 +666,7 @@ export default function PostDetail() {
         description: "Thank you for reporting. We'll review this comment.",
       });
     } catch (error) {
-      console.error('Error reporting comment:', error);
+      // console.error('Error reporting comment:', error);
       toast({
         title: "Error",
         description: "Failed to report comment. Please try again.",
@@ -699,7 +699,7 @@ export default function PostDetail() {
       // Navigate back to home after deleting
       navigate('/home');
     } catch (error) {
-      console.error('Error deleting post:', error);
+      // console.error('Error deleting post:', error);
       toast({
         title: "Error",
         description: "Failed to delete post. Please try again.",
@@ -1172,7 +1172,7 @@ export default function PostDetail() {
                           await new Promise(resolve => setTimeout(resolve, 500));
                         }
                       } catch (error) {
-                        console.error(`Failed to download attachment ${i + 1}:`, error);
+                        // console.error(`Failed to download attachment ${i + 1}:`, error);
                       }
                     }
                   }}

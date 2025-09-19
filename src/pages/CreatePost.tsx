@@ -212,7 +212,7 @@ export default function CreatePost() {
 
       if (postError) throw postError;
 
-      console.log('Post created successfully:', postData);
+      // console.log('Post created successfully:', postData);
 
       // Create mention notifications
       if (mentions.length > 0 && postData?.id) {
@@ -223,7 +223,7 @@ export default function CreatePost() {
 
       navigate('/home');
     } catch (error: any) {
-      console.error('Error creating post:', error);
+      // console.error('Error creating post:', error);
       showToast(error.message || "Failed to create post. Please try again.", "error");
     } finally {
       setLoading(false);

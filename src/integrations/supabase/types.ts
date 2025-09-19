@@ -419,6 +419,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      deactivate_account: {
+        Args: {
+          target_user_id: string
+        }
+        Returns: undefined
+      }
       reactivate_account: {
         Args: {
           target_user_id: string
