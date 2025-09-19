@@ -1261,7 +1261,7 @@ export default function PostDetail() {
                   className="h-10 w-10 flex-shrink-0 cursor-pointer"
                   onClick={() => comment.profile?.username && navigate(`/profile/${comment.profile.username}`)}
                 >
-                  <AvatarImage src={comment.profile?.profile_pic || undefined} />
+                  <AvatarImage src={comment.profile?.profile_pic || (comment.user_id === user?.id ? (user?.user_metadata?.avatar_url || user?.user_metadata?.profile_pic) : undefined)} />
                   <AvatarFallback>
                     {comment.profile?.username?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
@@ -1397,7 +1397,7 @@ export default function PostDetail() {
                             className="h-8 w-8 flex-shrink-0 cursor-pointer"
                             onClick={() => reply.profile?.username && navigate(`/profile/${reply.profile.username}`)}
                           >
-                            <AvatarImage src={reply.profile?.profile_pic || undefined} />
+                            <AvatarImage src={reply.profile?.profile_pic || (reply.user_id === user?.id ? (user?.user_metadata?.avatar_url || user?.user_metadata?.profile_pic) : undefined)} />
                             <AvatarFallback>
                               {reply.profile?.username?.[0]?.toUpperCase() || 'U'}
                             </AvatarFallback>
