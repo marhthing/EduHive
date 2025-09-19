@@ -33,13 +33,13 @@ export const processAIBotMention = async (request: AIBotRequest): Promise<string
     let userPrompt = "";
 
     if (request.type === 'explain' && request.postContent) {
-      systemPrompt = `You are EduHive Assistant. Be extremely concise - maximum 3-4 sentences total. Get straight to the key point without verbose explanations. Don't mention "image" or describe file types. Start with "🤖" and summarize the core concept only.`;
+      systemPrompt = `You are EduHive Assistant. Be extremely concise - maximum 3-4 sentences total. Explain the actual content and concepts clearly. Do NOT use any markdown formatting like asterisks, bold, italics, or special characters. Use plain text only. Don't mention "image" or describe file types. Start with "🤖" and explain what the content is about.`;
 
-      userPrompt = `Explain briefly: "${request.postContent}"`;
+      userPrompt = `Explain what this content is about: "${request.postContent}"`;
 
       // If there are attachments, just analyze them without mentioning they're images
       if (request.attachments && request.attachments.length > 0) {
-        userPrompt += `\n\nSummarize the main concept shown in 2-3 sentences max.`;
+        userPrompt += `\n\nExplain the main concept in plain text, no formatting.`;
       }
 
       // Handle image analysis if there are image attachments
@@ -53,7 +53,7 @@ export const processAIBotMention = async (request: AIBotRequest): Promise<string
           const messageContent = [
             {
               type: "text",
-              text: `${userPrompt}\n\nBe extremely brief - 2-3 sentences max. Focus only on the main concept.`
+              text: `${userPrompt}\n\nBe extremely brief - 2-3 sentences max. Explain the concept clearly in plain text with no markdown formatting or special characters.`
             }
           ];
 
