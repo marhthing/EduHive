@@ -19,9 +19,27 @@ const groq = new Groq({
   dangerouslyAllowBrowser: true // Only for development - move to server-side for production
 });
 
+// Simple in-memory cache for AI responses
+const responseCache = new Map<string, { response: string, timestamp: number }>();
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
 export const processAIBotMention = async (request: AIBotRequest): Promise<string> => {
   try {
     console.log('Processing AI bot request:', request);
+
+    // Create cache key from request
+    const cacheKey = JSON.stringify({
+      type: request.type,
+      content: request.postContent?.substring(0, 200), // First 200 chars
+      question: request.userQuestion?.substring(0, 200)
+    });
+
+    // Check cache first
+    const cached = responseCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+      console.log('Returning cached response');
+      return cached.response;
+    }
 
     // Check if we have Groq API key
     const apiKey = import.meta.env.VITE_GROQ_API_KEY || "gsk_your_api_key_here";
@@ -129,6 +147,12 @@ Please provide a helpful, educational response.`;
     if (!aiResponse) {
       throw new Error('No response from AI');
     }
+
+    // Cache successful responses
+    responseCache.set(cacheKey, {
+      response: aiResponse,
+      timestamp: Date.now()
+    });
 
     return aiResponse;
 
