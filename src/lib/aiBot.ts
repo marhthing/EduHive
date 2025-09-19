@@ -80,19 +80,15 @@ Once the API key is configured, I'll be able to provide detailed explanations an
           });
           
           const visionResponse = await groq.chat.completions.create({
-            model: "llama-3.2-90b-vision-preview",
+            model: "meta-llama/llama-4-scout-17b-16e-instruct",
             messages: [
-              {
-                role: "system",
-                content: "You are EduHive Assistant. Give direct, concise responses like Groq's Twitter bot. Analyze ALL images provided and be specific about what you see. Don't be overly verbose - be helpful but brief."
-              },
               {
                 role: "user", 
                 content: messageContent
               }
             ],
             temperature: 0.7,
-            max_tokens: 500
+            max_completion_tokens: 500
           });
 
           return visionResponse.choices[0]?.message?.content || "I had trouble analyzing the content. Please try again!";
@@ -125,7 +121,7 @@ Please provide a helpful, educational response.`;
 
     // Make the API call to Groq
     const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile", // Updated recommended model
+      model: "llama-3.3-70b-versatile",
       messages: [
         {
           role: "system",
@@ -137,7 +133,7 @@ Please provide a helpful, educational response.`;
         }
       ],
       temperature: 0.7,
-      max_tokens: 800
+      max_completion_tokens: 800
     });
 
     const aiResponse = response.choices[0]?.message?.content;
