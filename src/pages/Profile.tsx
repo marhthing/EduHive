@@ -96,9 +96,27 @@ export default function Profile() {
         // Special handling for AI bot profile
         if (username === 'eduhive') {
           setProfile(AI_BOT_PROFILE as any);
-          setFollowersCount(0);
-          setFollowingCount(0);
-          setIsFollowing(false);
+          
+          // Get actual follower count for AI bot
+          const { count: aiBotFollowersCount } = await supabase
+            .from("follows")
+            .select("*", { count: "exact", head: true })
+            .eq("following_id", AI_BOT_PROFILE.user_id);
+
+          setFollowersCount(aiBotFollowersCount || 0);
+          setFollowingCount(0); // AI bot doesn't follow anyone
+          
+          // Check if current user is following the AI bot
+          if (currentUser) {
+            const { data: followData } = await supabase
+              .from("follows")
+              .select("id")
+              .eq("follower_id", currentUser.id)
+              .eq("following_id", AI_BOT_PROFILE.user_id)
+              .single();
+
+            setIsFollowing(!!followData);
+          }
           return;
         }
 
@@ -463,6 +481,9 @@ export default function Profile() {
 
   const handleFollowToggle = async () => {
     if (!currentUser || followingUser) return;
+    
+    // Don't allow AI bot to follow/unfollow (but allow users to follow AI bot)
+    if (currentUser.id === AI_BOT_USER_ID) return;
 
     setFollowingUser(true);
     try {
