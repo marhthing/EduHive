@@ -314,9 +314,22 @@ export default function PostDetail() {
         if (commentMentions.some(mention => mention.username === 'eduhive')) {
           console.log('Creating AI bot response comment...');
           try {
+            // Parse post attachments if they exist
+            let attachments = [];
+            if (post?.attachment_url) {
+              try {
+                const parsed = JSON.parse(post.attachment_url);
+                attachments = Array.isArray(parsed) ? parsed : [{url: post.attachment_url, type: post.attachment_type}];
+              } catch {
+                attachments = [{url: post.attachment_url, type: post.attachment_type}];
+              }
+            }
+
             const aiRequest: AIBotRequest = {
               type: 'explain',
               postContent: post?.body || '',
+              context: `Post by ${post?.profile?.username || 'Anonymous'}`,
+              attachments: attachments
             };
 
             const aiResponse = await processAIBotMention(aiRequest);
