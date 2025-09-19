@@ -68,9 +68,9 @@ export const processAIBotMention = async (request: AIBotRequest): Promise<string
           console.log(`Using Groq Vision to analyze ${imageAttachments.length} image(s)`);
           
           // Build content array with text and all images
-          const messageContent = [
+          const messageContent: any[] = [
             {
-              type: "text",
+              type: "text" as const,
               text: `${userPrompt}\n\nProvide a thorough educational explanation in 4-6 sentences. Focus on the actual concepts, formulas, and principles. Use plain text with no markdown formatting or special characters.`
             }
           ];
@@ -78,7 +78,7 @@ export const processAIBotMention = async (request: AIBotRequest): Promise<string
           // Add all images to the message
           imageAttachments.forEach((attachment, index) => {
             messageContent.push({
-              type: "image_url",
+              type: "image_url" as const,
               image_url: {
                 url: attachment.url
               }
@@ -86,15 +86,15 @@ export const processAIBotMention = async (request: AIBotRequest): Promise<string
           });
           
           const visionResponse = await groq.chat.completions.create({
-            model: "meta-llama/llama-4-scout-17b-16e-instruct",
+            model: "llama-3.2-90b-vision-preview",
             messages: [
               {
                 role: "user", 
-                content: messageContent
+                content: messageContent as any
               }
             ],
             temperature: 0.7,
-            max_completion_tokens: 250
+            max_tokens: 250
           });
 
           return visionResponse.choices[0]?.message?.content || "I had trouble analyzing the content. Please try again!";
@@ -257,12 +257,79 @@ export const parseAIBotMention = (text: string): AIBotRequest | null => {
   console.log('Found @eduhive mention:', mentionMatch);
   const command = mentionMatch[1].toLowerCase().trim();
   
-  // Check for explain command or questions about post content
-  if (command.includes('explain') || command.includes('content') || command === '' || 
-      command.includes('post about') || command.includes('what is') || command.includes('about')) {
+  // If empty mention, explain the post
+  if (command === '') {
     return { type: 'explain' };
   }
   
-  // Everything else is treated as a question
+  // Smart detection of post/image analysis requests
+  // These patterns clearly indicate the user wants to analyze the current post/image content
+  const postAnalysisPatterns = [
+    /^(explain|what is)\s+(in\s+)?(this\s+)?(post|image|picture|photo|content|attachment)/i,
+    /^(what|explain)\s+(is\s+)?(shown|displayed|in)\s+(this|the)\s+(post|image|picture|photo)/i,
+    /^(is\s+)?(this|what.*)\s+(correct|true|right|accurate)/i,
+    /^(analyze|check|verify)\s+(this|the)/i,
+    /^(what|can you)\s+(do you\s+)?see\s+(in|here)/i,
+    /^(describe|tell me about)\s+(this|what.s)/i,
+    /^(help|explain)\s+me\s+(understand|with)\s+(this|what.s)/i
+  ];
+  
+  // Check if it's clearly asking about the post/image content
+  const isPostAnalysis = postAnalysisPatterns.some(pattern => pattern.test(command));
+  
+  if (isPostAnalysis) {
+    console.log('Detected post analysis request:', command);
+    return { type: 'explain' };
+  }
+  
+  // Smart detection of direct educational questions
+  // These patterns indicate the user is asking a direct educational question, not about the post
+  const directQuestionPatterns = [
+    /^(what is|define|explain)\s+[a-zA-Z]+(\s+[a-zA-Z]+)*\??$/i, // "what is taylor series?", "explain photosynthesis"
+    /^(how (does|do|can|to)|why (does|do|is|are))\s+/i, // "how does integration work?", "why is gravity important?"
+    /^(can you (explain|tell me|help))\s+[a-zA-Z]/i, // "can you explain calculus?"
+    /^(tell me about|explain to me)\s+[a-zA-Z]/i, // "tell me about quantum physics"
+    /^(what are|what.s the)\s+[a-zA-Z]/i, // "what are derivatives?"
+    /^(give me|provide)\s+(an explanation|definition|example)/i, // "give me an explanation of..."
+  ];
+  
+  // Check if it's clearly a direct educational question
+  const isDirectQuestion = directQuestionPatterns.some(pattern => pattern.test(command));
+  
+  if (isDirectQuestion) {
+    console.log('Detected direct educational question:', command);
+    return { type: 'question', userQuestion: mentionMatch[1] };
+  }
+  
+  // For ambiguous cases, use context clues:
+  // If the question mentions specific academic terms/concepts, treat as direct question
+  const academicTerms = [
+    'taylor series', 'integration', 'derivative', 'calculus', 'algebra', 'geometry', 'trigonometry',
+    'physics', 'chemistry', 'biology', 'photosynthesis', 'mitosis', 'DNA', 'RNA', 'gravity',
+    'velocity', 'acceleration', 'momentum', 'energy', 'thermodynamics', 'quantum', 'atomic',
+    'molecule', 'equation', 'formula', 'theorem', 'proof', 'hypothesis', 'theory',
+    'probability', 'statistics', 'matrix', 'vector', 'function', 'logarithm', 'exponential'
+  ];
+  
+  const containsAcademicTerms = academicTerms.some(term => 
+    command.includes(term.toLowerCase())
+  );
+  
+  if (containsAcademicTerms) {
+    console.log('Contains academic terms, treating as direct question:', command);
+    return { type: 'question', userQuestion: mentionMatch[1] };
+  }
+  
+  // Default: if still unclear, check for specific phrases that suggest post analysis
+  const postRelatedWords = ['this', 'here', 'shown', 'displayed', 'above', 'below', 'image', 'picture', 'photo'];
+  const hasPostRelatedWords = postRelatedWords.some(word => command.includes(word));
+  
+  if (hasPostRelatedWords) {
+    console.log('Contains post-related words, treating as explain request:', command);
+    return { type: 'explain' };
+  }
+  
+  // Final fallback: treat as direct question
+  console.log('Defaulting to direct question:', command);
   return { type: 'question', userQuestion: mentionMatch[1] };
 };
