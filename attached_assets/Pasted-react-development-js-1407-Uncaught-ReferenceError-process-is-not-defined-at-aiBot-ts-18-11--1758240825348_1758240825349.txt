@@ -1,0 +1,29 @@
+react.development.js:1407 
+ Uncaught ReferenceError: process is not defined
+    at aiBot.ts:18:11
+react-dom.development.js:18704 
+ The above error occurred in one of your React components:
+
+    at Lazy
+    at RenderedRoute (https://0f7d295d-dac5-4983-b85c-d1c315630767-00-32rio04w4bgnc.worf.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=5ba356f7:4088:5)
+    at Routes (https://0f7d295d-dac5-4983-b85c-d1c315630767-00-32rio04w4bgnc.worf.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=5ba356f7:4558:5)
+    at Suspense
+    at Router (https://0f7d295d-dac5-4983-b85c-d1c315630767-00-32rio04w4bgnc.worf.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=5ba356f7:4501:15)
+    at BrowserRouter (https://0f7d295d-dac5-4983-b85c-d1c315630767-00-32rio04w4bgnc.worf.replit.dev/node_modules/.vite/deps/react-router-dom.js?v=5ba356f7:5247:5)
+    at TwitterToastProvider (https://0f7d295d-dac5-4983-b85c-d1c315630767-00-32rio04w4bgnc.worf.replit.dev/src/components/ui/twitter-toast.tsx:12:40)
+    at Provider (https://0f7d295d-dac5-4983-b85c-d1c315630767-00-32rio04w4bgnc.worf.replit.dev/node_modules/.vite/deps/chunk-7ZKHW5FC.js?v=5ba356f7:38:15)
+    at TooltipProvider (https://0f7d295d-dac5-4983-b85c-d1c315630767-00-32rio04w4bgnc.worf.replit.dev/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=5ba356f7:61:5)
+    at AuthProvider (https://0f7d295d-dac5-4983-b85c-d1c315630767-00-32rio04w4bgnc.worf.replit.dev/src/contexts/AuthContext.tsx:12:32)
+    at V (https://0f7d295d-dac5-4983-b85c-d1c315630767-00-32rio04w4bgnc.worf.replit.dev/node_modules/.vite/deps/next-themes.js?v=5ba356f7:44:25)
+    at J (https://0f7d295d-dac5-4983-b85c-d1c315630767-00-32rio04w4bgnc.worf.replit.dev/node_modules/.vite/deps/next-themes.js?v=5ba356f7:42:18)
+    at ThemeProvider (https://0f7d295d-dac5-4983-b85c-d1c315630767-00-32rio04w4bgnc.worf.replit.dev/src/components/ThemeProvider.tsx:3:33)
+    at QueryClientProvider (https://0f7d295d-dac5-4983-b85c-d1c315630767-00-32rio04w4bgnc.worf.replit.dev/node_modules/.vite/deps/@tanstack_react-query.js?v=5ba356f7:3081:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+react-dom.development.js:26962 
+ Uncaught ReferenceError: process is not defined
+    at aiBot.ts:18:11
+﻿
+
