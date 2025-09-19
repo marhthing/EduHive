@@ -651,7 +651,7 @@ export default function Profile() {
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-6">
             <Avatar className="w-24 h-24 mx-auto md:mx-0">
-              <AvatarImage src={profile.profile_pic || ""} />
+              <AvatarImage src={profile.profile_pic || (profile.user_id === currentUser?.id ? (currentUser?.user_metadata?.avatar_url || currentUser?.user_metadata?.profile_pic) : undefined)} />
               <AvatarFallback className="text-2xl">
                 {profile.username.charAt(0).toUpperCase()}
               </AvatarFallback>
