@@ -385,6 +385,55 @@ export default function PostDetail() {
     }
   };
 
+  // Function to handle reply button click with auto-mention (Twitter-like behavior)
+  const handleReplyClick = (commentId: string, directReplyAuthor: any, parentComment?: any) => {
+    if (replyingTo === commentId) {
+      // If already replying to this comment, close the reply form
+      setReplyingTo(null);
+      setReplyText("");
+      setReplyMentions([]);
+      return;
+    }
+
+    // Set the reply target
+    setReplyingTo(commentId);
+
+    // Auto-populate mentions based on context
+    const mentionsToAdd = new Set<string>();
+    const mentionUsers: any[] = [];
+
+    // Always mention the direct person being replied to
+    if (directReplyAuthor?.username && directReplyAuthor.username !== user?.user_metadata?.username) {
+      mentionsToAdd.add(directReplyAuthor.username);
+      mentionUsers.push({
+        id: directReplyAuthor.user_id || directReplyAuthor.id,
+        username: directReplyAuthor.username,
+        name: directReplyAuthor.name || directReplyAuthor.username,
+        profile_pic: directReplyAuthor.profile_pic
+      });
+    }
+
+    // If this is a nested reply, also mention the parent comment author
+    if (parentComment?.profile?.username && 
+        parentComment.profile.username !== user?.user_metadata?.username &&
+        parentComment.profile.username !== directReplyAuthor?.username) {
+      mentionsToAdd.add(parentComment.profile.username);
+      mentionUsers.push({
+        id: parentComment.profile.user_id || parentComment.profile.id,
+        username: parentComment.profile.username,
+        name: parentComment.profile.name || parentComment.profile.username,
+        profile_pic: parentComment.profile.profile_pic
+      });
+    }
+
+    // Create the auto-populated text with mentions
+    const autoMentions = Array.from(mentionsToAdd).map(username => `@${username}`).join(' ');
+    const initialText = autoMentions ? `${autoMentions} ` : '';
+
+    setReplyText(initialText);
+    setReplyMentions(mentionUsers);
+  };
+
   const handleSubmitReply = async (parentCommentId: string) => {
     if (!user || !postId || !replyText.trim()) return;
 
@@ -1281,7 +1330,7 @@ export default function PostDetail() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                      onClick={() => handleReplyClick(comment.id, comment.profile)}
                       className="text-muted-foreground hover:text-blue-500 p-1 h-auto flex items-center gap-1"
                     >
                       <Reply className="h-4 w-4" />
@@ -1417,7 +1466,7 @@ export default function PostDetail() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}
+                                onClick={() => handleReplyClick(reply.id, reply.profile, comment)}
                                 className="text-muted-foreground hover:text-blue-500 p-1 h-auto flex items-center gap-1"
                               >
                                 <Reply className="h-3 w-3" />
