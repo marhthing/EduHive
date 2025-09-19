@@ -15,7 +15,7 @@ export interface AIBotRequest {
 
 // Initialize Groq client
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || "gsk_your_api_key_here", // You'll need to add this to your environment
+  apiKey: import.meta.env.VITE_GROQ_API_KEY || "gsk_your_api_key_here", // You'll need to add this to your environment
   dangerouslyAllowBrowser: true // Only for development - move to server-side for production
 });
 
@@ -24,7 +24,7 @@ export const processAIBotMention = async (request: AIBotRequest): Promise<string
     console.log('Processing AI bot request:', request);
 
     // Check if we have Groq API key
-    const apiKey = process.env.GROQ_API_KEY || "gsk_your_api_key_here";
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY || "gsk_your_api_key_here";
     if (!apiKey || apiKey === "gsk_your_api_key_here") {
       return `🤖 Hi! I'm EduHive Assistant. I'd love to help analyze this content, but I need an API key to be configured. Please contact the administrators to enable full AI features.
 

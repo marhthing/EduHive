@@ -1384,17 +1384,79 @@ export default function PostDetail() {
                               className="text-foreground whitespace-pre-wrap text-sm mb-2 block" 
                             />
 
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleCommentLike(reply.id)}
-                              className={`flex items-center gap-1 hover:bg-red-500/10 rounded-full p-1 h-auto transition-colors ${
-                                reply.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
-                              }`}
-                            >
-                              <Heart className={`h-3 w-3 ${reply.is_liked ? 'fill-current text-red-500' : ''}`} />
-                              <span className="text-xs">{reply.likes_count}</span>
-                            </Button>
+                            <div className="flex items-center gap-4">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCommentLike(reply.id)}
+                                className={`flex items-center gap-1 hover:bg-red-500/10 rounded-full p-1 h-auto transition-colors ${
+                                  reply.is_liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500'
+                                }`}
+                              >
+                                <Heart className={`h-3 w-3 ${reply.is_liked ? 'fill-current text-red-500' : ''}`} />
+                                <span className="text-xs">{reply.likes_count}</span>
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}
+                                className="text-muted-foreground hover:text-blue-500 p-1 h-auto flex items-center gap-1"
+                              >
+                                <Reply className="h-3 w-3" />
+                                <span className="text-xs">Reply</span>
+                              </Button>
+                            </div>
+
+                            {/* Reply Form for child comments */}
+                            {replyingTo === reply.id && user && (
+                              <div className="mt-3 pl-4 border-l-2 border-border">
+                                <div className="flex gap-3">
+                                  <Avatar className="h-6 w-6 flex-shrink-0">
+                                    <AvatarImage src={user.user_metadata?.avatar_url} />
+                                    <AvatarFallback className="text-xs">
+                                      {user.user_metadata?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
+                                    </AvatarFallback>
+                                  </Avatar>
+
+                                  <div className="flex-1">
+                                    <MentionInput
+                                      value={replyText}
+                                      onChange={(value, mentions) => {
+                                        setReplyText(value);
+                                        setReplyMentions(mentions);
+                                      }}
+                                      placeholder={`Reply to ${reply.profile?.username || 'Anonymous'}...`}
+                                      className="min-h-[60px] resize-none border-none text-sm placeholder:text-muted-foreground focus-visible:ring-0 p-0 mb-2"
+                                      disabled={submitting}
+                                      allowAIBot={false}
+                                    />
+
+                                    <div className="flex gap-2 justify-end">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          setReplyingTo(null);
+                                          setReplyText("");
+                                          setReplyMentions([]);
+                                        }}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        onClick={() => handleSubmitReply(comment.id)}
+                                        disabled={!replyText.trim() || submitting}
+                                        size="sm"
+                                        className="rounded-full px-4"
+                                      >
+                                        {submitting ? "Replying..." : "Reply"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
