@@ -70,9 +70,10 @@ Always start your response with "🤖 Hi! I'm EduHive Assistant." and end with a
         try {
           // Use Groq's vision model to analyze the first image
           const imageUrl = imageAttachments[0].url;
+          console.log('Using Groq Vision to analyze image:', imageUrl);
           
           const visionResponse = await groq.chat.completions.create({
-            model: "llama-4-scout",
+            model: "meta-llama/llama-4-scout-17b-16e-instruct",
             messages: [
               {
                 role: "system",
