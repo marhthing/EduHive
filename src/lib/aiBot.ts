@@ -37,30 +37,21 @@ Once the API key is configured, I'll be able to provide detailed explanations an
     let userPrompt = "";
 
     if (request.type === 'explain' && request.postContent) {
-      systemPrompt = `You are EduHive Assistant, a helpful AI tutor for educational content. Your role is to:
-1. Analyze educational posts and explain them in a clear, student-friendly way
-2. Break down complex concepts into understandable parts
-3. Provide additional context and examples when helpful
-4. Encourage learning and ask follow-up questions
-5. Be enthusiastic and supportive
+      systemPrompt = `You are EduHive Assistant. Give direct, concise responses like Groq's Twitter bot. Be helpful but brief. Analyze content and images specifically. Start with "🤖" but keep responses focused and to the point.`;
 
-Always start your response with "🤖 Hi! I'm EduHive Assistant." and end with an encouraging message about learning.`;
-
-      userPrompt = `Please explain this educational post content in detail:
-
-"${request.postContent}"`;
+      userPrompt = `Explain this post: "${request.postContent}"`;
 
       // If there are attachments, mention them
       if (request.attachments && request.attachments.length > 0) {
-        userPrompt += `\n\nThis post also includes ${request.attachments.length} attachment(s):`;
-        request.attachments.forEach((attachment, index) => {
-          if (attachment.type?.startsWith('image/')) {
-            userPrompt += `\n- Image ${index + 1}: ${attachment.name || 'Image file'}`;
-          } else {
-            userPrompt += `\n- Document ${index + 1}: ${attachment.name || 'File'} (${attachment.type})`;
-          }
-        });
-        userPrompt += `\n\nPlease analyze both the text content and reference the attachments in your explanation.`;
+        const imageCount = request.attachments.filter(att => att.type?.startsWith('image/')).length;
+        const docCount = request.attachments.length - imageCount;
+        
+        if (imageCount > 0) {
+          userPrompt += `\n\nAnalyze the ${imageCount} image(s) and explain what you see in relation to the text.`;
+        }
+        if (docCount > 0) {
+          userPrompt += `\n\nAlso reference the ${docCount} document(s) provided.`;
+        }
       }
 
       // Handle image analysis if there are image attachments
@@ -68,35 +59,40 @@ Always start your response with "🤖 Hi! I'm EduHive Assistant." and end with a
         const imageAttachments = request.attachments.filter(att => att.type?.startsWith('image/'));
         
         try {
-          // Use Groq's vision model to analyze the first image
-          const imageUrl = imageAttachments[0].url;
-          console.log('Using Groq Vision to analyze image:', imageUrl);
+          console.log(`Using Groq Vision to analyze ${imageAttachments.length} image(s)`);
+          
+          // Build content array with text and all images
+          const messageContent = [
+            {
+              type: "text",
+              text: `${userPrompt}\n\nAnalyze ALL ${imageAttachments.length} images and provide a direct, concise explanation. Be specific about what you see in each image.`
+            }
+          ];
+
+          // Add all images to the message
+          imageAttachments.forEach((attachment, index) => {
+            messageContent.push({
+              type: "image_url",
+              image_url: {
+                url: attachment.url
+              }
+            });
+          });
           
           const visionResponse = await groq.chat.completions.create({
-            model: "meta-llama/llama-4-scout-17b-16e-instruct",
+            model: "llama-3.2-90b-vision-preview",
             messages: [
               {
                 role: "system",
-                content: systemPrompt
+                content: "You are EduHive Assistant. Give direct, concise responses like Groq's Twitter bot. Analyze ALL images provided and be specific about what you see. Don't be overly verbose - be helpful but brief."
               },
               {
                 role: "user", 
-                content: [
-                  {
-                    type: "text",
-                    text: userPrompt + "\n\nPlease also analyze this image and incorporate it into your explanation:"
-                  },
-                  {
-                    type: "image_url",
-                    image_url: {
-                      url: imageUrl
-                    }
-                  }
-                ]
+                content: messageContent
               }
             ],
             temperature: 0.7,
-            max_tokens: 1000
+            max_tokens: 500
           });
 
           return visionResponse.choices[0]?.message?.content || "I had trouble analyzing the content. Please try again!";
