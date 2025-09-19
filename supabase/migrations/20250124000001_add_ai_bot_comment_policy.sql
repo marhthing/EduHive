@@ -41,6 +41,10 @@ INSERT INTO auth.users (
   ''
 ) ON CONFLICT (id) DO NOTHING;
 
+-- Drop existing AI bot policies if they exist
+DROP POLICY IF EXISTS "AI bot can create comments" ON comments;
+DROP POLICY IF EXISTS "AI bot can view its own comments" ON comments;
+
 -- Create policy to allow AI bot to insert comments
 CREATE POLICY "AI bot can create comments" ON comments
 FOR INSERT WITH CHECK (user_id = '00000000-0000-4000-8000-000000000001'::uuid);
