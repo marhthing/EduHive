@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 
 interface Profile {
@@ -44,6 +45,7 @@ const ACADEMIC_YEAR_REVERSE_MAPPING = Object.fromEntries(
 export default function Settings() {
   const navigate = useNavigate();
   const { showToast } = useTwitterToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -351,7 +353,7 @@ export default function Settings() {
           <div className="flex flex-col items-center space-y-4">
             <div className="relative">
               <Avatar className="w-24 h-24">
-                <AvatarImage src={profile.profile_pic || ""} />
+                <AvatarImage src={profile.profile_pic || user?.user_metadata?.avatar_url || user?.user_metadata?.profile_pic || undefined} />
                 <AvatarFallback className="text-2xl">
                   {profile.username.charAt(0).toUpperCase()}
                 </AvatarFallback>

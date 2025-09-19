@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { MentionText } from "@/components/MentionText";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Profile {
   username: string;
@@ -75,6 +76,7 @@ export function PostItem({
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
   // Use currentUserId prop for user authentication check
 
   const handleProfileClick = (e: React.MouseEvent) => {
@@ -375,7 +377,7 @@ export function PostItem({
           className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={handleProfileClick}
         >
-          <AvatarImage src={post.profile?.profile_pic || undefined} />
+          <AvatarImage src={post.profile?.profile_pic || (post.user_id === user?.id ? user?.user_metadata?.avatar_url || user?.user_metadata?.profile_pic : undefined)} />
           <AvatarFallback className="text-xs md:text-sm">
             {post.profile?.username?.[0]?.toUpperCase() || 'U'}
           </AvatarFallback>

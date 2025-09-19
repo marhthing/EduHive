@@ -754,7 +754,7 @@ export default function PostDetail() {
             className="h-12 w-12 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => post.profile?.username && navigate(`/profile/${post.profile.username}`)}
           >
-            <AvatarImage src={post.profile?.profile_pic || undefined} />
+            <AvatarImage src={post.profile?.profile_pic || (post.user_id === user?.id ? user?.user_metadata?.avatar_url || user?.user_metadata?.profile_pic : undefined)} />
             <AvatarFallback>
               {post.profile?.username?.[0]?.toUpperCase() || 'U'}
             </AvatarFallback>
