@@ -310,27 +310,36 @@ export default function PostDetail() {
         description: "Comment added successfully",
       });
 
-      // If AI bot was mentioned, also create a comment from the AI bot
-      if (aiResponse) {
-        console.log('Creating AI bot response comment...');
-        try {
-          const { error: aiBotCommentError } = await supabase
-            .from('comments')
-            .insert({
-              body: aiResponse,
-              post_id: postId,
-              user_id: AI_BOT_USER_ID,
-            });
+      // Check if AI bot was mentioned and create response
+        if (commentMentions.some(mention => mention.username === 'eduhive')) {
+          console.log('Creating AI bot response comment...');
+          try {
+            const aiRequest: AIBotRequest = {
+              type: 'explain',
+              postContent: post?.body || '',
+            };
 
-          if (aiBotCommentError) {
-            console.error('Error creating AI bot comment:', aiBotCommentError);
-          } else {
-            console.log('AI bot comment created successfully');
+            const aiResponse = await processAIBotMention(aiRequest);
+
+            // Create AI bot reply to the comment that mentioned it
+            const { data: aiBotComment, error: aiBotCommentError } = await supabase
+              .from('comments')
+              .insert({
+                body: aiResponse,
+                post_id: postId,
+                user_id: AI_BOT_USER_ID,
+                parent_comment_id: commentData.id, // Reply to the comment that mentioned the AI bot
+              });
+
+            if (aiBotCommentError) {
+              console.error('Error creating AI bot comment:', aiBotCommentError);
+            } else {
+              console.log('AI bot comment created successfully');
+            }
+          } catch (error) {
+            console.error('Error creating AI bot comment:', error);
           }
-        } catch (error) {
-          console.error('Error creating AI bot comment:', error);
         }
-      }
 
       // Refresh comments to show user's comment and AI response
       await fetchComments();
