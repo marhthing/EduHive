@@ -51,7 +51,7 @@ export const processAIBotMention = async (request: AIBotRequest): Promise<string
     let userPrompt = "";
 
     if (request.type === 'explain' && request.postContent) {
-      systemPrompt = `You are EduHive Assistant, an educational AI. Provide clear, detailed explanations that help students understand concepts. Use 4-6 sentences to thoroughly explain the topic. Do NOT use any markdown formatting like asterisks, bold, italics, or special characters. Use plain text only. Don't mention "image" or describe file types. Start with "🤖" and focus on explaining the actual concepts, formulas, principles, or ideas presented.`;
+      systemPrompt = `You are EduHive Assistant, an educational AI. Provide clear, complete explanations that help students understand concepts. Write 4-6 complete sentences that thoroughly explain the topic from start to finish. Do NOT use any markdown formatting like asterisks, bold, italics, or special characters. Use plain text only. Don't mention "image" or describe file types. Start with "🤖" and always end with a complete thought and proper punctuation. Ensure your explanation covers all main points and concludes properly.`;
 
       userPrompt = `Explain this educational content in detail: "${request.postContent}"`;
 
@@ -112,7 +112,7 @@ export const processAIBotMention = async (request: AIBotRequest): Promise<string
 4. Encourage further learning and curiosity
 5. Be supportive and enthusiastic
 
-Always start your response with "🤖 Hi! I'm EduHive Assistant." and end with an encouraging message.`;
+Always start your response with "🤖 Hi! I'm EduHive Assistant." and end with an encouraging message like "Keep learning! 📚✨". Make sure to provide a complete, well-structured response that fully addresses the question.`;
 
       userPrompt = `A student is asking: "${request.userQuestion}"
 
@@ -125,8 +125,8 @@ Please provide a helpful, educational response.`;
       userPrompt = `A student has mentioned me but didn't specify what they need. Please introduce yourself and ask how you can help with their studies.`;
     }
 
-    // Make the API call to Groq
-    const response = await groq.chat.completions.create({
+    // Make the API call to Groq with streaming for better completion
+    const stream = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
         {
@@ -139,13 +139,78 @@ Please provide a helpful, educational response.`;
         }
       ],
       temperature: 0.7,
-      max_completion_tokens: 300
+      max_completion_tokens: 500, // Increased for more complete responses
+      stream: true
     });
 
-    const aiResponse = response.choices[0]?.message?.content;
+    let aiResponse = '';
+    let lastChunkTime = Date.now();
+    const CHUNK_TIMEOUT = 10000; // 10 seconds timeout for chunks
+
+    try {
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+          aiResponse += content;
+          lastChunkTime = Date.now();
+        }
+        
+        // Check for timeout
+        if (Date.now() - lastChunkTime > CHUNK_TIMEOUT) {
+          console.warn('Streaming timeout, finalizing response');
+          break;
+        }
+      }
+    } catch (streamError) {
+      console.warn('Streaming error, using partial response:', streamError);
+    }
+
+    // Check if response seems incomplete (ends mid-sentence)
+    const isIncomplete = aiResponse && (
+      !aiResponse.trim().endsWith('.') && 
+      !aiResponse.trim().endsWith('!') && 
+      !aiResponse.trim().endsWith('?') &&
+      !aiResponse.trim().endsWith('✨') &&
+      aiResponse.length > 50 // Only check if response is substantial
+    );
+
+    // If incomplete, try to wrap it up properly
+    if (isIncomplete) {
+      console.log('Response appears incomplete, attempting to complete...');
+      try {
+        const completionResponse = await groq.chat.completions.create({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            {
+              role: "system",
+              content: "You are completing a response that was cut off. Provide a brief, natural conclusion to make the response complete. Keep it short (1-2 sentences max)."
+            },
+            {
+              role: "user",
+              content: `This response was cut off: "${aiResponse.slice(-200)}"\n\nPlease provide a brief, natural conclusion to complete it properly.`
+            }
+          ],
+          temperature: 0.5,
+          max_completion_tokens: 100
+        });
+
+        const completion = completionResponse.choices[0]?.message?.content;
+        if (completion && completion.trim()) {
+          // Clean up any repetition and add the completion
+          const cleanCompletion = completion.replace(/^[.!?]*\s*/, '').trim();
+          aiResponse = aiResponse.trim() + (cleanCompletion ? ` ${cleanCompletion}` : '.');
+        } else {
+          // Fallback: just add proper punctuation
+          aiResponse = aiResponse.trim() + '.';
+        }
+      } catch (completionError) {
+        console.warn('Could not complete response, adding punctuation:', completionError);
+        aiResponse = aiResponse.trim() + '.';
+      }
+    }
     
-    if (!aiResponse) {
-      throw new Error('No response from AI');
+    if (!aiResponse || aiResponse.trim().length < 10) {
+      throw new Error('No meaningful response from AI');
     }
 
     // Cache successful responses
