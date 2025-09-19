@@ -39,53 +39,74 @@ export const MentionInput: React.FC<MentionInputProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Fetch mutual followers for tagging (users who follow me AND I follow them)
+  // Fetch users for tagging (anyone you follow + some popular users)
   const fetchFollowersForMentions = useCallback(async (searchTerm: string = '') => {
     if (!user) return [];
     
     try {
+      console.log('Fetching mention suggestions for search term:', searchTerm);
+      
       // Get users that I follow
       const { data: iFollow, error: followError } = await supabase
         .from('follows')
         .select('following_id')
         .eq('follower_id', user.id);
 
-      if (followError) throw followError;
+      if (followError) {
+        console.error('Error fetching following list:', followError);
+        throw followError;
+      }
 
-      // Get users who follow me
-      const { data: myFollowers, error: followersError } = await supabase
-        .from('follows')
-        .select('follower_id')
-        .eq('following_id', user.id);
-
-      if (followersError) throw followersError;
-      
-      // Find mutual connections (users who follow me AND I follow them)
       const followingIds = iFollow?.map(f => f.following_id) || [];
-      const followerIds = myFollowers?.map(f => f.follower_id) || [];
-      const mutualIds = followingIds.filter(id => followerIds.includes(id));
+      console.log('Following IDs:', followingIds);
       
-      if (mutualIds.length === 0) return [];
+      let mentionableUsers: any[] = [];
+      
+      // If I follow people, get their profiles
+      if (followingIds.length > 0) {
+        const { data: followingProfiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, username, name, profile_pic')
+          .in('user_id', followingIds)
+          .ilike('username', `%${searchTerm}%`)
+          .limit(6);
 
-      // Get profiles for mutual connections
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id, username, name, profile_pic')
-        .in('user_id', mutualIds)
-        .ilike('username', `%${searchTerm}%`)
-        .limit(8);
+        if (profileError) {
+          console.error('Error fetching following profiles:', profileError);
+        } else {
+          mentionableUsers.push(...(followingProfiles || []));
+        }
+      }
+      
+      // Also include some active users from the platform (even if not following) for better UX
+      if (mentionableUsers.length < 6) {
+        const { data: popularUsers, error: popularError } = await supabase
+          .from('profiles')
+          .select('user_id, username, name, profile_pic')
+          .neq('user_id', user.id) // Don't include yourself
+          .not('user_id', 'in', `(${followingIds.join(',') || 'null'})`) // Don't duplicate following
+          .ilike('username', `%${searchTerm}%`)
+          .order('created_at', { ascending: false })
+          .limit(6 - mentionableUsers.length);
 
-      if (profileError) throw profileError;
+        if (popularError) {
+          console.error('Error fetching popular users:', popularError);
+        } else {
+          mentionableUsers.push(...(popularUsers || []));
+        }
+      }
+
+      console.log('Found mentionable users:', mentionableUsers);
 
       // Map to the expected format
-      return profiles?.map(profile => ({
+      return mentionableUsers.map(profile => ({
         id: profile.user_id,
         username: profile.username,
         name: profile.name,
         profile_pic: profile.profile_pic
-      })) || [];
+      }));
     } catch (error) {
-      console.error('Error fetching mutual followers for mentions:', error);
+      console.error('Error fetching users for mentions:', error);
       return [];
     }
   }, [user]);
