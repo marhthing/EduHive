@@ -68,6 +68,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
           .from('profiles')
           .select('user_id, username, name, profile_pic')
           .in('user_id', followingIds)
+          .neq('username', 'eduhive') // Don't include AI bot
           .ilike('username', `%${searchTerm}%`)
           .limit(6);
 
@@ -84,6 +85,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
           .from('profiles')
           .select('user_id, username, name, profile_pic')
           .neq('user_id', user.id) // Don't include yourself
+          .neq('username', 'eduhive') // Don't include AI bot
           .not('user_id', 'in', `(${followingIds.join(',') || 'null'})`) // Don't duplicate following
           .ilike('username', `%${searchTerm}%`)
           .order('created_at', { ascending: false })
@@ -129,7 +131,7 @@ export const MentionInput: React.FC<MentionInputProps> = ({
         setCurrentMention(textAfterAt);
         const searchSuggestions: MentionUser[] = [];
         
-        // Add AI bot if allowed
+        // Add AI bot if allowed and matches search
         if (allowAIBot && 'eduhive'.includes(textAfterAt.toLowerCase())) {
           searchSuggestions.push({
             id: 'ai-bot',
@@ -139,9 +141,10 @@ export const MentionInput: React.FC<MentionInputProps> = ({
           });
         }
         
-        // Add mutual followers (users who follow each other)
+        // Add mutual followers (users who follow each other) - but exclude eduhive to prevent duplicates
         const mutualUsers = await fetchFollowersForMentions(textAfterAt);
-        searchSuggestions.push(...mutualUsers);
+        const filteredMutualUsers = mutualUsers.filter(user => user.username !== 'eduhive');
+        searchSuggestions.push(...filteredMutualUsers);
         
         setSuggestions(searchSuggestions);
         setShowSuggestions(searchSuggestions.length > 0);
