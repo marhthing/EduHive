@@ -72,7 +72,7 @@ Always start your response with "🤖 Hi! I'm EduHive Assistant." and end with a
           const imageUrl = imageAttachments[0].url;
           
           const visionResponse = await groq.chat.completions.create({
-            model: "llama-3.2-90b-vision-preview",
+            model: "llama-4-scout",
             messages: [
               {
                 role: "system",
@@ -128,7 +128,7 @@ Please provide a helpful, educational response.`;
 
     // Make the API call to Groq
     const response = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant", // Fast model for text-only responses
+      model: "llama-3.3-70b-versatile", // Updated recommended model
       messages: [
         {
           role: "system",
@@ -153,9 +153,23 @@ Please provide a helpful, educational response.`;
 
   } catch (error) {
     console.error('Error processing AI bot request:', error);
+    
+    // More specific error handling
+    if (error.message?.includes('404') || error.message?.includes('model')) {
+      return `🤖 Hi! I'm EduHive Assistant. I'm currently experiencing technical difficulties with my AI models. Please try again in a few moments.
+
+Keep learning! 📚✨`;
+    }
+    
+    if (error.message?.includes('rate limit') || error.message?.includes('429')) {
+      return `🤖 Hi! I'm EduHive Assistant. I'm receiving too many requests right now. Please wait a moment and try again.
+
+Keep learning! 📚✨`;
+    }
+    
     return `🤖 Hi! I'm EduHive Assistant. I encountered an error while processing your request. Please try again, and if the issue persists, contact the administrators.
 
-I was trying to help with: "${request.postContent?.substring(0, 100) || request.userQuestion?.substring(0, 100) || 'your request'}${(request.postContent?.length || 0) > 100 || (request.userQuestion?.length || 0) > 100 ? '...' : ''}"
+Error details: ${error.message || 'Unknown error'}
 
 Keep learning! 📚✨`;
   }

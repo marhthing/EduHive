@@ -268,18 +268,7 @@ export default function PostDetail() {
 
     setSubmitting(true);
     try {
-      // Check for AI bot mentions by parsing text directly
-      let aiResponse = null;
-      const botRequest = parseAIBotMention(commentText);
-
-      if (botRequest && post) {
-        console.log('AI bot mentioned, processing...', botRequest);
-        // Set post content for AI processing
-        botRequest.postContent = post.body;
-        botRequest.context = `Post by ${post.profile?.username || 'Anonymous'}: ${post.body}`;
-        aiResponse = await processAIBotMention(botRequest);
-        console.log('AI response:', aiResponse);
-      }
+      // AI bot processing will be handled after comment creation
 
       // First, save the user's comment
       const { data: commentData, error: commentError } = await supabase
@@ -302,18 +291,22 @@ export default function PostDetail() {
         await createMentionNotifications(commentMentions, user.id, postId, commentData.id);
       }
 
-      setCommentText("");
-      setCommentMentions([]);
-
       toast({
         title: "Success",
         description: "Comment added successfully",
       });
 
       // Check if AI bot was mentioned and create response
-        if (commentMentions.some(mention => mention.username === 'eduhive')) {
-          console.log('Creating AI bot response comment...');
-          try {
+      const originalCommentText = commentText; // Store before clearing
+      setCommentText("");
+      setCommentMentions([]);
+      if (commentMentions.some(mention => mention.username === 'eduhive')) {
+        console.log('Creating AI bot response comment...');
+        try {
+          // Parse the original comment to understand what the user asked
+          const botRequest = parseAIBotMention(originalCommentText);
+          
+          if (botRequest && post) {
             // Parse post attachments if they exist
             let attachments = [];
             if (post?.attachment_url) {
@@ -325,14 +318,12 @@ export default function PostDetail() {
               }
             }
 
-            const aiRequest: AIBotRequest = {
-              type: 'explain',
-              postContent: post?.body || '',
-              context: `Post by ${post?.profile?.username || 'Anonymous'}`,
-              attachments: attachments
-            };
+            // Set up the AI request properly based on what the user asked
+            botRequest.postContent = post.body;
+            botRequest.context = `Post by ${post.profile?.username || 'Anonymous'}: ${post.body}`;
+            botRequest.attachments = attachments;
 
-            const aiResponse = await processAIBotMention(aiRequest);
+            const aiResponse = await processAIBotMention(botRequest);
 
             // Create AI bot reply to the comment that mentioned it
             const { data: aiBotComment, error: aiBotCommentError } = await supabase
