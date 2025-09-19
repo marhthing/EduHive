@@ -45,8 +45,9 @@ export const parseAIBotMention = (text: string): AIBotRequest | null => {
   console.log('Found @eduhive mention:', mentionMatch);
   const command = mentionMatch[1].toLowerCase().trim();
   
-  // Check for explain command
-  if (command.includes('explain') || command.includes('content') || command === '') {
+  // Check for explain command or questions about post content
+  if (command.includes('explain') || command.includes('content') || command === '' || 
+      command.includes('post about') || command.includes('what is') || command.includes('about')) {
     return { type: 'explain' };
   }
   

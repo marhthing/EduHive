@@ -274,7 +274,9 @@ export default function PostDetail() {
 
       if (botRequest && post) {
         console.log('AI bot mentioned, processing...', botRequest);
+        // Set post content for AI processing
         botRequest.postContent = post.body;
+        botRequest.context = `Post by ${post.profile?.username || 'Anonymous'}: ${post.body}`;
         aiResponse = await processAIBotMention(botRequest);
         console.log('AI response:', aiResponse);
       }
@@ -308,20 +310,30 @@ export default function PostDetail() {
         description: "Comment added successfully",
       });
 
-      // Refresh comments to show user's comment
-      await fetchComments();
-
-      // If AI bot was mentioned, show its response as a toast notification
+      // If AI bot was mentioned, also create a comment from the AI bot
       if (aiResponse) {
-        console.log('Showing AI bot response...');
-        setTimeout(() => {
-          toast({
-            title: "🤖 EduHive Assistant",
-            description: aiResponse,
-            duration: 10000, // Show for 10 seconds so users can read it
-          });
-        }, 1500);
+        console.log('Creating AI bot response comment...');
+        try {
+          const { error: aiBotCommentError } = await supabase
+            .from('comments')
+            .insert({
+              body: aiResponse,
+              post_id: postId,
+              user_id: AI_BOT_USER_ID,
+            });
+
+          if (aiBotCommentError) {
+            console.error('Error creating AI bot comment:', aiBotCommentError);
+          } else {
+            console.log('AI bot comment created successfully');
+          }
+        } catch (error) {
+          console.error('Error creating AI bot comment:', error);
+        }
       }
+
+      // Refresh comments to show user's comment and AI response
+      await fetchComments();
 
     } catch (error) {
       console.error('Error submitting comment:', error);
