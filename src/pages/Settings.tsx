@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, Save, LogOut, Trash2 } from "lucide-react";
+import { Camera, Save, LogOut, Trash2, X, Key, Eye, EyeOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,6 +57,15 @@ export default function Settings() {
   });
   const [canChangeUsername, setCanChangeUsername] = useState(true);
   const [nextUsernameChange, setNextUsernameChange] = useState<Date | null>(null);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -106,6 +115,32 @@ export default function Settings() {
     } catch (error) {
       console.error("Error fetching profile:", error);
       showToast("Failed to load profile data", "error");
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!profile?.profile_pic) return;
+
+    setUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Update profile to remove avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ profile_pic: null })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      setProfile({ ...profile, profile_pic: null });
+      showToast("Profile picture removed", "success");
+    } catch (error: any) {
+      console.error('Avatar removal error:', error);
+      showToast(error.message || "Failed to remove avatar", "error");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -254,6 +289,42 @@ export default function Settings() {
     }
   };
 
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showToast("New passwords don't match", "error");
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      showToast("Password must be at least 6 characters long", "error");
+      return;
+    }
+    
+    setChangingPassword(true);
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+      
+      if (error) throw error;
+      
+      showToast("Password updated successfully", "success");
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error: any) {
+      console.error('Password change error:', error);
+      showToast(error.message || "Failed to change password", "error");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -278,12 +349,25 @@ export default function Settings() {
         <CardContent className="space-y-6">
           {/* Avatar Section */}
           <div className="flex flex-col items-center space-y-4">
-            <Avatar className="w-24 h-24">
-              <AvatarImage src={profile.profile_pic || ""} />
-              <AvatarFallback className="text-2xl">
-                {profile.username.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="w-24 h-24">
+                <AvatarImage src={profile.profile_pic || ""} />
+                <AvatarFallback className="text-2xl">
+                  {profile.username.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              {profile.profile_pic && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="absolute -top-2 -right-2 rounded-full w-8 h-8 p-0"
+                  onClick={handleRemoveAvatar}
+                  disabled={uploading}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -403,6 +487,103 @@ export default function Settings() {
               {loading ? "Saving..." : "Save Changes"}
             </Button>
           </form>
+
+          {/* Password Change Section */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4">Change Password</h3>
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="current-password">Current Password</Label>
+                <div className="relative">
+                  <Input
+                    id="current-password"
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                    placeholder="Enter your current password"
+                    disabled={changingPassword}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="new-password"
+                    type={showNewPassword ? "text" : "password"}
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                    placeholder="Enter your new password"
+                    disabled={changingPassword}
+                    required
+                    minLength={6}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                    placeholder="Confirm your new password"
+                    disabled={changingPassword}
+                    required
+                    minLength={6}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <Button type="submit" disabled={changingPassword} className="w-full">
+                <Key className="w-4 h-4 mr-2" />
+                {changingPassword ? "Changing..." : "Change Password"}
+              </Button>
+            </form>
+          </div>
 
           {/* Danger Zone */}
           <div className="border-t pt-6 space-y-4">
