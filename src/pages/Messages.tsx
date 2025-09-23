@@ -1096,7 +1096,7 @@ export default function Messages() {
                     }`}
                   >
                     <div 
-                      className="text-sm whitespace-pre-wrap break-words prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                      className="text-sm whitespace-pre-wrap break-words prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>ol]:list-decimal [&>ol]:list-inside [&>ul]:list-disc [&>ul]:list-inside [&>ol>li]:ml-0 [&>ul>li]:ml-0"
                       dangerouslySetInnerHTML={renderMarkdown(message.content)} 
                     />
                     {renderAttachment(message)}
