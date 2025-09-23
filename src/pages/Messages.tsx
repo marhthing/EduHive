@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, Loader2, Paperclip, Mic, MicOff, Plus, History, Trash2, Image, FileText, Volume2 } from "lucide-react";
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -52,6 +54,12 @@ export default function Messages() {
   const [showTranscriptionPreview, setShowTranscriptionPreview] = useState(false); // Show transcription preview
 
   const { user } = useAuth();
+  
+  // Configure marked options for inline rendering
+  marked.setOptions({
+    breaks: true,
+    gfm: true
+  });
   const { showToast } = useTwitterToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -92,6 +100,22 @@ export default function Messages() {
     prevUserIdRef.current = currentUserId;
     activeUserIdRef.current = currentUserId;
   }, [user]);
+
+  // Render markdown content safely
+  const renderMarkdown = (content: string) => {
+    try {
+      const rawMarkup = marked.parse(content, { 
+        async: false,
+        breaks: true,
+        gfm: true 
+      }) as string;
+      const cleanMarkup = DOMPurify.sanitize(rawMarkup);
+      return { __html: cleanMarkup };
+    } catch (error) {
+      console.error('Error parsing markdown:', error);
+      return { __html: DOMPurify.sanitize(content) };
+    }
+  };
 
   const clearAllChatState = () => {
     // Clear all chat state
@@ -779,7 +803,7 @@ export default function Messages() {
               temperature: 0.0
             });
 
-            transcribedText = transcription;
+            transcribedText = transcription.toString();
           }
         } catch (error) {
           console.error('Error transcribing audio:', error);
@@ -1071,7 +1095,10 @@ export default function Messages() {
                         : 'bg-muted'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                    <div 
+                      className="text-sm whitespace-pre-wrap break-words prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                      dangerouslySetInnerHTML={renderMarkdown(message.content)} 
+                    />
                     {renderAttachment(message)}
                     <span className={`text-xs mt-1 block ${
                       message.isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
@@ -1199,7 +1226,7 @@ export default function Messages() {
                               temperature: 0.0
                             });
 
-                            setInputMessage(transcription);
+                            setInputMessage(transcription.toString());
                             setShowTranscriptionPreview(true);
                           }
                         } catch (error) {
