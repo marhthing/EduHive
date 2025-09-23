@@ -67,12 +67,61 @@ export default function Messages() {
     scrollToBottom();
   }, [messages]);
 
+  // Track previous user ID to handle user switches
+  const prevUserIdRef = useRef<string | null>(null);
+  // Track current user ID for async operation guards
+  const activeUserIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (user) {
+    const currentUserId = user?.id || null;
+    const prevUserId = prevUserIdRef.current;
+
+    if (user && currentUserId !== prevUserId) {
+      // User changed or logged in - clear state and load new data
+      if (prevUserId !== null) {
+        // Clear all state when switching users
+        clearAllChatState();
+      }
       loadChatSessions();
       fetchCurrentUserProfile();
+    } else if (!user && prevUserId !== null) {
+      // User logged out - clear all state
+      clearAllChatState();
     }
+
+    prevUserIdRef.current = currentUserId;
+    activeUserIdRef.current = currentUserId;
   }, [user]);
+
+  const clearAllChatState = () => {
+    // Clear all chat state
+    setMessages([]);
+    setChatSessions([]);
+    setCurrentSessionId(null);
+    setCurrentUserProfile(null);
+    setIsLoadingHistory(false);
+    setIsTyping(false);
+    setIsSheetOpen(false);
+    setIsProcessingAudio(false);
+    setShowTranscriptionPreview(false);
+    setIsLoading(false);
+    
+    // Clear compose/input state
+    setInputMessage('');
+    setSelectedFile(null);
+    setIsRecording(false);
+    
+    // Stop any active media recording
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      const stream = mediaRecorderRef.current.stream;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    }
+    mediaRecorderRef.current = null;
+    audioChunksRef.current = [];
+  };
 
   const fetchCurrentUserProfile = async () => {
     if (!user) return;
@@ -117,7 +166,8 @@ export default function Messages() {
 
   const loadChatSessions = async () => {
     if (!user) return;
-
+    
+    const requestUserId = user.id;
     try {
       const { data, error } = await supabase
         .from('chat_sessions')
@@ -127,7 +177,11 @@ export default function Messages() {
         .limit(50);
 
       if (error) throw error;
-      setChatSessions(data || []);
+      
+      // Only update state if user hasn't changed
+      if (activeUserIdRef.current === requestUserId) {
+        setChatSessions(data || []);
+      }
     } catch (error) {
       console.error('Error loading chat sessions:', error);
     }
@@ -136,6 +190,7 @@ export default function Messages() {
   const loadChatMessages = async (sessionId: string) => {
     if (!user) return;
 
+    const requestUserId = user.id;
     setIsLoadingHistory(true);
     try {
       const { data, error } = await supabase
@@ -146,29 +201,36 @@ export default function Messages() {
 
       if (error) throw error;
 
-      const loadedMessages: Message[] = (data || []).map(msg => ({
-        id: msg.id,
-        content: msg.content,
-        isUser: msg.is_user,
-        timestamp: new Date(msg.created_at),
-        attachmentUrl: msg.attachment_url || undefined,
-        attachmentType: msg.attachment_type || undefined,
-        attachmentName: msg.attachment_name || undefined,
-      }));
+      // Only update state if user hasn't changed
+      if (activeUserIdRef.current === requestUserId) {
+        const loadedMessages: Message[] = (data || []).map(msg => ({
+          id: msg.id,
+          content: msg.content,
+          isUser: msg.is_user,
+          timestamp: new Date(msg.created_at),
+          attachmentUrl: msg.attachment_url || undefined,
+          attachmentType: msg.attachment_type || undefined,
+          attachmentName: msg.attachment_name || undefined,
+        }));
 
-      setMessages(loadedMessages);
-      setCurrentSessionId(sessionId);
-      setIsSheetOpen(false); // Auto-close the sheet when a chat is loaded
+        setMessages(loadedMessages);
+        setCurrentSessionId(sessionId);
+        setIsSheetOpen(false); // Auto-close the sheet when a chat is loaded
 
-      // Store the last opened chat in localStorage
-      if (user) {
-        localStorage.setItem(`lastOpenedChat_${user.id}`, sessionId);
+        // Store the last opened chat in localStorage
+        if (user) {
+          localStorage.setItem(`lastOpenedChat_${user.id}`, sessionId);
+        }
       }
     } catch (error) {
       console.error('Error loading chat messages:', error);
-      showToast("Failed to load chat history", "error");
+      if (activeUserIdRef.current === requestUserId) {
+        showToast("Failed to load chat history", "error");
+      }
     } finally {
-      setIsLoadingHistory(false);
+      if (activeUserIdRef.current === requestUserId) {
+        setIsLoadingHistory(false);
+      }
     }
   };
 

@@ -85,9 +85,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (event === 'SIGNED_OUT') {
           // console.log('User signed out');
-          // Clear username from localStorage
+          // Clear all user-specific data from localStorage
           Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('username_')) {
+            if (key.startsWith('username_') || key.startsWith('lastOpenedChat_')) {
               localStorage.removeItem(key);
             }
           });
