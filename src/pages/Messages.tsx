@@ -101,6 +101,7 @@ export default function Messages() {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -112,7 +113,7 @@ export default function Messages() {
   const [recordingDuration, setRecordingDuration] = useState(0);
 
   const { user } = useAuth();
-  
+
   // Configure marked options for inline rendering
   marked.setOptions({
     breaks: true,
@@ -187,19 +188,20 @@ export default function Messages() {
     setIsSheetOpen(false);
     setIsProcessingAudio(false);
     setIsLoading(false);
-    
+
     // Clear compose/input state
     setInputMessage('');
     setSelectedFile(null);
     setIsRecording(false);
+    setIsPaused(false); // Reset pause state
     setRecordingDuration(0);
-    
+
     // Stop recording timer
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);
       recordingIntervalRef.current = null;
     }
-    
+
     // Stop any active media recording
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
@@ -255,7 +257,7 @@ export default function Messages() {
 
   const loadChatSessions = async () => {
     if (!user) return;
-    
+
     const requestUserId = user.id;
     try {
       const { data, error } = await supabase
@@ -266,7 +268,7 @@ export default function Messages() {
         .limit(50);
 
       if (error) throw error;
-      
+
       // Only update state if user hasn't changed
       if (activeUserIdRef.current === requestUserId) {
         setChatSessions(data || []);
@@ -499,10 +501,11 @@ export default function Messages() {
         const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
         setSelectedFile(audioFile);
         setIsRecording(false);
+        setIsPaused(false); // Reset paused state
 
         // Stop all tracks to release microphone
         stream.getTracks().forEach(track => track.stop());
-        
+
         // Clear timer
         if (recordingIntervalRef.current) {
           clearInterval(recordingIntervalRef.current);
@@ -514,7 +517,8 @@ export default function Messages() {
       // Start recording with timeslice to collect data continuously
       mediaRecorder.start(100); // Collect data every 100ms
       setIsRecording(true);
-      
+      setIsPaused(false); // Ensure not paused when starting
+
       // Start timer
       setRecordingDuration(0);
       recordingIntervalRef.current = setInterval(() => {
@@ -524,6 +528,43 @@ export default function Messages() {
       console.error('Error starting recording:', error);
       showToast("Failed to start recording. Please check microphone permissions.", "error");
       setIsRecording(false);
+      setIsPaused(false);
+    }
+  };
+
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && isRecording && !isPaused) {
+      mediaRecorderRef.current.stop(); // This will trigger onstop, but we'll restart later
+      setIsPaused(true);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    }
+  };
+
+  const resumeRecording = async () => {
+    if (mediaRecorderRef.current && isPaused) {
+      try {
+        // Re-acquire stream if it was closed by stop() in pause
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const newMediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorderRef.current = newMediaRecorder;
+        
+        newMediaRecorder.ondataavailable = mediaRecorderRef.current.ondataavailable; // Re-attach handler
+        newMediaRecorder.onstop = mediaRecorderRef.current.onstop; // Re-attach handler
+
+        newMediaRecorder.start(100); // Resume recording
+        setIsPaused(false);
+
+        // Restart timer
+        recordingIntervalRef.current = setInterval(() => {
+          setRecordingDuration(prev => prev + 1);
+        }, 1000);
+      } catch (error) {
+        console.error('Error resuming recording:', error);
+        showToast("Failed to resume recording. Please check microphone permissions.", "error");
+        setIsPaused(false); // Reset pause state on error
+      }
     }
   };
 
@@ -538,6 +579,7 @@ export default function Messages() {
       recordingIntervalRef.current = null;
     }
     setRecordingDuration(0);
+    setIsPaused(false);
   };
 
   const uploadFileToSupabase = async (file: File): Promise<{ url: string; type: string; name: string } | null> => {
@@ -844,25 +886,39 @@ export default function Messages() {
     try {
       let attachmentData: { url: string; type: string; name: string } | null = null;
 
-      // If recording, stop it and get the audio file directly
-      if (isRecording) {
-        audioFileToTranscribe = await new Promise<File>((resolve) => {
-          if (mediaRecorderRef.current) {
-            mediaRecorderRef.current.onstop = () => {
-              const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-              const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
-              setIsRecording(false);
-              
-              // Stop all tracks to release microphone
-              const stream = mediaRecorderRef.current?.stream;
-              if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-              }
-              resolve(audioFile);
-            };
-            mediaRecorderRef.current.stop();
-          }
-        });
+      // Handle recording state before sending
+      if (isRecording || isPaused) {
+        // If recording or paused, stop it and get the audio file
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
+          // The actual file creation and state reset happens in onstop
+          await new Promise<void>(resolve => { // Wait for onstop to complete
+            if (mediaRecorderRef.current) {
+              mediaRecorderRef.current.onstop = () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
+                audioFileToTranscribe = audioFile;
+                resolve();
+              };
+            } else {
+              resolve(); // If recorder is null, resolve immediately
+            }
+          });
+        }
+        // Reset recording state after stopping
+        setIsRecording(false);
+        setIsPaused(false);
+        if (recordingIntervalRef.current) {
+          clearInterval(recordingIntervalRef.current);
+          recordingIntervalRef.current = null;
+        }
+        setRecordingDuration(0);
+        const stream = mediaRecorderRef.current?.stream;
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+        mediaRecorderRef.current = null; // Clear ref after stopping
+        audioChunksRef.current = []; // Clear chunks
       } else if (selectedFile && selectedFile.type.startsWith('audio/')) {
         // Use the already selected audio file
         audioFileToTranscribe = selectedFile;
@@ -1021,7 +1077,8 @@ export default function Messages() {
       setIsLoading(false);
       setIsTyping(false);
       setIsProcessingAudio(false);
-      setIsRecording(false);
+      setIsRecording(false); // Ensure recording is off
+      setIsPaused(false); // Ensure paused is off
       setSelectedFile(null);
     }
   };
@@ -1125,7 +1182,7 @@ export default function Messages() {
                             </div>
                           </div>
                         </Button>
-                        
+
                         <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           {/* Rename Dialog */}
                           <RenameDialog 
@@ -1302,40 +1359,22 @@ export default function Messages() {
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2">
+                  {/* Cancel Button */}
                   <Button 
                     variant="ghost" 
                     size="sm"
                     onClick={() => {
-                      // Stop the recording
-                      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-                        // Remove the onstop handler to prevent file creation
-                        mediaRecorderRef.current.onstop = null;
-                        mediaRecorderRef.current.stop();
-                        const stream = mediaRecorderRef.current.stream;
-                        if (stream) {
-                          stream.getTracks().forEach(track => track.stop());
-                        }
-                      }
-                      // Clear timer
-                      if (recordingIntervalRef.current) {
-                        clearInterval(recordingIntervalRef.current);
-                        recordingIntervalRef.current = null;
-                      }
-                      // Clear all recording state
-                      mediaRecorderRef.current = null;
-                      audioChunksRef.current = [];
-                      setIsRecording(false);
-                      setRecordingDuration(0);
-                      setSelectedFile(null);
+                      stopRecording(); // Use stopRecording to handle cleanup
+                      setSelectedFile(null); // Clear selected file too
                     }}
                     className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                     title="Cancel recording"
                   >
-                    ×
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-                
-                {/* Timer Display */}
+
+                {/* Timer Display and Pause/Resume/Send Controls */}
                 <div className="flex-1 mx-4 flex items-center justify-center gap-3">
                   <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
                   <span className="text-sm font-mono text-gray-700 dark:text-gray-300">
@@ -1345,18 +1384,32 @@ export default function Messages() {
                   </span>
                 </div>
 
-                <Button 
-                  onClick={sendMessage}
-                  disabled={isLoading}
-                  size="sm"
-                  className="rounded-full w-10 h-10 bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-200"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-white dark:text-black" />
-                  ) : (
-                    <div className="w-0 h-0 border-l-[6px] border-l-white dark:border-l-black border-y-[4px] border-y-transparent ml-0.5" />
-                  )}
-                </Button>
+                <div className="flex items-center gap-2">
+                  {/* Pause/Resume Button */}
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={isPaused ? resumeRecording : pauseRecording}
+                    className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    title={isPaused ? "Resume recording" : "Pause recording"}
+                  >
+                    {isPaused ? <Play className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                  </Button>
+
+                  {/* Send Button */}
+                  <Button 
+                    onClick={sendMessage}
+                    disabled={isLoading}
+                    size="sm"
+                    className="rounded-full w-10 h-10 bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-200"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-white dark:text-black" />
+                    ) : (
+                      <div className="w-0 h-0 border-l-[6px] border-l-white dark:border-l-black border-y-[4px] border-y-transparent ml-0.5" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (
