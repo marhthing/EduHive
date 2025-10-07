@@ -10,10 +10,70 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTwitterToast } from "@/components/ui/twitter-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Groq from "groq-sdk";
 import { AI_BOT_PROFILE } from "@/lib/aiBotProfile";
+
+interface RenameDialogProps {
+  sessionId: string;
+  currentTitle: string;
+  onRename: (newTitle: string) => Promise<void>;
+}
+
+function RenameDialog({ sessionId, currentTitle, onRename }: RenameDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [title, setTitle] = useState(currentTitle);
+
+  const handleRename = async () => {
+    const newTitle = title.trim();
+    if (newTitle && newTitle !== currentTitle) {
+      await onRename(newTitle);
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+            <path d="m15 5 4 4"/>
+          </svg>
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Rename Chat</DialogTitle>
+          <DialogDescription>
+            Enter a new name for this chat session
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 pt-4">
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Chat name"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleRename();
+              }
+            }}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRename}>
+              Save
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 interface CurrentUserProfile {
   username: string;
@@ -1033,6 +1093,19 @@ export default function Messages() {
                             </div>
                           </div>
                         </Button>
+                        
+                        {/* Rename Dialog */}
+                        <RenameDialog 
+                          sessionId={session.id}
+                          currentTitle={session.title}
+                          onRename={async (newTitle) => {
+                            await updateChatTitle(session.id, newTitle);
+                            await loadChatSessions();
+                            showToast("Chat renamed successfully", "success");
+                          }}
+                        />
+
+                        {/* Delete AlertDialog */}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="sm">
