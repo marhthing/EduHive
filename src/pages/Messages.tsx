@@ -36,7 +36,7 @@ function RenameDialog({ sessionId, currentTitle, onRename }: RenameDialogProps) 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-accent">
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent">
           <Pencil className="h-4 w-4" />
           <span className="sr-only">Rename chat</span>
         </Button>
@@ -554,10 +554,6 @@ export default function Messages() {
       if (userMessage.attachmentType === 'image') {
         // Vision analysis
         try {
-          const response = await fetch(userMessage.attachmentUrl);
-          const arrayBuffer = await response.arrayBuffer();
-          const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-
           const completion = await groq.chat.completions.create({
             messages: [
               {
@@ -570,13 +566,13 @@ export default function Messages() {
                   {
                     type: "image_url",
                     image_url: {
-                      url: `data:image/jpeg;base64,${base64}`
+                      url: userMessage.attachmentUrl
                     }
                   }
                 ]
               }
             ],
-            model: "llama-3.2-90b-vision-preview",
+            model: "meta-llama/llama-4-maverick-17b-128e-instruct",
             temperature: 0.7,
             max_tokens: 1500,
             stream: true
@@ -1107,7 +1103,7 @@ export default function Messages() {
                           {/* Delete AlertDialog */}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0">
                                 <Trash2 className="h-4 w-4" />
                                 <span className="sr-only">Delete chat</span>
                               </Button>
