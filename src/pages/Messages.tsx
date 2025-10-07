@@ -110,6 +110,8 @@ export default function Messages() {
   const [currentUserProfile, setCurrentUserProfile] = useState<CurrentUserProfile | null>(null);
   const [isProcessingAudio, setIsProcessingAudio] = useState(false); // Added state for audio processing
   const [showTranscriptionPreview, setShowTranscriptionPreview] = useState(false); // Show transcription preview
+  const [transcriptionModalOpen, setTranscriptionModalOpen] = useState(false);
+  const [transcriptionText, setTranscriptionText] = useState("");
 
   const { user } = useAuth();
   
@@ -187,6 +189,8 @@ export default function Messages() {
     setIsProcessingAudio(false);
     setShowTranscriptionPreview(false);
     setIsLoading(false);
+    setTranscriptionModalOpen(false);
+    setTranscriptionText("");
     
     // Clear compose/input state
     setInputMessage('');
@@ -1235,6 +1239,47 @@ export default function Messages() {
         </ScrollArea>
       </div>
 
+      {/* Transcription Modal */}
+      <Dialog open={transcriptionModalOpen} onOpenChange={setTranscriptionModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Voice Transcription</DialogTitle>
+            <DialogDescription>
+              Review and edit your transcribed voice message before sending
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <textarea
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              className="w-full min-h-[200px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Your transcribed text will appear here..."
+            />
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setTranscriptionModalOpen(false);
+                setInputMessage("");
+                setSelectedFile(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setTranscriptionModalOpen(false);
+                // The text is already in inputMessage and file in selectedFile
+                // User can now click send
+              }}
+            >
+              Use This Text
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Fixed Input Footer - Above Mobile Nav */}
       <div className="fixed bottom-[72px] md:bottom-0 left-0 md:left-64 right-0 z-40 bg-background/95 backdrop-blur-sm border-t">
         {/* File Upload Preview */}
@@ -1288,62 +1333,76 @@ export default function Messages() {
                     variant="ghost"
                     size="sm"
                     onClick={async () => {
-                      if (!showTranscriptionPreview) {
-                        // Stop recording first to get the audio
-                        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-                          const audioFile = await new Promise<File>((resolve) => {
-                            if (mediaRecorderRef.current) {
-                              mediaRecorderRef.current.onstop = () => {
-                                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                                const file = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
-                                resolve(file);
-                              };
-                              mediaRecorderRef.current.stop();
-                            }
-                          });
-
-                          // Now transcribe the audio
-                          try {
-                            const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
-                            if (groqApiKey) {
-                              const groq = new Groq({
-                                apiKey: groqApiKey,
-                                dangerouslyAllowBrowser: true
-                              });
-
-                              const transcription = await groq.audio.transcriptions.create({
-                                file: audioFile,
-                                model: "whisper-large-v3-turbo",
-                                response_format: "text",
-                                temperature: 0.0
-                              });
-
-                              setInputMessage(transcription.toString());
-                              setSelectedFile(audioFile);
-                              setShowTranscriptionPreview(true);
-                            }
-                          } catch (error) {
-                            console.error('Error transcribing audio:', error);
-                            setInputMessage('Audio transcription failed');
-                            setShowTranscriptionPreview(true);
+                      // Stop recording first to get the audio
+                      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                        const audioFile = await new Promise<File>((resolve) => {
+                          if (mediaRecorderRef.current) {
+                            mediaRecorderRef.current.onstop = () => {
+                              const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                              const file = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
+                              setIsRecording(false);
+                              
+                              // Stop all tracks to release microphone
+                              const stream = mediaRecorderRef.current?.stream;
+                              if (stream) {
+                                stream.getTracks().forEach(track => track.stop());
+                              }
+                              resolve(file);
+                            };
+                            mediaRecorderRef.current.stop();
                           }
+                        });
+
+                        // Now transcribe the audio
+                        setIsProcessingAudio(true);
+                        try {
+                          const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
+                          if (groqApiKey) {
+                            const groq = new Groq({
+                              apiKey: groqApiKey,
+                              dangerouslyAllowBrowser: true
+                            });
+
+                            const transcription = await groq.audio.transcriptions.create({
+                              file: audioFile,
+                              model: "whisper-large-v3-turbo",
+                              response_format: "text",
+                              temperature: 0.0
+                            });
+
+                            const transcribedText = transcription.toString();
+                            setTranscriptionText(transcribedText);
+                            setInputMessage(transcribedText);
+                            setSelectedFile(audioFile);
+                            setTranscriptionModalOpen(true);
+                          }
+                        } catch (error) {
+                          console.error('Error transcribing audio:', error);
+                          setTranscriptionText('Audio transcription failed');
+                          setInputMessage('Audio transcription failed');
+                          setTranscriptionModalOpen(true);
+                        } finally {
+                          setIsProcessingAudio(false);
                         }
-                      } else {
-                        setShowTranscriptionPreview(!showTranscriptionPreview);
                       }
                     }}
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                    disabled={!showTranscriptionPreview && (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording')}
+                    disabled={isProcessingAudio || !mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording'}
                   >
-                    <span className="text-sm">See text</span>
+                    {isProcessingAudio ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <span className="text-sm">See text</span>
+                    )}
                   </Button>
                 </div>
                 
-                {/* Waveform Visualization or Transcription Preview */}
+                {/* Waveform Visualization or Processing State */}
                 <div className="flex-1 mx-4 flex items-center justify-center">
-                  {showTranscriptionPreview ? (
-                    <div className="text-sm text-gray-700 dark:text-gray-300 text-center max-w-md truncate">
-                      {inputMessage || "Transcribing..."}
+                  {isProcessingAudio ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Transcribing...</span>
                     </div>
                   ) : (
                     <div className="flex items-end gap-1 h-8">
