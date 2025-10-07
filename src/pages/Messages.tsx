@@ -1383,12 +1383,6 @@ export default function Messages() {
                     variant="ghost"
                     size="sm"
                     onClick={async () => {
-                      // Don't proceed if no audio chunks
-                      if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
-                        showToast("No audio recorded yet", "error");
-                        return;
-                      }
-
                       // Pause recording to transcribe
                       const wasPaused = mediaRecorderRef.current?.state === 'paused';
                       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
@@ -1398,6 +1392,13 @@ export default function Messages() {
                       // Get current audio chunks for transcription
                       setIsProcessingAudio(true);
                       try {
+                        // Check if we have audio data
+                        if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
+                          showToast("No audio recorded yet", "error");
+                          setIsProcessingAudio(false);
+                          return;
+                        }
+
                         const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
                         if (!groqApiKey) {
                           throw new Error("AI service is not configured");
@@ -1428,14 +1429,14 @@ export default function Messages() {
                         setTranscriptionModalOpen(true);
                       } finally {
                         setIsProcessingAudio(false);
-                        // Resume if it was already paused before we paused it
+                        // Resume if it wasn't already paused before we paused it
                         if (!wasPaused && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
                           mediaRecorderRef.current.resume();
                         }
                       }
                     }}
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                    disabled={isProcessingAudio || !mediaRecorderRef.current || (mediaRecorderRef.current.state !== 'recording' && mediaRecorderRef.current.state !== 'paused') || audioChunksRef.current.length === 0}
+                    disabled={isProcessingAudio || !mediaRecorderRef.current || (mediaRecorderRef.current.state !== 'recording' && mediaRecorderRef.current.state !== 'paused')}
                     title="See transcribed text"
                   >
                     {isProcessingAudio ? (
