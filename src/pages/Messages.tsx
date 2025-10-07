@@ -1317,9 +1317,22 @@ export default function Messages() {
                     variant="ghost" 
                     size="sm"
                     onClick={() => {
-                      stopRecording();
+                      // Stop the recording
+                      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                        mediaRecorderRef.current.stop();
+                        const stream = mediaRecorderRef.current.stream;
+                        if (stream) {
+                          stream.getTracks().forEach(track => track.stop());
+                        }
+                      }
+                      // Clear all recording state
+                      mediaRecorderRef.current = null;
+                      audioChunksRef.current = [];
+                      setIsRecording(false);
                       setSelectedFile(null);
                       setShowTranscriptionPreview(false);
+                      setTranscriptionText("");
+                      setTranscriptionModalOpen(false);
                     }}
                     className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                     title="Cancel recording"
@@ -1335,8 +1348,12 @@ export default function Messages() {
                       if (mediaRecorderRef.current) {
                         if (mediaRecorderRef.current.state === 'recording') {
                           mediaRecorderRef.current.pause();
+                          setIsRecording(false); // Update state to trigger re-render
+                          setTimeout(() => setIsRecording(true), 0); // Force re-render
                         } else if (mediaRecorderRef.current.state === 'paused') {
                           mediaRecorderRef.current.resume();
+                          setIsRecording(false); // Update state to trigger re-render
+                          setTimeout(() => setIsRecording(true), 0); // Force re-render
                         }
                       }
                     }}
@@ -1360,7 +1377,14 @@ export default function Messages() {
                     variant="ghost"
                     size="sm"
                     onClick={async () => {
+                      // Don't proceed if no audio chunks
+                      if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
+                        showToast("No audio recorded yet", "error");
+                        return;
+                      }
+
                       // Pause recording to transcribe
+                      const wasPaused = mediaRecorderRef.current?.state === 'paused';
                       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
                         mediaRecorderRef.current.pause();
                       }
@@ -1369,36 +1393,43 @@ export default function Messages() {
                       setIsProcessingAudio(true);
                       try {
                         const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
-                        if (groqApiKey && audioChunksRef.current.length > 0) {
-                          const groq = new Groq({
-                            apiKey: groqApiKey,
-                            dangerouslyAllowBrowser: true
-                          });
-
-                          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                          const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
-
-                          const transcription = await groq.audio.transcriptions.create({
-                            file: audioFile,
-                            model: "whisper-large-v3-turbo",
-                            response_format: "text",
-                            temperature: 0.0
-                          });
-
-                          const transcribedText = transcription.toString();
-                          setTranscriptionText(transcribedText);
-                          setTranscriptionModalOpen(true);
+                        if (!groqApiKey) {
+                          throw new Error("AI service is not configured");
                         }
+
+                        const groq = new Groq({
+                          apiKey: groqApiKey,
+                          dangerouslyAllowBrowser: true
+                        });
+
+                        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                        const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
+
+                        const transcription = await groq.audio.transcriptions.create({
+                          file: audioFile,
+                          model: "whisper-large-v3-turbo",
+                          response_format: "text",
+                          temperature: 0.0
+                        });
+
+                        const transcribedText = transcription.toString();
+                        setTranscriptionText(transcribedText);
+                        setTranscriptionModalOpen(true);
                       } catch (error) {
                         console.error('Error transcribing audio:', error);
-                        setTranscriptionText('Audio transcription failed');
+                        showToast("Failed to transcribe audio", "error");
+                        setTranscriptionText('Audio transcription failed. Please try again.');
                         setTranscriptionModalOpen(true);
                       } finally {
                         setIsProcessingAudio(false);
+                        // Resume if it was already paused before we paused it
+                        if (!wasPaused && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+                          mediaRecorderRef.current.resume();
+                        }
                       }
                     }}
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                    disabled={isProcessingAudio || !mediaRecorderRef.current || (mediaRecorderRef.current.state !== 'recording' && mediaRecorderRef.current.state !== 'paused')}
+                    disabled={isProcessingAudio || !mediaRecorderRef.current || (mediaRecorderRef.current.state !== 'recording' && mediaRecorderRef.current.state !== 'paused') || audioChunksRef.current.length === 0}
                     title="See transcribed text"
                   >
                     {isProcessingAudio ? (
