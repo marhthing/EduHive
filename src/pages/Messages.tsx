@@ -876,7 +876,17 @@ export default function Messages() {
       }
 
       // Use transcribed text as message content for voice notes, otherwise use input
-      const userMessageContent = transcribedText || inputMessage.trim() || (attachmentData ? `Uploaded ${attachmentData.name}` : '');
+      // For voice notes, combine any input text with transcribed text
+      let userMessageContent = '';
+      if (transcribedText) {
+        // Voice note was transcribed
+        userMessageContent = inputMessage.trim() 
+          ? `${inputMessage.trim()}\n\n[Voice transcription]: ${transcribedText}` 
+          : transcribedText;
+      } else {
+        // Regular message
+        userMessageContent = inputMessage.trim() || (attachmentData ? `Uploaded ${attachmentData.name}` : '');
+      }
 
       let sessionId = currentSessionId;
       if (!sessionId && userMessageContent) { // Only create session if there's actual content
@@ -1074,13 +1084,13 @@ export default function Messages() {
                   </Button>
                   <ScrollArea className="h-[400px]">
                     {chatSessions.map((session) => (
-                      <div key={session.id} className="flex items-center gap-1 p-2 group">
+                      <div key={session.id} className="flex items-center gap-1 p-1 group hover:bg-accent/50 rounded-md">
                         <Button
                           variant={currentSessionId === session.id ? "default" : "ghost"}
-                          className="flex-1 justify-start text-left h-auto p-2 min-w-0"
+                          className="flex-1 justify-start text-left h-auto p-2 min-w-0 hover:bg-transparent"
                           onClick={() => loadChatMessages(session.id)}
                         >
-                          <div className="truncate">
+                          <div className="truncate w-full">
                             <div className="font-medium truncate">{session.title}</div>
                             <div className="text-xs text-muted-foreground">
                               {new Date(session.updated_at).toLocaleDateString()}
@@ -1088,7 +1098,7 @@ export default function Messages() {
                           </div>
                         </Button>
                         
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                        <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           {/* Rename Dialog */}
                           <RenameDialog 
                             sessionId={session.id}
@@ -1103,7 +1113,7 @@ export default function Messages() {
                           {/* Delete AlertDialog */}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
                                 <Trash2 className="h-4 w-4" />
                                 <span className="sr-only">Delete chat</span>
                               </Button>
