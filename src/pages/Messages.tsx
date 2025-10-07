@@ -1351,8 +1351,27 @@ export default function Messages() {
                     variant="ghost" 
                     size="sm"
                     onClick={() => {
-                      stopRecording(); // Use stopRecording to handle cleanup
-                      setSelectedFile(null); // Clear selected file too
+                      // Stop recording and clear all audio data
+                      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                        const stream = mediaRecorderRef.current.stream;
+                        if (stream) {
+                          stream.getTracks().forEach(track => track.stop());
+                        }
+                      }
+                      
+                      // Clear all recording state
+                      setIsRecording(false);
+                      setIsPaused(false);
+                      setSelectedFile(null);
+                      mediaRecorderRef.current = null;
+                      audioChunksRef.current = []; // Clear audio chunks
+                      
+                      // Clear timer
+                      if (recordingIntervalRef.current) {
+                        clearInterval(recordingIntervalRef.current);
+                        recordingIntervalRef.current = null;
+                      }
+                      setRecordingDuration(0);
                     }}
                     className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                     title="Cancel recording"
