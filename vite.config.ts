@@ -11,6 +11,7 @@ export default defineConfig(({ mode }: { mode: string }) => ({
     port: 5000,
     strictPort: true,
     hmr: false,
+    allowedHosts: [".replit.dev", ".repl.co"],
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
