@@ -1248,8 +1248,9 @@ export default function Messages() {
       <Dialog open={transcriptionModalOpen} onOpenChange={(open) => {
         setTranscriptionModalOpen(open);
         // Resume recording if user closes modal and recording is paused
-        if (!open && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+        if (!open && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused' && isRecording) {
           mediaRecorderRef.current.resume();
+          setIsRecordingPaused(false);
         }
       }}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
@@ -1270,8 +1271,9 @@ export default function Messages() {
               onClick={() => {
                 setTranscriptionModalOpen(false);
                 // Resume recording if paused
-                if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+                if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused' && isRecording) {
                   mediaRecorderRef.current.resume();
+                  setIsRecordingPaused(false);
                 }
               }}
             >
@@ -1387,21 +1389,26 @@ export default function Messages() {
                       const wasPaused = mediaRecorderRef.current?.state === 'paused';
                       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
                         mediaRecorderRef.current.pause();
+                        setIsRecordingPaused(true);
                       }
 
                       // Wait a bit to ensure audio chunks are captured
-                      await new Promise(resolve => setTimeout(resolve, 100));
+                      await new Promise(resolve => setTimeout(resolve, 200));
 
                       // Get current audio chunks for transcription
                       setIsProcessingAudio(true);
+                      setTranscriptionText("Transcribing your audio...");
+                      setTranscriptionModalOpen(true);
+                      
                       try {
                         // Check if we have audio data
                         if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
-                          showToast("No audio recorded yet. Please wait a moment and try again.", "error");
+                          setTranscriptionText("No audio recorded yet. Please wait a moment and try again.");
                           setIsProcessingAudio(false);
                           // Resume if it wasn't paused before
                           if (!wasPaused && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
                             mediaRecorderRef.current.resume();
+                            setIsRecordingPaused(false);
                           }
                           return;
                         }
@@ -1428,18 +1435,11 @@ export default function Messages() {
 
                         const transcribedText = transcription.toString();
                         setTranscriptionText(transcribedText);
-                        setTranscriptionModalOpen(true);
                       } catch (error) {
                         console.error('Error transcribing audio:', error);
-                        showToast("Failed to transcribe audio", "error");
                         setTranscriptionText('Audio transcription failed. Please try again.');
-                        setTranscriptionModalOpen(true);
                       } finally {
                         setIsProcessingAudio(false);
-                        // Resume if it wasn't already paused before we paused it
-                        if (!wasPaused && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
-                          mediaRecorderRef.current.resume();
-                        }
                       }
                     }}
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
