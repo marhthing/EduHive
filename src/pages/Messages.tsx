@@ -1431,6 +1431,19 @@ export default function Messages() {
                         });
 
                         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                        
+                        // Check if audio is too short (minimum ~100KB for at least 0.1 seconds of audio)
+                        if (audioBlob.size < 1000) {
+                          setTranscriptionText("Audio recording is too short. Please speak for at least 1 second and try again.");
+                          setIsProcessingAudio(false);
+                          // Resume if it wasn't paused before
+                          if (!wasPaused && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+                            mediaRecorderRef.current.resume();
+                            setIsRecordingPaused(false);
+                          }
+                          return;
+                        }
+                        
                         const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
 
                         const transcription = await groq.audio.transcriptions.create({
@@ -1444,7 +1457,19 @@ export default function Messages() {
                         setTranscriptionText(transcribedText);
                       } catch (error) {
                         console.error('Error transcribing audio:', error);
-                        setTranscriptionText('Audio transcription failed. Please try again.');
+                        
+                        let errorMessage = 'Audio transcription failed. Please try again.';
+                        if (error instanceof Error) {
+                          if (error.message.includes('too short') || error.message.includes('0.01 seconds')) {
+                            errorMessage = 'Audio is too short. Please record for at least 1-2 seconds before transcribing.';
+                          } else if (error.message.includes('rate limit')) {
+                            errorMessage = 'Too many transcription requests. Please wait a moment and try again.';
+                          } else if (error.message.includes('network')) {
+                            errorMessage = 'Network error. Please check your connection and try again.';
+                          }
+                        }
+                        
+                        setTranscriptionText(errorMessage);
                       } finally {
                         setIsProcessingAudio(false);
                       }
