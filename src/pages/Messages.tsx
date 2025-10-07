@@ -1389,13 +1389,20 @@ export default function Messages() {
                         mediaRecorderRef.current.pause();
                       }
 
+                      // Wait a bit to ensure audio chunks are captured
+                      await new Promise(resolve => setTimeout(resolve, 100));
+
                       // Get current audio chunks for transcription
                       setIsProcessingAudio(true);
                       try {
                         // Check if we have audio data
                         if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
-                          showToast("No audio recorded yet", "error");
+                          showToast("No audio recorded yet. Please wait a moment and try again.", "error");
                           setIsProcessingAudio(false);
+                          // Resume if it wasn't paused before
+                          if (!wasPaused && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+                            mediaRecorderRef.current.resume();
+                          }
                           return;
                         }
 
@@ -1453,6 +1460,14 @@ export default function Messages() {
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span className="text-sm text-gray-600 dark:text-gray-400">Transcribing...</span>
+                    </div>
+                  ) : isRecordingPaused ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <div className="w-1 h-3 bg-gray-400 dark:bg-gray-500 rounded-sm"></div>
+                        <div className="w-1 h-3 bg-gray-400 dark:bg-gray-500 rounded-sm"></div>
+                      </div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Recording paused</span>
                     </div>
                   ) : (
                     <div className="flex items-end gap-1 h-8">
