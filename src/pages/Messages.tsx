@@ -196,6 +196,7 @@ export default function Messages() {
     setInputMessage('');
     setSelectedFile(null);
     setIsRecording(false);
+    setIsRecordingPaused(false);
     
     // Stop any active media recording
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -499,12 +500,16 @@ export default function Messages() {
 
       mediaRecorder.start();
       setIsRecording(true);
+      setIsRecordingPaused(false);
     } catch (error) {
       console.error('Error starting recording:', error);
       showToast("Failed to start recording. Please check microphone permissions.", "error");
       setIsRecording(false); // Ensure recording state is reset on error
+      setIsRecordingPaused(false);
     }
   };
+
+  const [isRecordingPaused, setIsRecordingPaused] = useState(false);
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
@@ -1319,6 +1324,8 @@ export default function Messages() {
                     onClick={() => {
                       // Stop the recording
                       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                        // Remove the onstop handler to prevent file creation
+                        mediaRecorderRef.current.onstop = null;
                         mediaRecorderRef.current.stop();
                         const stream = mediaRecorderRef.current.stream;
                         if (stream) {
@@ -1329,6 +1336,7 @@ export default function Messages() {
                       mediaRecorderRef.current = null;
                       audioChunksRef.current = [];
                       setIsRecording(false);
+                      setIsRecordingPaused(false);
                       setSelectedFile(null);
                       setShowTranscriptionPreview(false);
                       setTranscriptionText("");
@@ -1348,20 +1356,18 @@ export default function Messages() {
                       if (mediaRecorderRef.current) {
                         if (mediaRecorderRef.current.state === 'recording') {
                           mediaRecorderRef.current.pause();
-                          setIsRecording(false); // Update state to trigger re-render
-                          setTimeout(() => setIsRecording(true), 0); // Force re-render
+                          setIsRecordingPaused(true);
                         } else if (mediaRecorderRef.current.state === 'paused') {
                           mediaRecorderRef.current.resume();
-                          setIsRecording(false); // Update state to trigger re-render
-                          setTimeout(() => setIsRecording(true), 0); // Force re-render
+                          setIsRecordingPaused(false);
                         }
                       }
                     }}
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                     disabled={!mediaRecorderRef.current || (mediaRecorderRef.current.state !== 'recording' && mediaRecorderRef.current.state !== 'paused')}
-                    title={mediaRecorderRef.current?.state === 'paused' ? 'Resume recording' : 'Pause recording'}
+                    title={isRecordingPaused ? 'Resume recording' : 'Pause recording'}
                   >
-                    {mediaRecorderRef.current?.state === 'paused' ? (
+                    {isRecordingPaused ? (
                       <div className="flex items-center gap-1">
                         <div className="w-0 h-0 border-l-[8px] border-l-current border-y-[6px] border-y-transparent" />
                       </div>
