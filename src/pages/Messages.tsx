@@ -1385,15 +1385,22 @@ export default function Messages() {
                     variant="ghost"
                     size="sm"
                     onClick={async () => {
-                      // Pause recording to transcribe
-                      const wasPaused = mediaRecorderRef.current?.state === 'paused';
-                      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                      if (!mediaRecorderRef.current) return;
+
+                      const wasPaused = mediaRecorderRef.current.state === 'paused';
+                      
+                      // Request data from MediaRecorder to ensure chunks are available
+                      if (mediaRecorderRef.current.state === 'recording') {
+                        mediaRecorderRef.current.requestData(); // Force data to be available
                         mediaRecorderRef.current.pause();
                         setIsRecordingPaused(true);
+                      } else if (mediaRecorderRef.current.state === 'paused') {
+                        // Already paused, just request data
+                        mediaRecorderRef.current.requestData();
                       }
 
-                      // Wait a bit to ensure audio chunks are captured
-                      await new Promise(resolve => setTimeout(resolve, 200));
+                      // Wait for ondataavailable to fire
+                      await new Promise(resolve => setTimeout(resolve, 300));
 
                       // Get current audio chunks for transcription
                       setIsProcessingAudio(true);
@@ -1403,7 +1410,7 @@ export default function Messages() {
                       try {
                         // Check if we have audio data
                         if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
-                          setTranscriptionText("No audio recorded yet. Please wait a moment and try again.");
+                          setTranscriptionText("No audio recorded yet. Please speak for a moment and try again.");
                           setIsProcessingAudio(false);
                           // Resume if it wasn't paused before
                           if (!wasPaused && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
