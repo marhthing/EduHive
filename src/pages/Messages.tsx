@@ -1240,41 +1240,37 @@ export default function Messages() {
       </div>
 
       {/* Transcription Modal */}
-      <Dialog open={transcriptionModalOpen} onOpenChange={setTranscriptionModalOpen}>
+      <Dialog open={transcriptionModalOpen} onOpenChange={(open) => {
+        setTranscriptionModalOpen(open);
+        // Resume recording if user closes modal and recording is paused
+        if (!open && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+          mediaRecorderRef.current.resume();
+        }
+      }}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>Voice Transcription</DialogTitle>
+            <DialogTitle>Voice Transcription Preview</DialogTitle>
             <DialogDescription>
-              Review and edit your transcribed voice message before sending
+              This is what your voice note says. You can close this and continue recording.
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4">
-            <textarea
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              className="w-full min-h-[200px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Your transcribed text will appear here..."
-            />
+            <div className="w-full min-h-[200px] p-3 border rounded-md bg-muted/50 whitespace-pre-wrap">
+              {transcriptionText || "Transcribing..."}
+            </div>
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button
               variant="outline"
               onClick={() => {
                 setTranscriptionModalOpen(false);
-                setInputMessage("");
-                setSelectedFile(null);
+                // Resume recording if paused
+                if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+                  mediaRecorderRef.current.resume();
+                }
               }}
             >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                setTranscriptionModalOpen(false);
-                // The text is already in inputMessage and file in selectedFile
-                // User can now click send
-              }}
-            >
-              Use This Text
+              Close & Continue Recording
             </Button>
           </div>
         </DialogContent>
@@ -1364,57 +1360,41 @@ export default function Messages() {
                     variant="ghost"
                     size="sm"
                     onClick={async () => {
-                      // Stop recording first to get the audio
-                      if (mediaRecorderRef.current && (mediaRecorderRef.current.state === 'recording' || mediaRecorderRef.current.state === 'paused')) {
-                        const audioFile = await new Promise<File>((resolve) => {
-                          if (mediaRecorderRef.current) {
-                            mediaRecorderRef.current.onstop = () => {
-                              const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                              const file = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
-                              setIsRecording(false);
-                              
-                              // Stop all tracks to release microphone
-                              const stream = mediaRecorderRef.current?.stream;
-                              if (stream) {
-                                stream.getTracks().forEach(track => track.stop());
-                              }
-                              resolve(file);
-                            };
-                            mediaRecorderRef.current.stop();
-                          }
-                        });
+                      // Pause recording to transcribe
+                      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                        mediaRecorderRef.current.pause();
+                      }
 
-                        // Now transcribe the audio
-                        setIsProcessingAudio(true);
-                        try {
-                          const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
-                          if (groqApiKey) {
-                            const groq = new Groq({
-                              apiKey: groqApiKey,
-                              dangerouslyAllowBrowser: true
-                            });
+                      // Get current audio chunks for transcription
+                      setIsProcessingAudio(true);
+                      try {
+                        const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
+                        if (groqApiKey && audioChunksRef.current.length > 0) {
+                          const groq = new Groq({
+                            apiKey: groqApiKey,
+                            dangerouslyAllowBrowser: true
+                          });
 
-                            const transcription = await groq.audio.transcriptions.create({
-                              file: audioFile,
-                              model: "whisper-large-v3-turbo",
-                              response_format: "text",
-                              temperature: 0.0
-                            });
+                          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                          const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
 
-                            const transcribedText = transcription.toString();
-                            setTranscriptionText(transcribedText);
-                            setInputMessage(transcribedText);
-                            setSelectedFile(audioFile);
-                            setTranscriptionModalOpen(true);
-                          }
-                        } catch (error) {
-                          console.error('Error transcribing audio:', error);
-                          setTranscriptionText('Audio transcription failed');
-                          setInputMessage('Audio transcription failed');
+                          const transcription = await groq.audio.transcriptions.create({
+                            file: audioFile,
+                            model: "whisper-large-v3-turbo",
+                            response_format: "text",
+                            temperature: 0.0
+                          });
+
+                          const transcribedText = transcription.toString();
+                          setTranscriptionText(transcribedText);
                           setTranscriptionModalOpen(true);
-                        } finally {
-                          setIsProcessingAudio(false);
                         }
+                      } catch (error) {
+                        console.error('Error transcribing audio:', error);
+                        setTranscriptionText('Audio transcription failed');
+                        setTranscriptionModalOpen(true);
+                      } finally {
+                        setIsProcessingAudio(false);
                       }
                     }}
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
