@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Loader2, Paperclip, Mic, MicOff, Plus, History, Trash2, Image, FileText, Volume2, Pencil } from "lucide-react";
+import { Send, Bot, User, Loader2, Paperclip, Mic, MicOff, Plus, History, Trash2, Image, FileText, Volume2, Pencil, Pause, Play } from "lucide-react";
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { Button } from "@/components/ui/button";
@@ -533,38 +533,25 @@ export default function Messages() {
   };
 
   const pauseRecording = () => {
-    if (mediaRecorderRef.current && isRecording && !isPaused) {
-      mediaRecorderRef.current.stop(); // This will trigger onstop, but we'll restart later
+    if (mediaRecorderRef.current && isRecording && !isPaused && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.pause();
       setIsPaused(true);
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
       }
     }
   };
 
-  const resumeRecording = async () => {
-    if (mediaRecorderRef.current && isPaused) {
-      try {
-        // Re-acquire stream if it was closed by stop() in pause
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const newMediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        mediaRecorderRef.current = newMediaRecorder;
-        
-        newMediaRecorder.ondataavailable = mediaRecorderRef.current.ondataavailable; // Re-attach handler
-        newMediaRecorder.onstop = mediaRecorderRef.current.onstop; // Re-attach handler
-
-        newMediaRecorder.start(100); // Resume recording
-        setIsPaused(false);
-
-        // Restart timer
-        recordingIntervalRef.current = setInterval(() => {
-          setRecordingDuration(prev => prev + 1);
-        }, 1000);
-      } catch (error) {
-        console.error('Error resuming recording:', error);
-        showToast("Failed to resume recording. Please check microphone permissions.", "error");
-        setIsPaused(false); // Reset pause state on error
-      }
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && isPaused && mediaRecorderRef.current.state === 'paused') {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+      
+      // Restart timer
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
     }
   };
 
@@ -1393,7 +1380,7 @@ export default function Messages() {
                     className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                     title={isPaused ? "Resume recording" : "Pause recording"}
                   >
-                    {isPaused ? <Play className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                    {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
                   </Button>
 
                   {/* Send Button */}
