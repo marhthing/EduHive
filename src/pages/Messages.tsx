@@ -855,7 +855,6 @@ export default function Messages() {
             });
 
             transcribedText = transcription.toString();
-            console.log('Transcribed text:', transcribedText);
           }
         } catch (error) {
           console.error('Error transcribing audio:', error);
@@ -1289,35 +1288,52 @@ export default function Messages() {
                     variant="ghost"
                     size="sm"
                     onClick={async () => {
-                      if (!showTranscriptionPreview && selectedFile?.type.startsWith('audio/')) {
-                        try {
-                          const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
-                          if (groqApiKey) {
-                            const groq = new Groq({
-                              apiKey: groqApiKey,
-                              dangerouslyAllowBrowser: true
-                            });
+                      if (!showTranscriptionPreview) {
+                        // Stop recording first to get the audio
+                        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                          const audioFile = await new Promise<File>((resolve) => {
+                            if (mediaRecorderRef.current) {
+                              mediaRecorderRef.current.onstop = () => {
+                                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                                const file = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
+                                resolve(file);
+                              };
+                              mediaRecorderRef.current.stop();
+                            }
+                          });
 
-                            const transcription = await groq.audio.transcriptions.create({
-                              file: selectedFile,
-                              model: "whisper-large-v3-turbo",
-                              response_format: "text",
-                              temperature: 0.0
-                            });
+                          // Now transcribe the audio
+                          try {
+                            const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
+                            if (groqApiKey) {
+                              const groq = new Groq({
+                                apiKey: groqApiKey,
+                                dangerouslyAllowBrowser: true
+                              });
 
-                            setInputMessage(transcription.toString());
+                              const transcription = await groq.audio.transcriptions.create({
+                                file: audioFile,
+                                model: "whisper-large-v3-turbo",
+                                response_format: "text",
+                                temperature: 0.0
+                              });
+
+                              setInputMessage(transcription.toString());
+                              setSelectedFile(audioFile);
+                              setShowTranscriptionPreview(true);
+                            }
+                          } catch (error) {
+                            console.error('Error transcribing audio:', error);
+                            setInputMessage('Audio transcription failed');
                             setShowTranscriptionPreview(true);
                           }
-                        } catch (error) {
-                          console.error('Error transcribing audio:', error);
-                          setInputMessage('Audio transcription failed');
-                          setShowTranscriptionPreview(true);
                         }
                       } else {
                         setShowTranscriptionPreview(!showTranscriptionPreview);
                       }
                     }}
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                    disabled={!showTranscriptionPreview && (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording')}
                   >
                     <span className="text-sm">See text</span>
                   </Button>
