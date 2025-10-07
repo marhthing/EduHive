@@ -36,8 +36,9 @@ function RenameDialog({ sessionId, currentTitle, onRename }: RenameDialogProps) 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-accent">
           <Pencil className="h-4 w-4" />
+          <span className="sr-only">Rename chat</span>
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -1077,10 +1078,10 @@ export default function Messages() {
                   </Button>
                   <ScrollArea className="h-[400px]">
                     {chatSessions.map((session) => (
-                      <div key={session.id} className="flex items-center gap-2 p-2">
+                      <div key={session.id} className="flex items-center gap-1 p-2 group">
                         <Button
                           variant={currentSessionId === session.id ? "default" : "ghost"}
-                          className="flex-1 justify-start text-left h-auto p-2"
+                          className="flex-1 justify-start text-left h-auto p-2 min-w-0"
                           onClick={() => loadChatMessages(session.id)}
                         >
                           <div className="truncate">
@@ -1091,39 +1092,42 @@ export default function Messages() {
                           </div>
                         </Button>
                         
-                        {/* Rename Dialog */}
-                        <RenameDialog 
-                          sessionId={session.id}
-                          currentTitle={session.title}
-                          onRename={async (newTitle) => {
-                            await updateChatTitle(session.id, newTitle);
-                            await loadChatSessions();
-                            showToast("Chat renamed successfully", "success");
-                          }}
-                        />
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {/* Rename Dialog */}
+                          <RenameDialog 
+                            sessionId={session.id}
+                            currentTitle={session.title}
+                            onRename={async (newTitle) => {
+                              await updateChatTitle(session.id, newTitle);
+                              await loadChatSessions();
+                              showToast("Chat renamed successfully", "success");
+                            }}
+                          />
 
-                        {/* Delete AlertDialog */}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Chat</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this chat? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteChat(session.id)}>
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                          {/* Delete AlertDialog */}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0">
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Delete chat</span>
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this chat? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteChat(session.id)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                     ))}
                   </ScrollArea>
