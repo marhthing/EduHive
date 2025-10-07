@@ -808,19 +808,18 @@ export default function Messages() {
     let aiMessageId: string | null = null;
     let aiMessage: Message | null = null;
     let transcribedText = '';
+    let audioFileToTranscribe: File | null = null;
 
     try {
       let attachmentData: { url: string; type: string; name: string } | null = null;
 
-      // If recording, stop it and process the audio
+      // If recording, stop it and get the audio file directly
       if (isRecording) {
-        // Stop recording and get the audio file
-        await new Promise<void>((resolve) => {
+        audioFileToTranscribe = await new Promise<File>((resolve) => {
           if (mediaRecorderRef.current) {
             mediaRecorderRef.current.onstop = () => {
               const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
               const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
-              setSelectedFile(audioFile);
               setIsRecording(false);
               
               // Stop all tracks to release microphone
@@ -828,20 +827,18 @@ export default function Messages() {
               if (stream) {
                 stream.getTracks().forEach(track => track.stop());
               }
-              resolve();
+              resolve(audioFile);
             };
             mediaRecorderRef.current.stop();
-          } else {
-            resolve();
           }
         });
-
-        // Wait a bit for selectedFile to be set
-        await new Promise(resolve => setTimeout(resolve, 100));
+      } else if (selectedFile && selectedFile.type.startsWith('audio/')) {
+        // Use the already selected audio file
+        audioFileToTranscribe = selectedFile;
       }
 
       // Process voice note if we have an audio file
-      if (selectedFile && selectedFile.type.startsWith('audio/')) {
+      if (audioFileToTranscribe) {
         try {
           const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
           if (groqApiKey) {
@@ -851,22 +848,24 @@ export default function Messages() {
             });
 
             const transcription = await groq.audio.transcriptions.create({
-              file: selectedFile,
+              file: audioFileToTranscribe,
               model: "whisper-large-v3-turbo",
               response_format: "text",
               temperature: 0.0
             });
 
             transcribedText = transcription.toString();
+            console.log('Transcribed text:', transcribedText);
           }
         } catch (error) {
           console.error('Error transcribing audio:', error);
-          transcribedText = 'Audio transcription failed';
+          transcribedText = '';
+          showToast("Failed to transcribe audio", "error");
         }
       }
 
-      // Upload file if selected (but don't include voice notes as attachments)
-      if (selectedFile && !selectedFile.type.startsWith('audio/')) {
+      // Upload file if selected (but don't include voice notes as attachments since we transcribe them)
+      if (selectedFile && !selectedFile.type.startsWith('audio/') && !audioFileToTranscribe) {
         attachmentData = await uploadFileToSupabase(selectedFile);
         if (!attachmentData) {
           setIsLoading(false);
