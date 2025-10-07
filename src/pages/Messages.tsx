@@ -1316,7 +1316,7 @@ export default function Messages() {
             /* Voice Recording UI with Waveform - Like ChatGPT */
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <Button 
                     variant="ghost" 
                     size="sm"
@@ -1325,16 +1325,47 @@ export default function Messages() {
                       setSelectedFile(null);
                       setShowTranscriptionPreview(false);
                     }}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    title="Cancel recording"
                   >
                     ×
                   </Button>
+                  
+                  {/* Pause/Resume button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (mediaRecorderRef.current) {
+                        if (mediaRecorderRef.current.state === 'recording') {
+                          mediaRecorderRef.current.pause();
+                        } else if (mediaRecorderRef.current.state === 'paused') {
+                          mediaRecorderRef.current.resume();
+                        }
+                      }
+                    }}
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                    disabled={!mediaRecorderRef.current || (mediaRecorderRef.current.state !== 'recording' && mediaRecorderRef.current.state !== 'paused')}
+                    title={mediaRecorderRef.current?.state === 'paused' ? 'Resume recording' : 'Pause recording'}
+                  >
+                    {mediaRecorderRef.current?.state === 'paused' ? (
+                      <div className="flex items-center gap-1">
+                        <div className="w-0 h-0 border-l-[8px] border-l-current border-y-[6px] border-y-transparent" />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <div className="w-1 h-3 bg-current rounded-sm"></div>
+                        <div className="w-1 h-3 bg-current rounded-sm"></div>
+                      </div>
+                    )}
+                  </Button>
+
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={async () => {
                       // Stop recording first to get the audio
-                      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                      if (mediaRecorderRef.current && (mediaRecorderRef.current.state === 'recording' || mediaRecorderRef.current.state === 'paused')) {
                         const audioFile = await new Promise<File>((resolve) => {
                           if (mediaRecorderRef.current) {
                             mediaRecorderRef.current.onstop = () => {
@@ -1387,7 +1418,8 @@ export default function Messages() {
                       }
                     }}
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                    disabled={isProcessingAudio || !mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording'}
+                    disabled={isProcessingAudio || !mediaRecorderRef.current || (mediaRecorderRef.current.state !== 'recording' && mediaRecorderRef.current.state !== 'paused')}
+                    title="See transcribed text"
                   >
                     {isProcessingAudio ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
