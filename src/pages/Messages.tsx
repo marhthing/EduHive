@@ -108,10 +108,8 @@ export default function Messages() {
   const [isTyping, setIsTyping] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<CurrentUserProfile | null>(null);
-  const [isProcessingAudio, setIsProcessingAudio] = useState(false); // Added state for audio processing
-  const [showTranscriptionPreview, setShowTranscriptionPreview] = useState(false); // Show transcription preview
-  const [transcriptionModalOpen, setTranscriptionModalOpen] = useState(false);
-  const [transcriptionText, setTranscriptionText] = useState("");
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
 
   const { user } = useAuth();
   
@@ -126,6 +124,7 @@ export default function Messages() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -187,16 +186,19 @@ export default function Messages() {
     setIsTyping(false);
     setIsSheetOpen(false);
     setIsProcessingAudio(false);
-    setShowTranscriptionPreview(false);
     setIsLoading(false);
-    setTranscriptionModalOpen(false);
-    setTranscriptionText("");
     
     // Clear compose/input state
     setInputMessage('');
     setSelectedFile(null);
     setIsRecording(false);
-    setIsRecordingPaused(false);
+    setRecordingDuration(0);
+    
+    // Stop recording timer
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
     
     // Stop any active media recording
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -512,7 +514,6 @@ export default function Messages() {
       // Start recording with timeslice to collect data continuously
       mediaRecorder.start(100); // Collect data every 100ms
       setIsRecording(true);
-      setIsRecordingPaused(false);
       
       // Start timer
       setRecordingDuration(0);
@@ -523,13 +524,8 @@ export default function Messages() {
       console.error('Error starting recording:', error);
       showToast("Failed to start recording. Please check microphone permissions.", "error");
       setIsRecording(false);
-      setIsRecordingPaused(false);
     }
   };
-
-  const [isRecordingPaused, setIsRecordingPaused] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
-  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
@@ -1024,10 +1020,9 @@ export default function Messages() {
     } finally {
       setIsLoading(false);
       setIsTyping(false);
-      setIsProcessingAudio(false); // Reset audio processing state
-      setIsRecording(false); // Ensure recording is off
-      setSelectedFile(null); // Clear selected file on completion or error
-      setShowTranscriptionPreview(false); // Reset transcription preview
+      setIsProcessingAudio(false);
+      setIsRecording(false);
+      setSelectedFile(null);
     }
   };
 
@@ -1270,45 +1265,6 @@ export default function Messages() {
         </ScrollArea>
       </div>
 
-      {/* Transcription Modal */}
-      <Dialog open={transcriptionModalOpen} onOpenChange={(open) => {
-        setTranscriptionModalOpen(open);
-        // Resume recording if user closes modal and recording is paused
-        if (!open && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused' && isRecording) {
-          mediaRecorderRef.current.resume();
-          setIsRecordingPaused(false);
-        }
-      }}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>Voice Transcription Preview</DialogTitle>
-            <DialogDescription>
-              This is what your voice note says. You can close this and continue recording.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4">
-            <div className="w-full min-h-[200px] p-3 border rounded-md bg-muted/50 whitespace-pre-wrap">
-              {transcriptionText || "Transcribing..."}
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setTranscriptionModalOpen(false);
-                // Resume recording if paused
-                if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused' && isRecording) {
-                  mediaRecorderRef.current.resume();
-                  setIsRecordingPaused(false);
-                }
-              }}
-            >
-              Close & Continue Recording
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Fixed Input Footer - Above Mobile Nav */}
       <div className="fixed bottom-[72px] md:bottom-0 left-0 md:left-64 right-0 z-40 bg-background/95 backdrop-blur-sm border-t">
         {/* File Upload Preview */}
@@ -1369,224 +1325,33 @@ export default function Messages() {
                       mediaRecorderRef.current = null;
                       audioChunksRef.current = [];
                       setIsRecording(false);
-                      setIsRecordingPaused(false);
                       setRecordingDuration(0);
                       setSelectedFile(null);
-                      setShowTranscriptionPreview(false);
-                      setTranscriptionText("");
-                      setTranscriptionModalOpen(false);
                     }}
                     className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                     title="Cancel recording"
                   >
                     ×
                   </Button>
-                  
-                  {/* Pause/Resume button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      if (mediaRecorderRef.current) {
-                        if (mediaRecorderRef.current.state === 'recording') {
-                          mediaRecorderRef.current.pause();
-                          setIsRecordingPaused(true);
-                          // Pause timer
-                          if (recordingIntervalRef.current) {
-                            clearInterval(recordingIntervalRef.current);
-                            recordingIntervalRef.current = null;
-                          }
-                        } else if (mediaRecorderRef.current.state === 'paused') {
-                          mediaRecorderRef.current.resume();
-                          setIsRecordingPaused(false);
-                          // Resume timer
-                          recordingIntervalRef.current = setInterval(() => {
-                            setRecordingDuration(prev => prev + 1);
-                          }, 1000);
-                        }
-                      }
-                    }}
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                    disabled={!mediaRecorderRef.current || (mediaRecorderRef.current.state !== 'recording' && mediaRecorderRef.current.state !== 'paused')}
-                    title={isRecordingPaused ? 'Resume recording' : 'Pause recording'}
-                  >
-                    {isRecordingPaused ? (
-                      <div className="flex items-center gap-1">
-                        <div className="w-0 h-0 border-l-[8px] border-l-current border-y-[6px] border-y-transparent" />
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        <div className="w-1 h-3 bg-current rounded-sm"></div>
-                        <div className="w-1 h-3 bg-current rounded-sm"></div>
-                      </div>
-                    )}
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={async () => {
-                      if (!mediaRecorderRef.current) return;
-
-                      const wasPaused = mediaRecorderRef.current.state === 'paused';
-                      const wasRecording = mediaRecorderRef.current.state === 'recording';
-                      
-                      // Pause recording and timer if currently recording
-                      if (wasRecording) {
-                        mediaRecorderRef.current.pause();
-                        setIsRecordingPaused(true);
-                        if (recordingIntervalRef.current) {
-                          clearInterval(recordingIntervalRef.current);
-                          recordingIntervalRef.current = null;
-                        }
-                      }
-                      
-                      // Request final data
-                      mediaRecorderRef.current.requestData();
-
-                      // Wait for data to be collected
-                      await new Promise(resolve => setTimeout(resolve, 300));
-
-                      // Get current audio chunks for transcription
-                      setIsProcessingAudio(true);
-                      setTranscriptionText("Transcribing your audio...");
-                      setTranscriptionModalOpen(true);
-                      
-                      try {
-                        // Check if we have audio data
-                        if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
-                          setTranscriptionText("No audio recorded yet. Please speak for a moment and try again.");
-                          setIsProcessingAudio(false);
-                          // Resume if it wasn't paused before
-                          if (!wasPaused && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
-                            mediaRecorderRef.current.resume();
-                            setIsRecordingPaused(false);
-                          }
-                          return;
-                        }
-
-                        const groqApiKey = import.meta.env.VITE_GROQ_API_KEY;
-                        if (!groqApiKey) {
-                          throw new Error("AI service is not configured");
-                        }
-
-                        const groq = new Groq({
-                          apiKey: groqApiKey,
-                          dangerouslyAllowBrowser: true
-                        });
-
-                        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                        
-                        // Check if audio is too short (minimum ~100KB for at least 0.1 seconds of audio)
-                        if (audioBlob.size < 1000) {
-                          setTranscriptionText("Audio recording is too short. Please speak for at least 1 second and try again.");
-                          setIsProcessingAudio(false);
-                          // Resume if it wasn't paused before
-                          if (!wasPaused && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
-                            mediaRecorderRef.current.resume();
-                            setIsRecordingPaused(false);
-                          }
-                          return;
-                        }
-                        
-                        const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
-
-                        const transcription = await groq.audio.transcriptions.create({
-                          file: audioFile,
-                          model: "whisper-large-v3-turbo",
-                          response_format: "text",
-                          temperature: 0.0
-                        });
-
-                        const transcribedText = transcription.toString();
-                        setTranscriptionText(transcribedText);
-                      } catch (error) {
-                        console.error('Error transcribing audio:', error);
-                        
-                        let errorMessage = 'Audio transcription failed. Please try again.';
-                        if (error instanceof Error) {
-                          if (error.message.includes('too short') || error.message.includes('0.01 seconds')) {
-                            errorMessage = 'Audio is too short. Please record for at least 1-2 seconds before transcribing.';
-                          } else if (error.message.includes('rate limit')) {
-                            errorMessage = 'Too many transcription requests. Please wait a moment and try again.';
-                          } else if (error.message.includes('network')) {
-                            errorMessage = 'Network error. Please check your connection and try again.';
-                          }
-                        }
-                        
-                        setTranscriptionText(errorMessage);
-                      } finally {
-                        setIsProcessingAudio(false);
-                        // Resume recording and timer if it wasn't paused before
-                        if (!wasPaused && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
-                          mediaRecorderRef.current.resume();
-                          setIsRecordingPaused(false);
-                          recordingIntervalRef.current = setInterval(() => {
-                            setRecordingDuration(prev => prev + 1);
-                          }, 1000);
-                        }
-                      }
-                    }}
-                    className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                    disabled={isProcessingAudio || !mediaRecorderRef.current || (mediaRecorderRef.current.state !== 'recording' && mediaRecorderRef.current.state !== 'paused')}
-                    title="See transcribed text"
-                  >
-                    {isProcessingAudio ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <span className="text-sm">See text</span>
-                    )}
-                  </Button>
                 </div>
                 
-                {/* Timer and Recording State */}
-                <div className="flex-1 mx-4 flex items-center justify-center">
-                  {isProcessingAudio ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Transcribing...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      {isRecordingPaused ? (
-                        <div className="flex items-center gap-1">
-                          <div className="w-1 h-3 bg-gray-400 dark:bg-gray-500 rounded-sm"></div>
-                          <div className="w-1 h-3 bg-gray-400 dark:bg-gray-500 rounded-sm"></div>
-                        </div>
-                      ) : (
-                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                      )}
-                      <span className="text-sm font-mono text-gray-700 dark:text-gray-300">
-                        {Math.floor(recordingDuration / 3600).toString().padStart(2, '0')}:
-                        {Math.floor((recordingDuration % 3600) / 60).toString().padStart(2, '0')}:
-                        {(recordingDuration % 60).toString().padStart(2, '0')}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-end gap-1 h-8">
-                      {Array.from({ length: 40 }, (_, i) => (
-                        <div
-                          key={i}
-                          className="bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse"
-                          style={{
-                            width: '2px',
-                            height: `${Math.random() * 24 + 8}px`,
-                            animationDelay: `${i * 0.05}s`,
-                            animationDuration: `${0.5 + Math.random() * 0.5}s`
-                          }}
-                        />
-                      ))}
-                    </div>
-                  )}
+                {/* Timer Display */}
+                <div className="flex-1 mx-4 flex items-center justify-center gap-3">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-mono text-gray-700 dark:text-gray-300">
+                    {Math.floor(recordingDuration / 3600).toString().padStart(2, '0')}:
+                    {Math.floor((recordingDuration % 3600) / 60).toString().padStart(2, '0')}:
+                    {(recordingDuration % 60).toString().padStart(2, '0')}
+                  </span>
                 </div>
 
                 <Button 
                   onClick={sendMessage}
-                  disabled={isLoading || isProcessingAudio}
+                  disabled={isLoading}
                   size="sm"
                   className="rounded-full w-10 h-10 bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-200"
                 >
-                  {isLoading || isProcessingAudio ? (
+                  {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin text-white dark:text-black" />
                   ) : (
                     <div className="w-0 h-0 border-l-[6px] border-l-white dark:border-l-black border-y-[4px] border-y-transparent ml-0.5" />
