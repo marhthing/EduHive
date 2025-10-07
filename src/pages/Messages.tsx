@@ -480,42 +480,68 @@ export default function Messages() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const mediaRecorder = new MediaRecorder(stream, { 
+        mimeType: 'audio/webm',
+      });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
 
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const audioFile = new File([audioBlob], 'voice-note.webm', { type: 'audio/webm' });
         setSelectedFile(audioFile);
-        setIsRecording(false); // Set isRecording to false immediately after stopping
+        setIsRecording(false);
 
         // Stop all tracks to release microphone
         stream.getTracks().forEach(track => track.stop());
+        
+        // Clear timer
+        if (recordingIntervalRef.current) {
+          clearInterval(recordingIntervalRef.current);
+          recordingIntervalRef.current = null;
+        }
+        setRecordingDuration(0);
       };
 
-      mediaRecorder.start();
+      // Start recording with timeslice to collect data continuously
+      mediaRecorder.start(100); // Collect data every 100ms
       setIsRecording(true);
       setIsRecordingPaused(false);
+      
+      // Start timer
+      setRecordingDuration(0);
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
     } catch (error) {
       console.error('Error starting recording:', error);
       showToast("Failed to start recording. Please check microphone permissions.", "error");
-      setIsRecording(false); // Ensure recording state is reset on error
+      setIsRecording(false);
       setIsRecordingPaused(false);
     }
   };
 
   const [isRecordingPaused, setIsRecordingPaused] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       // isRecording is set to false in mediaRecorder.onstop
     }
+    // Clear timer
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+    setRecordingDuration(0);
   };
 
   const uploadFileToSupabase = async (file: File): Promise<{ url: string; type: string; name: string } | null> => {
@@ -1334,11 +1360,17 @@ export default function Messages() {
                           stream.getTracks().forEach(track => track.stop());
                         }
                       }
+                      // Clear timer
+                      if (recordingIntervalRef.current) {
+                        clearInterval(recordingIntervalRef.current);
+                        recordingIntervalRef.current = null;
+                      }
                       // Clear all recording state
                       mediaRecorderRef.current = null;
                       audioChunksRef.current = [];
                       setIsRecording(false);
                       setIsRecordingPaused(false);
+                      setRecordingDuration(0);
                       setSelectedFile(null);
                       setShowTranscriptionPreview(false);
                       setTranscriptionText("");
@@ -1359,9 +1391,18 @@ export default function Messages() {
                         if (mediaRecorderRef.current.state === 'recording') {
                           mediaRecorderRef.current.pause();
                           setIsRecordingPaused(true);
+                          // Pause timer
+                          if (recordingIntervalRef.current) {
+                            clearInterval(recordingIntervalRef.current);
+                            recordingIntervalRef.current = null;
+                          }
                         } else if (mediaRecorderRef.current.state === 'paused') {
                           mediaRecorderRef.current.resume();
                           setIsRecordingPaused(false);
+                          // Resume timer
+                          recordingIntervalRef.current = setInterval(() => {
+                            setRecordingDuration(prev => prev + 1);
+                          }, 1000);
                         }
                       }
                     }}
@@ -1388,18 +1429,22 @@ export default function Messages() {
                       if (!mediaRecorderRef.current) return;
 
                       const wasPaused = mediaRecorderRef.current.state === 'paused';
+                      const wasRecording = mediaRecorderRef.current.state === 'recording';
                       
-                      // Request data from MediaRecorder to ensure chunks are available
-                      if (mediaRecorderRef.current.state === 'recording') {
-                        mediaRecorderRef.current.requestData(); // Force data to be available
+                      // Pause recording and timer if currently recording
+                      if (wasRecording) {
                         mediaRecorderRef.current.pause();
                         setIsRecordingPaused(true);
-                      } else if (mediaRecorderRef.current.state === 'paused') {
-                        // Already paused, just request data
-                        mediaRecorderRef.current.requestData();
+                        if (recordingIntervalRef.current) {
+                          clearInterval(recordingIntervalRef.current);
+                          recordingIntervalRef.current = null;
+                        }
                       }
+                      
+                      // Request final data
+                      mediaRecorderRef.current.requestData();
 
-                      // Wait for ondataavailable to fire
+                      // Wait for data to be collected
                       await new Promise(resolve => setTimeout(resolve, 300));
 
                       // Get current audio chunks for transcription
@@ -1472,6 +1517,14 @@ export default function Messages() {
                         setTranscriptionText(errorMessage);
                       } finally {
                         setIsProcessingAudio(false);
+                        // Resume recording and timer if it wasn't paused before
+                        if (!wasPaused && mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+                          mediaRecorderRef.current.resume();
+                          setIsRecordingPaused(false);
+                          recordingIntervalRef.current = setInterval(() => {
+                            setRecordingDuration(prev => prev + 1);
+                          }, 1000);
+                        }
                       }
                     }}
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
@@ -1486,20 +1539,28 @@ export default function Messages() {
                   </Button>
                 </div>
                 
-                {/* Waveform Visualization or Processing State */}
+                {/* Timer and Recording State */}
                 <div className="flex-1 mx-4 flex items-center justify-center">
                   {isProcessingAudio ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span className="text-sm text-gray-600 dark:text-gray-400">Transcribing...</span>
                     </div>
-                  ) : isRecordingPaused ? (
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        <div className="w-1 h-3 bg-gray-400 dark:bg-gray-500 rounded-sm"></div>
-                        <div className="w-1 h-3 bg-gray-400 dark:bg-gray-500 rounded-sm"></div>
-                      </div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Recording paused</span>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      {isRecordingPaused ? (
+                        <div className="flex items-center gap-1">
+                          <div className="w-1 h-3 bg-gray-400 dark:bg-gray-500 rounded-sm"></div>
+                          <div className="w-1 h-3 bg-gray-400 dark:bg-gray-500 rounded-sm"></div>
+                        </div>
+                      ) : (
+                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                      )}
+                      <span className="text-sm font-mono text-gray-700 dark:text-gray-300">
+                        {Math.floor(recordingDuration / 3600).toString().padStart(2, '0')}:
+                        {Math.floor((recordingDuration % 3600) / 60).toString().padStart(2, '0')}:
+                        {(recordingDuration % 60).toString().padStart(2, '0')}
+                      </span>
                     </div>
                   ) : (
                     <div className="flex items-end gap-1 h-8">
